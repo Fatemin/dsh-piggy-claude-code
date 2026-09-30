@@ -120,6 +120,10 @@ window.__ModuleLoader__.load({
           },
           ageLabel: str(pig.ageLabel, ''),
           daysToNextStage: typeof pig.daysToNextStage === 'number' ? pig.daysToNextStage : null,
+          // [dsh-piggy-claude-code mod] growth by weight, switchable elder look.
+          kgToNextStage: typeof pig.kgToNextStage === 'number' ? pig.kgToNextStage : null,
+          canChooseLook: pig.canChooseLook === true,
+          look: pig.look === 'original' ? 'original' : 'elder',
           soul: pig.soul === true,
           mood: str(pig.mood, 'fine'),
           moodEmoji: str(pig.moodEmoji, '😊'),
@@ -341,7 +345,9 @@ window.__ModuleLoader__.load({
       'box-shadow:var(--ac-shadow-lg);color:var(--ac-text-body)}',
 
       /* ---------- the pig: never moved, never boxed ---------- */
-      '.dp-scene{position:relative;height:var(--scene-open);background:none;cursor:grab;',
+      // [dsh-piggy-claude-code mod] a heavy pig (up to 200 px) needs a taller
+      // scene, with room above it for the hud and the speech bubble.
+      '.dp-scene{position:relative;height:max(var(--scene-open),calc(var(--pig-size) + var(--pig-gap-below) + 72px));background:none;cursor:grab;',
       'overflow:visible;display:flex;align-items:flex-end;justify-content:flex-end;',
       'padding:0 6px var(--pig-gap-below);width:max-content}',
       '.dp-scene[data-dragging="true"]{cursor:grabbing}',
@@ -612,6 +618,7 @@ window.__ModuleLoader__.load({
       '.dp-count{margin-left:2px;font-size:9px;font-weight:700;color:var(--ac-text-2);',
       'background:var(--ac-bg-content);border-radius:var(--ac-pill);padding:0 5px}',
       '.dp-btn[data-open-picker="true"]{background:var(--ac-active);border-color:#9db0d6}',
+      '.dp-looks .dp-btn[aria-pressed="true"]{background:var(--ac-active);border-color:#9db0d6}',
       '.dp-seg button[data-locked="true"]{color:var(--ac-text-disabled);',
       'border-style:dashed;background:var(--ac-bg-disabled)}',
       '.dp-seg button[data-locked="true"]:hover{background:var(--ac-bg-disabled)}',
@@ -1150,11 +1157,26 @@ window.__ModuleLoader__.load({
 
         var age = el('div', 'dp-row')
         age.appendChild(el('span', null, '🎂 年龄'))
-        age.appendChild(el('b', null, p.ageLabel + (p.daysToNextStage === null ? ' · 已长成' : '')))
+        age.appendChild(el('b', null, p.ageLabel + ' · ' + p.stage.label))
         content.appendChild(age)
-        if (p.daysToNextStage !== null) {
+        // [dsh-piggy-claude-code mod] the pig grows by weight, not by age.
+        if (p.kgToNextStage !== null) {
           content.appendChild(el('div', 'dp-empty',
-            '再过 ' + formatDays(p.daysToNextStage) + ' 就长成下一阶段了'))
+            '再长 ' + p.kgToNextStage.toFixed(1) + ' kg 就长成下一阶段了'))
+        }
+        if (p.canChooseLook) {
+          var looks = el('div', 'dp-actions dp-looks')
+          var LOOK_CHOICES = [['elder', '👴 老年猪'], ['original', '🐷 原版']]
+          for (var li = 0; li < LOOK_CHOICES.length; li += 1) {
+            (function (key, label) {
+              var pick = button('dp-btn', { 'data-look': key, 'aria-pressed': String(p.look === key) }, function () {
+                if (p.look !== key) send('look', { look: key })
+              })
+              pick.appendChild(el('span', null, label))
+              looks.appendChild(pick)
+            })(LOOK_CHOICES[li][0], LOOK_CHOICES[li][1])
+          }
+          content.appendChild(looks)
         }
 
         var grid = el('div', 'dp-actions')

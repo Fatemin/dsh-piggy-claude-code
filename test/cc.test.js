@@ -18,6 +18,9 @@ import { readSnapshot, statusLine } from '../lib/status.js'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
+// Most tests count every event; the throttle has its own test below.
+process.env.PIG_FEED_EVERY_MIN = '0'
+
 const tempState = () => join(mkdtempSync(join(tmpdir(), 'pig-cc-')), 'state.json')
 const readSave = file => JSON.parse(readFileSync(file, 'utf8'))
 
@@ -222,4 +225,26 @@ test('statusline.sh shows the pig alone or after another status line', () => {
   assert.match(alone.stdout, /^🐖 .*🍚\d+/)
   const chained = spawnSync('sh', [join(ROOT, 'bin/statusline.sh'), 'sh', '-c', 'cat >/dev/null; echo BASE'], { env, input: '{}', encoding: 'utf8' })
   assert.match(chained.stdout, /^BASE · 🐖 /)
+})
+
+test('passive feeding is throttled to one bite per interval, across processes', () => {
+  const file = hatched(tempState())
+  let clock = 1_000_000
+  const now = () => clock
+  const first = createHost({ statePath: file, feedEveryMs: 30 * 60_000, now })
+  assert.equal(first.emit('tool'), 'fed')
+  assert.equal(first.emit('tool'), 'throttled')
+  assert.equal(first.emit('bogus'), false)
+  first.dispose()
+
+  // Another process (a hook, a second session) shares the same clock file.
+  const second = createHost({ statePath: file, feedEveryMs: 30 * 60_000, now })
+  clock += 29 * 60_000
+  assert.equal(second.emit('turn'), 'throttled')
+  clock += 2 * 60_000
+  assert.equal(second.emit('turn'), 'fed')
+  second.dispose()
+
+  const stats = readSave(file).stats
+  assert.deepEqual([stats.tools, stats.turns], [1, 1])
 })

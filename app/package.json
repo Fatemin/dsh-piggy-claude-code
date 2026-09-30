@@ -1,7 +1,7 @@
 {
   "name": "dsh-piggy-desk",
   "productName": "DSH Piggy",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "🐖 dsh-piggy as a standalone desktop pet for Windows and macOS",
   "main": "main.mjs",
   "private": true,

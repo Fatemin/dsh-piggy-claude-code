@@ -22,6 +22,7 @@ import { dirname, join, resolve } from 'node:path'
 import {
   act as coreAct,
   buy as coreBuy,
+  setLook as coreSetLook,
   callOffActivity as coreCallOff,
   decay,
   drainPending,
@@ -166,6 +167,9 @@ export function createStore(filePath = defaultStatePath(), options = {}) {
 
     /** Buy one item into the backpack. */
     buy: itemKey => mutate(live => coreBuy(live, itemKey)),
+
+    /** [dsh-piggy-claude-code mod] Elder look: 'elder' or 'original'. */
+    setLook: look => mutate(live => coreSetLook(live, look, now())),
 
     /** Use one item from the backpack. */
     useItem: itemKey => mutate(live => coreUseItem(live, itemKey, now())),

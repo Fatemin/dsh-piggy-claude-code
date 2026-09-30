@@ -38,6 +38,8 @@ import {
   inventoryView,
   ageDays,
   daysToNextStage,
+  kgToNextStage,
+  canChooseLook,
   hasSoul,
   LIFE_STAGES,
   lifeStageFor,
@@ -120,6 +122,8 @@ const OPERATIONS = {
   study: (store, body) => store.startStudy(str(body.subject), str(body.stage)),
   trip: (store, body) => store.startTrip(str(body.trip)),
   calloff: store => store.callOffActivity(),
+  // [dsh-piggy-claude-code mod] switch an elder pig's drawing.
+  look: (store, body) => store.setLook(str(body.look)),
   buy: (store, body) => store.buy(str(body.item)),
   use: (store, body) => store.useItem(str(body.item)),
 }
@@ -229,7 +233,7 @@ export function apply(ctx, config = {}) {
     commandCtx.commands.register({
       name: commandName,
       description: 'your pig 🐖: status · study · work · shop · travel · bag',
-      input: { hint: '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|about]' },
+      input: { hint: '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|about]' },
       handler: invocation => {
         try {
           return dispatch(store, commandName, String(invocation.rawInput ?? ''))
@@ -323,6 +327,10 @@ export function snapshot(store, options = {}) {
       ageDays: Number(ageDays(state, nowMs).toFixed(2)),
       ageLabel: formatAge(ageDays(state, nowMs), state, nowMs),
       daysToNextStage: daysToNextStage(state, nowMs) === null ? null : Number(daysToNextStage(state, nowMs).toFixed(2)),
+      // [dsh-piggy-claude-code mod] growth follows weight; elder look is switchable.
+      kgToNextStage: kgToNextStage(state, nowMs) === null ? null : Number(kgToNextStage(state, nowMs).toFixed(1)),
+      canChooseLook: canChooseLook(state),
+      look: state.look === 'original' ? 'original' : 'elder',
       soul: hasSoul(state, nowMs),
       mood: current.key,
       moodEmoji: current.emoji,
@@ -548,6 +556,18 @@ export function dispatch(store, commandName, rawInput) {
     case 'weigh': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
       return { kind: 'success', text: renderWeigh(state, nowMs) }
+    }
+    case 'look': {
+      if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
+      const wanted = /^(原版|原来|original|piglet)$/i.test(argument.trim()) ? 'original'
+        : /^(老年|老|elder)$/i.test(argument.trim()) ? 'elder' : ''
+      if (wanted === '') return { kind: 'error', text: `用法：/${commandName} look 老年 | 原版` }
+      const result = store.setLook(wanted)
+      if (!result.ok) {
+        const why = result.reason === 'too-light' ? '要长到 80 kg、变成老年猪之后才能换样子' : '现在换不了样子'
+        return { kind: 'success', text: `🐖 ${why}` }
+      }
+      return { kind: 'success', text: wanted === 'original' ? '🐖 换回原版小猪的样子了' : '🐖 换成老年猪的样子了' }
     }
     case 'name': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }

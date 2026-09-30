@@ -2,11 +2,11 @@
 
 把 [dsh-piggy](https://github.com/CLICGGER-TYPES/dsh-piggy)——那只住在 DeepSeek Harness 里、照 QQ 宠物（怀旧服 v1.2.4）复刻的猪——搬进 **Claude Code**。
 
-它吃你在 Claude Code 里的**真实工作**长大：你提的每个问题、每一轮回复、每一次工具调用都是它的口粮。会上课、打工、旅行、生病，玩法和数值见上游的 [原版说明](README.dsh.md)。
+它吃你在 Claude Code 里的**真实工作**长大：你提的问题、每一轮回复、每一次工具调用都是它的口粮（有节流，见下文）。会上课、打工、旅行、生病，基础玩法和数值见上游的 [原版说明](README.dsh.md)，本仓库的改动见「[玩法改动](#玩法改动)」。
 
 - **零 token**：只用 hooks 和 statusLine，hook 永不输出，模型不知道猪存在（`claude plugin details` 显示常驻开销 ~0）
 - **不拖慢工作**：所有 hook 都是 `async`，出了任何问题也永远 `exit 0`
-- **上游代码零修改**：本仓库是上游的 fork，根目录的 `index.js` / `core.js` / `client.js` 等保持原样，适配层全部在新增目录里，可以直接 merge 上游更新
+- **贴着上游改**：本仓库是上游的 fork。Claude Code 适配层全部在新增目录里；玩法改动只动了根目录几处，都标了 `[dsh-piggy-claude-code mod]`，merge 上游更新时容易对照
 
 三种看猪的方式：
 
@@ -132,11 +132,27 @@ pig                                  状态卡
 pig hatch | feed | bathe | play | pet
 pig study <科目> <小学|大学|研究生>    pig work <odd|site|office>    pig trip <suburb|mountain|sea|abroad>
 pig shop | buy <物品> | use <物品> | calloff | weigh | name <名字>
+pig look 老年 | 原版                  80 kg 以后切换老年猪 / 原版小猪的样子
 pig serve                            面板服务
 pig status-line                      一行状态
 ```
 
 （`pig` = `node ~/dsh-piggy-claude-code/bin/pig.js`，可以自己 alias。）刻意不做成 Claude Code 斜杠命令——那样每次都要经过模型、花 token。
+
+## 玩法改动
+
+和上游原版相比：
+
+| | 上游原版 | 本仓库 |
+|---|---|---|
+| 长大靠什么 | 年龄：第 1 / 3 / 7 天换阶段 | **体重**：20 kg 青年猪、50 kg 中年猪、**80 kg 老年猪** |
+| 体型 | 每个阶段固定大小（40–62 px） | **随体重连续变大**：出生 40 px，**120 kg 时 200 px**（封顶） |
+| 形象 | 小猪手绘 → 🐖 emoji → 老年猪手绘 | 80 kg 前一直是手绘小猪；80 kg 起是老年猪，**可以在状态页切换「老年猪 / 原版」**（或 `pig look 老年 / 原版`） |
+| 体重从哪来 | 每个事件、每次喂食固定加几克 | **只来自真正吃下去的饱食度**：每点约 98 g，80 kg 后约 50 g。吃饱了再喂不长肉 |
+| 长大要多久 | — | 正常照顾（饱食度每天自然消耗约 115 点）：约 1 周到 80 kg，约 2 周到 120 kg |
+| 寿命 | 第 14 天老死 | **不会老死**；生病拖到健康归零仍会死，还魂丹照样能救 |
+
+改动集中在 `data.js`（`GROWTH`、`LIFE_STAGES`）、`core.js`（`lifeStageFor`、`growFromFood`、`setLook`）、`index.js`、`store.js`、`client.js`，都标了 `[dsh-piggy-claude-code mod]`。
 
 ## 怎么接上的
 
@@ -165,6 +181,8 @@ pig status-line                      一行状态
 默认 `~/.claude/pig/state.json`，可用环境变量 `PIG_STATE` 改；面板端口默认 `41717`，可用 `PIG_PORT` 改。
 
 每个 hook 都是独立的短进程，还可能有多个会话同时在跑，所以：
+
+Claude Code 一小时能有几百次工具调用，远超上游数值设计时的假设，照原样会把猪喂成永远满饱食的胖子。所以**被动喂食有节流：所有会话合起来最多每 30 分钟喂一口**（`PIG_FEED_EVERY_MIN` 可调，`0` = 关闭）。这样高强度干活时饱食度掉得慢一点，但还是要你自己喂。
 
 1. 面板服务（`pig serve` 或桌面猪）在跑时，它持有存档锁、是**唯一写者**，hook 只通知它；
 2. 服务没跑时，hook 拿锁后直接读 → 喂 → **立即落盘**；

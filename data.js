@@ -121,42 +121,69 @@ export const SLEEPY_AFTER_MINUTES = 30
 export const AWAY_MULTIPLIER = 1.8
 
 // ---------------------------------------------------------------------------
-// Life — the pig is measured in days, not in points.
+// Life — [dsh-piggy-claude-code mod] the pig is measured in kilograms.
 //
-// QQ Pet's pets hatch, grow up and eventually die; there is no "level 40" to
-// grind toward. This ladder is that idea with the numbers the pig can actually
-// be observed at: a box arrives, something small falls out of it, and then it
-// simply gets older. XP still accumulates from your real work, but it feeds the
-// pig's *weight* — a fatter pig, not a higher one.
+// Upstream grows the pig by age (piglet → young → middle → elder by day 7) and
+// lets it die of old age on day 14. This fork grows it by WEIGHT instead:
 //
-// Age is wall-clock time since `bornAt`, so a pig left alone still grows up.
+//   - weight comes only from food actually eaten (satiety gained), so a pig
+//     that is looked after grows at the pace of its appetite: about a week to
+//     80 kg, about two weeks to 120 kg;
+//   - the sprite widens with weight, from 40 px at birth to 200 px at 120 kg;
+//   - at 80 kg it becomes an elder pig, and from then on the owner may switch
+//     between the elder drawing and the original one;
+//   - nothing dies of old age any more (illness can still kill, and the soul
+//     pill still revives).
+//
+// Age is still wall-clock time since `bornAt` and still shown, it just no
+// longer drives anything.
 // ---------------------------------------------------------------------------
 
-/** Where the stages change over, in days since birth. */
+/** Growth by weight. */
+export const GROWTH = Object.freeze({
+  /** Sprite width at hatching weight … and at `fullKg`, linear in between. */
+  minSize: 40,
+  maxSize: 200,
+  fullKg: 120,
+  /** Where the elder pig starts, and where the look becomes switchable. */
+  elderKg: 80,
+  /**
+   * Grams per point of satiety actually gained. Satiety drains ~115 points a
+   * day, so a fed pig eats ~115 points a day: ~11 kg/day below 80 kg (≈ 7 days
+   * from hatching), ~5.8 kg/day above it (≈ 7 more days to 120 kg).
+   */
+  gramsPerSatiety: 98,
+  gramsPerSatietyElder: 50,
+})
+
+/** The looks an elder pig can wear. */
+export const LOOKS = Object.freeze(['elder', 'original'])
+
+/** Where the stages change over, in kilograms. The sprite size comes from GROWTH. */
 export const LIFE_STAGES = Object.freeze([
   Object.freeze({
-    key: 'box', label: '纸盒', emoji: '📦', size: 58, from: 0, box: true,
+    key: 'box', label: '纸盒', emoji: '📦', size: 58, from: 0, fromKg: 0, box: true,
     line: '一个纸盒，侧面戳了几个透气孔',
   }),
   Object.freeze({
-    key: 'piglet', label: '小猪', emoji: '🐖', art: 'piglet', size: 40, from: 0,
+    key: 'piglet', label: '小猪', emoji: '🐖', art: 'piglet', size: 40, from: 0, fromKg: 0,
     line: '刚从纸盒里蹦出来，圆头圆脑',
   }),
   Object.freeze({
-    key: 'young', label: '青年猪', emoji: '🐖', size: 48, from: 1,
+    key: 'young', label: '青年猪', emoji: '🐖', art: 'piglet', size: 48, from: 1, fromKg: 20,
     line: '长开了，走路带风',
   }),
   Object.freeze({
-    key: 'middle', label: '中年猪', emoji: '🐖', size: 62, from: 3,
+    key: 'middle', label: '中年猪', emoji: '🐖', art: 'piglet', size: 62, from: 3, fromKg: 50,
     line: '很有分量，会一屁股坐住你的椅子',
   }),
   Object.freeze({
-    key: 'elder', label: '老年猪', emoji: '🐖', art: 'elder', size: 56, from: 7,
+    key: 'elder', label: '老年猪', emoji: '🐖', art: 'elder', size: 56, from: 7, fromKg: 80,
     line: '鬃毛白了，獠牙还在',
   }),
 ])
 
-/** Days a pig lives before old age takes it. */
+/** Days a pig lived before old age took it — upstream only; this fork never uses it. */
 export const LIFESPAN_DAYS = 14
 
 /** The tombstone and the soul that settles on an unclaimed one. */

@@ -17,7 +17,12 @@ private final class PetWebView: WKWebView {
 /// dragging the pig moves the whole window.
 @MainActor
 final class PetWindow: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
-    static let size = NSSize(width: 340, height: 640)
+    /// Tall enough for the panel above a 200 px (120 kg) pig; shorter screens
+    /// get a shorter window and the panel shrinks to fit.
+    static var size: NSSize {
+        let visible = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.height ?? 800
+        return NSSize(width: 340, height: min(800, visible - 16))
+    }
     private static let originKey = "petWindowOrigin"
 
     let window: NSPanel

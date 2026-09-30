@@ -48,6 +48,10 @@ import {
   applyDevPatch,
   adopt,
   daysToNextStage,
+  kgToNextStage,
+  canChooseLook,
+  setLook,
+  sizeForWeight,
   lifeStageFor,
   rename,
   startStudy,
@@ -120,49 +124,101 @@ test('a fresh pig is a cardboard box, and opening it lets a piglet out', () => {
   assert.ok(piglet.memories.some(m => m.includes('纸盒')), 'it remembers the box')
 })
 
-test('the pig grows up on the clock, not on XP', () => {
+// [dsh-piggy-claude-code mod] growth follows weight; nothing dies of old age.
+test('the pig grows by weight, not by age or XP', () => {
   const DAY = 86_400_000
   const pig = hatchEgg(T0)
-  // XP is irrelevant to the shape it takes.
   pig.xp = 999_999
   assert.equal(lifeStageFor(pig, T0).key, 'piglet')
+  assert.equal(lifeStageFor(pig, T0 + 30 * DAY).key, 'piglet', 'age alone grows nothing')
 
-  const at = days => lifeStageFor(pig, T0 + days * DAY).key
-  assert.equal(at(0.9), 'piglet')
-  assert.equal(at(1), 'young')
-  assert.equal(at(3), 'middle')
-  assert.equal(at(7), 'elder')
-  assert.equal(at(13.9), 'elder')
-  // Every stage has its own size, so the pig literally grows.
-  const sizes = LIFE_STAGES.map(stage => stage.size)
-  assert.equal(new Set(sizes).size, sizes.length, 'no two stages share a size')
+  const at = kg => { pig.weightG = kg * 1000; return lifeStageFor(pig, T0) }
+  assert.equal(at(19.9).key, 'piglet')
+  assert.equal(at(20).key, 'young')
+  assert.equal(at(50).key, 'middle')
+  assert.equal(at(79.9).key, 'middle')
+  assert.equal(at(80).key, 'elder')
+  // Hand-drawn piglet all the way up to the elder drawing.
+  assert.equal(at(60).art, 'piglet')
+  assert.equal(at(80).art, 'elder')
 })
 
-test('daysToNextStage counts down, and stops at the end of the line', () => {
-  const DAY = 86_400_000
+test('the sprite widens with weight: 40 px at hatching, 200 px at 120 kg', () => {
   const pig = hatchEgg(T0)
-  assert.equal(daysToNextStage(pig, T0), 1)
-  assert.equal(daysToNextStage(pig, T0 + 0.5 * DAY), 0.5)
-  assert.equal(daysToNextStage(pig, T0 + 8 * DAY), null, 'no stage past 老年猪')
+  assert.equal(lifeStageFor(pig, T0).size, 40)
+  assert.equal(sizeForWeight(pig.weightG), 40)
+  assert.equal(sizeForWeight(80_000), 146)
+  assert.equal(sizeForWeight(120_000), 200)
+  assert.equal(sizeForWeight(300_000), 200, 'capped')
+  assert.ok(sizeForWeight(60_000) > sizeForWeight(40_000), 'grows steadily in between')
 })
 
-test('old age takes the pig, and a grave can be left for a new pig', () => {
-  const DAY = 86_400_000
+test('kgToNextStage counts down in kilograms; days no longer matter', () => {
   const pig = hatchEgg(T0)
+  assert.equal(kgToNextStage(pig, T0), 20 - pig.weightG / 1000)
+  pig.weightG = 70_000
+  assert.equal(kgToNextStage(pig, T0), 10)
+  pig.weightG = 80_000
+  assert.equal(kgToNextStage(pig, T0), null, 'no stage past 老年猪')
+  assert.equal(daysToNextStage(pig, T0), null)
+})
+
+test('weight comes from food actually eaten, slower once elderly', () => {
+  const pig = hatchEgg(T0)
+  pig.satiety = 50
+  const start = pig.weightG
+  feed(pig, 'turn', T0) // +2 satiety
+  assert.equal(pig.weightG, start + 2 * 98)
+
   pig.satiety = 100
-  pig.cleanliness = 100
-  pig.happiness = 100
-  decay(pig, T0 + LIFESPAN_DAYS * DAY + 1000)
-  assert.equal(pig.dead, true, 'a pig outlives its span')
-  assert.equal(lifeStageFor(pig, T0 + 15 * DAY).key, 'grave')
-  assert.ok(typeof pig.diedAt === 'number')
+  const full = pig.weightG
+  feed(pig, 'turn', T0)
+  assert.equal(pig.weightG, full, 'a full pig cannot be stuffed heavier')
 
-  // Its story is kept when a new one arrives.
+  pig.weightG = 90_000
+  pig.satiety = 50
+  feed(pig, 'turn', T0)
+  assert.equal(pig.weightG, 90_000 + 2 * 50)
+})
+
+test('an elder pig can switch between the elder and the original drawing', () => {
+  const pig = hatchEgg(T0)
+  assert.equal(canChooseLook(pig), false)
+  assert.deepEqual(setLook(pig, 'original', T0), { ok: false, reason: 'too-light' })
+
+  pig.weightG = 80_000
+  assert.equal(canChooseLook(pig), true)
+  assert.equal(lifeStageFor(pig, T0).art, 'elder', 'elder by default')
+  assert.equal(setLook(pig, 'original', T0).ok, true)
+  assert.equal(lifeStageFor(pig, T0).key, 'elder', 'still an elder pig')
+  assert.equal(lifeStageFor(pig, T0).art, 'piglet', 'wearing the original drawing')
+  assert.equal(setLook(pig, 'nonsense', T0).ok, false)
+  assert.equal(migrate(JSON.parse(JSON.stringify(pig))).look, 'original', 'the choice is saved')
+  assert.equal(setLook(pig, 'elder', T0).ok, true)
+  assert.equal(lifeStageFor(pig, T0).art, 'elder')
+})
+
+test('nothing dies of old age, and a grave can still be left for a new pig', () => {
+  const DAY = 86_400_000
+  const HOUR = 3_600_000
+  const pig = hatchEgg(T0)
+  // Looked after every hour for well past upstream's 14-day lifespan.
+  for (let t = T0; t <= T0 + (LIFESPAN_DAYS + 6) * DAY; t += HOUR) {
+    decay(pig, t)
+    pig.satiety = 100
+    pig.cleanliness = 100
+    pig.happiness = 100
+  }
+  assert.equal(pig.dead, false, 'still alive after 20 days')
+
+  // Illness can still take it; its story is kept when a new one arrives.
+  applyDevPatch(pig, { dead: true }, T0 + 20 * DAY)
+  assert.equal(lifeStageFor(pig, T0 + 20 * DAY).key, 'grave')
   const before = pig.memories.length
-  adopt(pig, T0 + 16 * DAY)
+  adopt(pig, T0 + 21 * DAY)
   assert.equal(pig.dead, false)
   assert.equal(pig.hatched, false, 'a new pig starts as a box again')
-  assert.equal(lifeStageFor(pig, T0 + 16 * DAY).key, 'box')
+  assert.equal(lifeStageFor(pig, T0 + 21 * DAY).key, 'box')
   assert.ok(pig.memories.length >= before - 1, 'the old memories are still there')
 })
 
@@ -1054,8 +1110,10 @@ test('developer mode can force any state, but only valid ones', () => {
     applyDevPatch(pig, { dead: false, health: 5 }, T0)
     assert.equal(pig.dead, false)
 
-    // Age is jumpable — that is what takes days otherwise.
+    // Age is jumpable, but [mod] weight is what makes an elder pig now.
     applyDevPatch(pig, { ageDays: 9 }, T0)
+    assert.notEqual(lifeStageFor(pig, T0).key, 'elder')
+    applyDevPatch(pig, { weightG: 90_000 }, T0)
     assert.equal(lifeStageFor(pig, T0).key, 'elder')
 
     // And the clock can be fast-forwarded.

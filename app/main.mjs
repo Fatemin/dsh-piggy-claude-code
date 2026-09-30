@@ -15,7 +15,11 @@ import { fileURLToPath } from 'node:url'
 import { startServer } from './pig/lib/server.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const SIZE = { width: 340, height: 640 }
+// Tall enough for the panel above a 200 px (120 kg) pig; shorter screens get
+// a shorter window and the panel shrinks to fit.
+const WIDTH = 340
+const MAX_HEIGHT = 800
+const windowSize = () => ({ width: WIDTH, height: Math.min(MAX_HEIGHT, screen.getPrimaryDisplay().workArea.height - 16) })
 // Fixed so the page's origin (and its remembered UI state) is stable.
 const PREFERRED_PORT = 41727
 
@@ -43,12 +47,14 @@ async function openServer(statePath) {
 
 function defaultPosition() {
   const area = screen.getPrimaryDisplay().workArea
-  return { x: area.x + area.width - SIZE.width - 8, y: area.y + area.height - SIZE.height - 8 }
+  const size = windowSize()
+  return { x: area.x + area.width - size.width - 8, y: area.y + area.height - size.height - 8 }
 }
 
 /** The pig sits in the window's bottom-right corner; keep that corner visible. */
 function onScreen({ x, y }) {
-  const corner = { x: x + SIZE.width - 90, y: y + SIZE.height - 90, width: 90, height: 90 }
+  const size = windowSize()
+  const corner = { x: x + size.width - 90, y: y + size.height - 90, width: 90, height: 90 }
   return screen.getAllDisplays().some(({ workArea: a }) =>
     corner.x < a.x + a.width && corner.x + corner.width > a.x && corner.y < a.y + a.height && corner.y + corner.height > a.y)
 }
@@ -68,7 +74,7 @@ function savePosition() {
 
 function createWindow(url) {
   win = new BrowserWindow({
-    ...SIZE,
+    ...windowSize(),
     ...savedPosition(),
     frame: false,
     transparent: true,

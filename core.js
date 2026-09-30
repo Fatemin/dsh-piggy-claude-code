@@ -24,7 +24,9 @@ import {
   CARE_KIND,
   DEFAULT_TOY,
   GRAVE,
+  GROWTH,
   LIFE_STAGES,
+  LOOKS,
   LIFESPAN_DAYS,
   SOUL,
   SOUL_AFTER_DAYS,
@@ -150,35 +152,78 @@ export function ageDays(state, nowMs) {
   return Math.max(0, (nowMs - state.bornAt) / DAY_MS)
 }
 
-/** Which stage the pig is at right now: a box, a pig of some age, or a grave. */
+/**
+ * [dsh-piggy-claude-code mod] Sprite width for a weight: 40 px at hatching,
+ * 200 px at 120 kg, linear in between and capped at both ends.
+ */
+export function sizeForWeight(weightG) {
+  const startG = BIRTH_WEIGHT_G + HATCH_WEIGHT_G
+  const t = (weightG - startG) / (GROWTH.fullKg * 1000 - startG)
+  const clamped = Math.min(1, Math.max(0, Number.isFinite(t) ? t : 0))
+  return Math.round(GROWTH.minSize + clamped * (GROWTH.maxSize - GROWTH.minSize))
+}
+
+/** Heaviest stage this weight has reached. */
+function stageForWeight(weightG) {
+  const kg = weightG / 1000
+  let stage = LIFE_STAGES[1]
+  for (const candidate of LIFE_STAGES) {
+    if (candidate.box === true) continue
+    if (kg >= candidate.fromKg) stage = candidate
+  }
+  return stage
+}
+
+/** Can the owner pick between the elder drawing and the original one yet? */
+export const canChooseLook = state =>
+  state !== null && state.hatched === true && state.dead !== true && state.weightG >= GROWTH.elderKg * 1000
+
+/**
+ * Which stage the pig is at right now: a box, a pig of some weight, or a grave.
+ * [dsh-piggy-claude-code mod] Weight decides the stage and the size; an elder
+ * pig whose owner chose the original look wears the piglet drawing.
+ */
 export function lifeStageFor(state, nowMs) {
   if (state === null) return LIFE_STAGES[0]
   if (state.dead === true) return GRAVE
   if (state.hatched !== true) return LIFE_STAGES[0]
-  const days = ageDays(state, nowMs)
-  let stage = LIFE_STAGES[1]
-  for (const candidate of LIFE_STAGES) {
-    if (candidate.box === true) continue
-    if (days >= candidate.from) stage = candidate
-  }
-  return stage
+  const stage = stageForWeight(state.weightG)
+  const art = stage.key === 'elder' && state.look === 'original' ? 'piglet' : stage.art
+  return { ...stage, art, size: sizeForWeight(state.weightG) }
 }
 
 /** The next rung, or null once the pig is as grown as it gets. */
 export function nextLifeStage(state, nowMs) {
   if (state === null || state.dead === true || state.hatched !== true) return null
-  const days = ageDays(state, nowMs)
-  return LIFE_STAGES.find(stage => stage.box !== true && stage.from > days) ?? null
+  const kg = state.weightG / 1000
+  return LIFE_STAGES.find(stage => stage.box !== true && stage.fromKg > kg) ?? null
 }
 
-/** Days remaining until that next rung, or null at the end of the line. */
-export function daysToNextStage(state, nowMs) {
+/** Kilograms still to gain before that next rung, or null at the end of the line. */
+export function kgToNextStage(state, nowMs) {
   const next = nextLifeStage(state, nowMs)
-  return next === null ? null : Math.max(0, next.from - ageDays(state, nowMs))
+  return next === null ? null : Math.max(0, next.fromKg - state.weightG / 1000)
 }
 
-/** Has the pig outlived its span? */
-export const isElderly = (state, nowMs) => ageDays(state, nowMs) >= LIFESPAN_DAYS
+/** Upstream's countdown in days; stages no longer follow age, so there is none. */
+export function daysToNextStage(state, nowMs) {
+  return null
+}
+
+/**
+ * Switch an elder pig between the elder drawing and the original one.
+ * @returns {{ok: boolean, reason?: string, look?: string}}
+ */
+export function setLook(state, look, nowMs) {
+  if (!LOOKS.includes(look)) return { ok: false, reason: 'bad-look' }
+  if (!canChooseLook(state)) return { ok: false, reason: state.dead === true ? 'dead' : 'too-light' }
+  state.look = look
+  state.lastActiveAt = nowMs
+  return { ok: true, look }
+}
+
+/** Has the pig outlived its span? [dsh-piggy-claude-code mod] Never: no death by old age. */
+export const isElderly = (state, nowMs) => false
 
 /** Has the grave been left alone long enough for the soul to settle on it? */
 export const hasSoul = (state, nowMs) =>
@@ -682,8 +727,8 @@ export function decay(state, nowMs) {
     }
   }
 
-  // Time does the growing now, not XP. Age passes whether or not anyone is
-  // watching, so a pig left alone comes back a day older.
+  // [dsh-piggy-claude-code mod] Weight does the growing, and nothing dies of
+  // old age; this only announces a pig that has eaten its way up a stage.
   if (state.dead !== true && state.hatched === true) {
     const stage = lifeStageFor(state, nowMs)
     if (state.stage !== stage.key) {
@@ -691,7 +736,6 @@ export function decay(state, nowMs) {
       remember(state, `长成了${stage.label} ${stage.emoji}`, nowMs)
       announce(state, 'stage', `${state.name} 长成了${stage.label} ${stage.emoji}`)
     }
-    if (ageDays(state, nowMs) >= LIFESPAN_DAYS) die(state, nowMs, '老了')
   }
 
   return state
@@ -809,12 +853,27 @@ function advanceIllness(state, nowMs) {
 // Effects and level crossings
 // ---------------------------------------------------------------------------
 
+/**
+ * [dsh-piggy-claude-code mod] Weight comes from food actually eaten: each point
+ * of satiety gained adds a fixed number of grams (fewer once elderly). Topping
+ * up a full pig adds nothing, so spamming events or snacks cannot inflate it;
+ * the old per-event `weightG` effects are no longer applied.
+ */
+function growFromFood(state, satietyGained) {
+  if (!(satietyGained > 0) || state.hatched !== true) return
+  const perPoint = state.weightG >= GROWTH.elderKg * 1000 ? GROWTH.gramsPerSatietyElder : GROWTH.gramsPerSatiety
+  state.weightG = Math.min(500_000, state.weightG + satietyGained * perPoint)
+}
+
 function applyEffects(state, effects, nowMs) {
   if (effects.xp) state.xp += effects.xp
-  if (effects.satiety) state.satiety = clamp100(state.satiety + effects.satiety)
+  if (effects.satiety) {
+    const before = state.satiety
+    state.satiety = clamp100(state.satiety + effects.satiety)
+    growFromFood(state, state.satiety - before)
+  }
   if (effects.happiness) state.happiness = clamp100(state.happiness + effects.happiness)
   if (effects.cleanliness) state.cleanliness = clamp100(state.cleanliness + effects.cleanliness)
-  if (effects.weightG) state.weightG = Math.max(400, state.weightG + effects.weightG)
   if (effects.health) state.health = clamp(Math.round(state.health + effects.health), 0, MAX.health)
   state.lastActiveAt = nowMs
 }

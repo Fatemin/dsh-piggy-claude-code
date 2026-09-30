@@ -1,6 +1,6 @@
 {
   "name": "dsh-piggy",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "🐖 dsh-piggy for Claude Code: a QQ-pet-style pig that grows on your real work. Zero tokens — hooks only, never visible to the model.",
   "homepage": "https://github.com/Fatemin/dsh-piggy-claude-code",
   "repository": "https://github.com/Fatemin/dsh-piggy-claude-code",
