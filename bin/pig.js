@@ -16,13 +16,14 @@ import { port, statePath } from '../lib/config.js'
 import { callServer, withLocalHost } from '../lib/reach.js'
 import { startServer } from '../lib/server.js'
 import { readSnapshot, statusLine } from '../lib/status.js'
+import { defaultLang, tr } from '../i18n.js'
 
 async function main(argv) {
   const [verb = ''] = argv
 
   if (verb === 'serve') {
     const server = await startServer({ port: port(), statePath: statePath() })
-    console.log(`🐖 面板：${server.url}（Ctrl+C 退出）`)
+    console.log(`🐖 ${tr(defaultLang(), '面板：{url}（Ctrl+C 退出）', { url: server.url })}`)
     const stop = () => server.close().then(() => process.exit(0))
     process.on('SIGINT', stop)
     process.on('SIGTERM', stop)
@@ -45,10 +46,10 @@ async function main(argv) {
   const remote = await callServer(port(), '/pig/cmd', { input }, { timeoutMs: 3000 })
   let result
   if (remote.reached) {
-    result = remote.ok ? remote.value : { kind: 'error', text: `面板服务返回 ${remote.status}` }
+    result = remote.ok ? remote.value : { kind: 'error', text: tr(defaultLang(), '面板服务返回 {status}', { status: remote.status }) }
   } else {
     const local = withLocalHost(statePath(), host => host.command(input), { waitMs: 3000 })
-    result = local.locked ? { kind: 'error', text: '存档被别的进程占着，稍后再试' } : local.value
+    result = local.locked ? { kind: 'error', text: tr(defaultLang(), '存档被别的进程占着，稍后再试') } : local.value
   }
   const text = typeof result?.text === 'string' ? result.text : JSON.stringify(result)
   if (result?.kind === 'error') {

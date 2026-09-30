@@ -59,10 +59,25 @@ final class PigServer {
         }
     }
 
-    func peek() async -> String? {
-        struct Peek: Decodable { let line: String }
+    struct Peek: Decodable {
+        let line: String
+        let lang: String?
+    }
+
+    /// The status line and the pig's language, without draining the panel's news.
+    func peek() async -> Peek? {
         guard let data = await get("pig/peek", timeout: 1) else { return nil }
-        return (try? JSONDecoder().decode(Peek.self, from: data))?.line
+        return try? JSONDecoder().decode(Peek.self, from: data)
+    }
+
+    /// POST one panel action (e.g. `["action": "lang", "lang": "ja"]`).
+    func act(_ body: [String: String]) async {
+        var request = URLRequest(url: baseURL.appendingPathComponent("dsh-pig/act"))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 2
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        _ = try? await URLSession.shared.data(for: request)
     }
 
     private func isHealthy() async -> Bool {
@@ -89,6 +104,10 @@ final class PigServer {
         ]
         var environment = ProcessInfo.processInfo.environment
         environment["PIG_PORT"] = String(port)
+        // A brand-new pig speaks the system language; existing saves keep theirs.
+        if environment["PIG_LANG"] == nil, let preferred = Locale.preferredLanguages.first {
+            environment["PIG_LANG"] = preferred
+        }
         // If this app dies without a clean quit, the server notices and exits.
         environment["PIG_PARENT_PID"] = String(ProcessInfo.processInfo.processIdentifier)
         process.environment = environment

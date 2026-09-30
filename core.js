@@ -213,11 +213,39 @@ export function kgToNextStage(state, nowMs) {
 export function setLang(state, lang, nowMs) {
   const next = normalizeLang(lang)
   if (next === null) return { ok: false, reason: 'bad-lang' }
+  // A pig still wearing a default name gets the default of the new language;
+  // a name the owner chose is theirs and is never touched.
+  const defaults = ['zh', 'ja', 'en'].map(code => tr(code, '猪猪'))
+  if (defaults.includes(state.name)) state.name = tr(next, '猪猪')
   state.lang = next
   return { ok: true, lang: next }
 }
 
 export { langOf }
+
+/** [dsh-piggy-claude-code mod] A message in the pig's current language. */
+const say = (state, zh, params) => tr(langOf(state), zh, params)
+/** A data label (stage, item, illness…) in the pig's current language. */
+const word = (state, zh) => tr(langOf(state), zh)
+
+/** The Chinese source label of an activity, rebuilt from its keys when possible. */
+function activitySourceLabel(activity) {
+  if (activity === null || activity === undefined) return ''
+  if (activity.kind === 'work') return jobByKey(activity.key)?.label ?? activity.label ?? ''
+  if (activity.kind === 'trip') return tripByKey(activity.key)?.label ?? activity.label ?? ''
+  if (activity.kind === 'study') {
+    const subject = subjectByKey(activity.key)
+    const stage = schoolStageByKey(activity.stage)
+    if (subject !== null && stage !== null) return `${stage.label}${subject.label}`
+  }
+  return typeof activity.label === 'string' ? activity.label : ''
+}
+
+/**
+ * [dsh-piggy-claude-code mod] An activity's label ("打零工", "小学语文", "郊游")
+ * in `lang`. The saved record keeps the Chinese source label.
+ */
+export const activityLabel = (activity, lang) => tr(lang, activitySourceLabel(activity))
 
 /** Upstream's countdown in days; stages no longer follow age, so there is none. */
 export function daysToNextStage(state, nowMs) {
@@ -255,8 +283,10 @@ function die(state, nowMs, why) {
   state.activity = null
   state.diedAt = nowMs
   state.stats.deaths = (state.stats.deaths ?? 0) + 1
-  remember(state, `${why} ${GRAVE.emoji}`, nowMs)
-  announce(state, 'death', `${state.name} ${why}…用${REVIVE_ITEM.label}可以救回来，也可以领养一只新的`)
+  remember(state, `${word(state, why)} ${GRAVE.emoji}`, nowMs)
+  announce(state, 'death', say(state, '{name} {why}…用{item}可以救回来，也可以领养一只新的', {
+    name: state.name, why: word(state, why), item: word(state, REVIVE_ITEM.label),
+  }))
 }
 
 /**
@@ -348,7 +378,7 @@ export function applyDevPatch(state, patch, nowMs) {
 
   state.stage = lifeStageFor(state, nowMs).key
   state.lastSeenAt = nowMs
-  remember(state, `🔧 开发者改了状态（${before.stage} → ${state.stage}）`, nowMs)
+  remember(state, say(state, '🔧 开发者改了状态（{from} → {to}）', { from: before.stage, to: state.stage }), nowMs)
   return state
 }
 
@@ -362,7 +392,7 @@ export function adopt(state, nowMs) {
   }
   if (state !== null && Array.isArray(state.memories)) {
     fresh.memories = state.memories.slice(-MEMORY_LIMIT)
-    remember(fresh, '又领养了一只，纸盒里传来窸窸窣窣的声音 📦', nowMs)
+    remember(fresh, say(fresh, '又领养了一只，纸盒里传来窸窸窣窣的声音 📦'), nowMs)
   }
   return Object.assign(state ?? {}, fresh)
 }
@@ -435,7 +465,7 @@ export function hatch(state, nowMs) {
   state.stage = 'piglet'
   state.weightG += HATCH_WEIGHT_G
   state.health = Math.max(state.health, 1)
-  remember(state, '纸盒打开了，一只小猪蹦了出来 🐷', nowMs)
+  remember(state, say(state, '纸盒打开了，一只小猪蹦了出来 🐷'), nowMs)
   return state
 }
 
@@ -445,7 +475,7 @@ export function hatchEgg(nowMs) {
   state.bornAt = nowMs
   state.weightG += HATCH_WEIGHT_G
   state.stage = 'piglet'
-  remember(state, '纸盒打开了，一只小猪蹦了出来 🐷', nowMs)
+  remember(state, say(state, '纸盒打开了，一只小猪蹦了出来 🐷'), nowMs)
   return state
 }
 
@@ -762,8 +792,9 @@ export function decay(state, nowMs) {
       const grewUp = rank(stage.key) > rank(state.stage)
       state.stage = stage.key
       if (grewUp) {
-        remember(state, `长成了${stage.label} ${stage.emoji}`, nowMs)
-        announce(state, 'stage', `${state.name} 长成了${stage.label} ${stage.emoji}`)
+        const params = { name: state.name, stage: word(state, stage.label), emoji: stage.emoji }
+        remember(state, say(state, '长成了{stage} {emoji}', params), nowMs)
+        announce(state, 'stage', say(state, '{name} 长成了{stage} {emoji}', params))
       }
     }
   }
@@ -799,11 +830,15 @@ function finishWork(state, activity, nowMs) {
   state.stats.jobs += 1
   state.stats.coinsEarned += coins
   applyEffects(state, { xp: job.xp }, nowMs)
-  const tag = sick ? '（带病上工，只有一半）' : (points > 0 ? `（${TRAITS[job.trait].label} ${points}）` : '')
-  remember(state, `${job.emoji} ${job.label}回来，赚了 ${coins} 金币${tag}`, nowMs)
+  const tag = sick
+    ? say(state, '（带病上工，只有一半）')
+    : (points > 0 ? say(state, '（{trait} {points}）', { trait: word(state, TRAITS[job.trait].label), points }) : '')
+  remember(state, say(state, '{emoji} {job}回来，赚了 {coins} 金币{tag}', {
+    emoji: job.emoji, job: word(state, job.label), coins, tag,
+  }), nowMs)
   announce(state, 'work', sick
-    ? `${state.name} 带病打工回来了，只赚到 ${coins} 金币 🤒`
-    : `${state.name} 打工回来了！赚到 ${coins} 金币 💰`)
+    ? say(state, '{name} 带病打工回来了，只赚到 {coins} 金币 🤒', { name: state.name, coins })
+    : say(state, '{name} 打工回来了！赚到 {coins} 金币 💰', { name: state.name, coins }))
 }
 
 function finishStudy(state, activity, nowMs) {
@@ -822,8 +857,12 @@ function finishStudy(state, activity, nowMs) {
   state.stats.courses += 1
   state.stats.lessons += 1
   applyEffects(state, { xp: stage.xp }, nowMs)
-  remember(state, `${subject.emoji} 上完${stage.label}${subject.label}，${TRAITS[subject.trait].label} +${stage.gain}`, nowMs)
-  announce(state, 'study', `${state.name} 学完${stage.label}${subject.label}，${TRAITS[subject.trait].label} +${stage.gain} 📚`)
+  const params = {
+    name: state.name, emoji: subject.emoji, gain: stage.gain,
+    lesson: word(state, `${stage.label}${subject.label}`), trait: word(state, TRAITS[subject.trait].label),
+  }
+  remember(state, say(state, '{emoji} 上完{lesson}，{trait} +{gain}', params), nowMs)
+  announce(state, 'study', say(state, '{name} 学完{lesson}，{trait} +{gain} 📚', params))
 }
 
 function finishTrip(state, activity, nowMs) {
@@ -836,8 +875,9 @@ function finishTrip(state, activity, nowMs) {
   state.satiety = clamp100(state.satiety + trip.satiety)
   state.stats.trips += 1
   applyEffects(state, { xp: trip.xp }, nowMs)
-  remember(state, `${trip.emoji} ${trip.label}回来，带回「${souvenir}」`, nowMs)
-  announce(state, 'trip', `${state.name} 从${trip.label}回来了，带回「${souvenir}」🧳`)
+  const params = { name: state.name, emoji: trip.emoji, trip: word(state, trip.label), souvenir: word(state, souvenir) }
+  remember(state, say(state, '{emoji} {trip}回来，带回「{souvenir}」', params), nowMs)
+  announce(state, 'trip', say(state, '{name} 从{trip}回来了，带回「{souvenir}」🧳', params))
 }
 
 function catchIllness(state, nowMs) {
@@ -847,8 +887,9 @@ function catchIllness(state, nowMs) {
   state.stats.illnesses = (state.stats.illnesses ?? 0) + 1
   const ill = illnessAt(chain, 1)
   if (ill !== null) {
-    remember(state, `得了${ill.name} 🤒`, nowMs)
-    announce(state, 'sick', `${state.name} 得了${ill.name}，需要${ill.cure} 🤒`)
+    const params = { name: state.name, ill: word(state, ill.name), cure: word(state, ill.cure) }
+    remember(state, say(state, '得了{ill} 🤒', params), nowMs)
+    announce(state, 'sick', say(state, '{name} 得了{ill}，需要{cure} 🤒', params))
   }
 }
 
@@ -863,8 +904,10 @@ function advanceIllness(state, nowMs) {
   if (healChance > 0 && Math.random() < healChance) {
     state.illness = null
     state.health = Math.min(MAX.health, state.health + 1)
-    remember(state, `自己好了，扛过去了 💚`, nowMs)
-    announce(state, 'cured', `${state.name} 的${ILLNESS_CHAINS[chain].name}自己好了 💚`)
+    remember(state, say(state, '自己好了，扛过去了 💚'), nowMs)
+    announce(state, 'cured', say(state, '{name} 的{ill}自己好了 💚', {
+      name: state.name, ill: word(state, ILLNESS_CHAINS[chain].name),
+    }))
     return
   }
 
@@ -875,8 +918,9 @@ function advanceIllness(state, nowMs) {
 
   state.illness = { chain, stage: stage + 1, since: nowMs, progressMs: 0 }
   state.health = STAGE_HEALTH[stage]
-  remember(state, `病情加重：${worse.name}`, nowMs)
-  announce(state, 'worse', `${state.name} 的病情加重了：${worse.name}，需要${worse.cure}`)
+  const params = { name: state.name, ill: word(state, worse.name), cure: word(state, worse.cure) }
+  remember(state, say(state, '病情加重：{ill}', params), nowMs)
+  announce(state, 'worse', say(state, '{name} 的病情加重了：{ill}，需要{cure}', params))
 }
 
 // ---------------------------------------------------------------------------
@@ -976,7 +1020,9 @@ export function act(state, action, nowMs, itemKey) {
   else if (action === 'pet') state.stats.pets += 1
 
   applyEffects(state, careEffects(item, spec), nowMs)
-  remember(state, item === null ? spec.verb : `${item.emoji} ${spec.label}用了「${item.label}」`, nowMs)
+  remember(state, item === null
+    ? say(state, spec.verb)
+    : say(state, '{emoji} {action}用了「{item}」', { emoji: item.emoji, action: word(state, spec.label), item: word(state, item.label) }), nowMs)
   return { ok: true, item: item === null ? null : item.key, spent: item !== null && item.default !== true }
 }
 
@@ -1090,7 +1136,10 @@ export function startWork(state, jobKey, nowMs) {
   }, nowMs)
   if (result.ok) {
     const saved = job.minutes - minutes
-    remember(state, `${job.emoji} 出门${job.label}去了${saved > 0 ? `（${TRAITS[job.trait].label} ${points}，省了 ${saved} 分钟）` : ''}`, nowMs)
+    const note = saved > 0
+      ? say(state, '（{trait} {points}，省了 {minutes} 分钟）', { trait: word(state, TRAITS[job.trait].label), points, minutes: saved })
+      : ''
+    remember(state, say(state, '{emoji} 出门{job}去了{saved}', { emoji: job.emoji, job: word(state, job.label), saved: note }), nowMs)
   }
   return result
 }
@@ -1119,7 +1168,9 @@ export function startStudy(state, subjectKey, stageKey, nowMs) {
     state.coins += stage.tuition // refund if the pig turned out to be unavailable
     return result
   }
-  remember(state, `${subject.emoji} 去上${stage.label}${subject.label}（学费 ${stage.tuition}）`, nowMs)
+  remember(state, say(state, '{emoji} 去上{lesson}（学费 {tuition}）', {
+    emoji: subject.emoji, lesson: word(state, `${stage.label}${subject.label}`), tuition: stage.tuition,
+  }), nowMs)
   return result
 }
 
@@ -1141,7 +1192,7 @@ export function startTrip(state, tripKey, nowMs) {
     state.coins += trip.cost
     return result
   }
-  remember(state, `${trip.emoji} 出发去${trip.label}（花了 ${trip.cost} 金币）`, nowMs)
+  remember(state, say(state, '{emoji} 出发去{trip}（花了 {cost} 金币）', { emoji: trip.emoji, trip: word(state, trip.label), cost: trip.cost }), nowMs)
   return result
 }
 
@@ -1161,10 +1212,10 @@ export function callOffActivity(state, nowMs) {
   state.activity = null
   if (activity.kind !== 'work' && activity.cost > 0) {
     state.coins += activity.cost
-    remember(state, `${activity.emoji} 从${activity.label}提前回来了，钱退回来了`, nowMs)
+    remember(state, say(state, '{emoji} 从{label}提前回来了，钱退回来了', { emoji: activity.emoji, label: activityLabel(activity, langOf(state)) }), nowMs)
     return { ok: true, refunded: activity.cost }
   }
-  remember(state, `${activity.emoji} 从${activity.label}提前回来了，白跑一趟`, nowMs)
+  remember(state, say(state, '{emoji} 从{label}提前回来了，白跑一趟', { emoji: activity.emoji, label: activityLabel(activity, langOf(state)) }), nowMs)
   return { ok: true, refunded: 0 }
 }
 
@@ -1185,7 +1236,7 @@ export function buy(state, itemKey) {
   state.inventory = { ...(state.inventory ?? {}) }
   state.inventory[item.key] = (state.inventory[item.key] ?? 0) + 1
   state.stats.purchases += 1
-  remember(state, `买了 ${item.emoji} ${item.label}（-${item.price} 金币）`, Date.now())
+  remember(state, say(state, '买了 {emoji} {item}（-{price} 金币）', { emoji: item.emoji, item: word(state, item.label), price: item.price }), Date.now())
   return { ok: true, item }
 }
 
@@ -1219,15 +1270,16 @@ export function useItem(state, itemKey, nowMs) {
     state.illness = null
     state.health = MAX.health
     state.stats.cures = (state.stats.cures ?? 0) + 1
-    remember(state, `吃了 ${item.emoji} ${item.label}，病好了`, nowMs)
-    announce(state, 'cured', `${state.name} 吃了 ${item.label}，痊愈了 💚`)
+    const params = { name: state.name, emoji: item.emoji, item: word(state, item.label) }
+    remember(state, say(state, '吃了 {emoji} {item}，病好了', params), nowMs)
+    announce(state, 'cured', say(state, '{name} 吃了 {item}，痊愈了 💚', params))
     return { ok: true, item }
   }
 
   if (state.activity !== null) return { ok: false, reason: 'away' }
   state.inventory[itemKey] = have - 1
   applyEffects(state, item, nowMs)
-  remember(state, `用了 ${item.emoji} ${item.label}`, nowMs)
+  remember(state, say(state, '用了 {emoji} {item}', { emoji: item.emoji, item: word(state, item.label) }), nowMs)
   return { ok: true, item }
 }
 
@@ -1242,8 +1294,8 @@ export function revive(state, nowMs) {
   state.activity = null
   state.riskMinutes = 0
   state.stats.revives = (state.stats.revives ?? 0) + 1
-  remember(state, `被 ${REVIVE_ITEM.label} 救了回来 ✨`, nowMs)
-  announce(state, 'revived', `${state.name} 回来了 ✨`)
+  remember(state, say(state, '被 {item} 救了回来 ✨', { item: word(state, REVIVE_ITEM.label) }), nowMs)
+  announce(state, 'revived', say(state, '{name} 回来了 ✨', { name: state.name }))
 }
 
 // ---------------------------------------------------------------------------
@@ -1254,7 +1306,7 @@ export function rename(state, rawName, nowMs) {
   const cleaned = String(rawName ?? '').replace(/\s+/g, ' ').trim()
   if (cleaned === '' || [...cleaned].length > 16) return null
   state.name = cleaned
-  remember(state, `改名叫「${cleaned}」`, nowMs)
+  remember(state, say(state, '改名叫「{name}」', { name: cleaned }), nowMs)
   return cleaned
 }
 
@@ -1266,21 +1318,21 @@ const AWAY_MOODS = Object.freeze({
 
 export function mood(state, nowMs) {
   decay(state, nowMs)
-  if (state.dead) return { key: 'dead', emoji: '💀', label: '已经走了' }
+  if (state.dead) return { key: 'dead', emoji: '💀', label: word(state, '已经走了') }
   if (state.illness !== null) {
     const ill = currentIllness(state)
-    return { key: 'sick', emoji: '🤒', label: ill === null ? '生病了' : `得了${ill.name}` }
+    return { key: 'sick', emoji: '🤒', label: ill === null ? word(state, '生病了') : say(state, '得了{ill}', { ill: word(state, ill.name) }) }
   }
   if (state.activity !== null) {
     const base = AWAY_MOODS[state.activity.kind] ?? AWAY_MOODS.work
-    return { ...base, emoji: state.activity.emoji || base.emoji }
+    return { ...base, label: word(state, base.label), emoji: state.activity.emoji || base.emoji }
   }
-  if (state.satiety < THRESHOLDS.hungry) return { key: 'hungry', emoji: '🍎', label: '饿了' }
-  if (state.cleanliness < THRESHOLDS.dirty) return { key: 'dirty', emoji: '🫧', label: '该洗澡了' }
-  if (nowMs - state.lastActiveAt > SLEEPY_AFTER_MINUTES * 60000) return { key: 'sleepy', emoji: '💤', label: '睡着了' }
-  if (state.happiness >= 75) return { key: 'happy', emoji: '❤️', label: '很开心' }
-  if (state.happiness < THRESHOLDS.lonely) return { key: 'lonely', emoji: '🥺', label: '有点孤单' }
-  return { key: 'fine', emoji: '😊', label: '还不错' }
+  if (state.satiety < THRESHOLDS.hungry) return { key: 'hungry', emoji: '🍎', label: word(state, '饿了') }
+  if (state.cleanliness < THRESHOLDS.dirty) return { key: 'dirty', emoji: '🫧', label: word(state, '该洗澡了') }
+  if (nowMs - state.lastActiveAt > SLEEPY_AFTER_MINUTES * 60000) return { key: 'sleepy', emoji: '💤', label: word(state, '睡着了') }
+  if (state.happiness >= 75) return { key: 'happy', emoji: '❤️', label: word(state, '很开心') }
+  if (state.happiness < THRESHOLDS.lonely) return { key: 'lonely', emoji: '🥺', label: word(state, '有点孤单') }
+  return { key: 'fine', emoji: '😊', label: word(state, '还不错') }
 }
 
 export const healthPercent = state => Math.round((clamp(state.health, 0, MAX.health) / MAX.health) * 100)

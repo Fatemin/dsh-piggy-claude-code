@@ -12,7 +12,9 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { LANGS, LANG_NAMES, tr } from './pig/i18n.js'
 import { startServer } from './pig/lib/server.js'
+import { readSnapshot } from './pig/lib/status.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 // Tall enough for the panel above a 200 px (120 kg) pig; shorter screens get
@@ -27,6 +29,23 @@ let server = null
 let win = null
 let tray = null
 let quitting = false
+let trayLang = null
+
+/** The pig's language, read from the save (the panel may have just changed it). */
+function currentLang() {
+  try { return readSnapshot(userFile('state.json')).lang } catch { return 'zh' }
+}
+
+async function setLang(lang) {
+  try {
+    await fetch(server.url + 'dsh-pig/act', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'lang', lang }),
+    })
+  } catch { /* the next refresh shows whatever stuck */ }
+  refreshTray(true)
+}
 
 const userFile = name => join(app.getPath('userData'), name)
 
@@ -132,28 +151,49 @@ ipcMain.on('pig', (event, message) => {
 
 function trayMenu() {
   const visible = win?.isVisible() === true
+  const lang = currentLang()
+  const t = zh => tr(lang, zh)
   return Menu.buildFromTemplate([
-    { label: visible ? '隐藏猪猪' : '显示猪猪', click: () => { visible ? win.hide() : win.showInactive(); tray.setContextMenu(trayMenu()) } },
-    { label: '猪猪回到右下角', click: () => { win.setPosition(...Object.values(defaultPosition())); savePosition(); win.showInactive() } },
-    { label: '在浏览器里打开面板', click: () => shell.openExternal(server.url) },
+    { label: visible ? t('隐藏猪猪') : t('显示猪猪'), click: () => { visible ? win.hide() : win.showInactive(); refreshTray(true) } },
+    { label: t('猪猪回到右下角'), click: () => { win.setPosition(...Object.values(defaultPosition())); savePosition(); win.showInactive() } },
+    { label: t('在浏览器里打开面板'), click: () => shell.openExternal(server.url) },
     { type: 'separator' },
     {
-      label: '开机自动启动',
+      label: '🌐 ' + t('语言'),
+      submenu: LANGS.map(key => ({
+        label: LANG_NAMES[key],
+        type: 'radio',
+        checked: key === lang,
+        click: () => setLang(key),
+      })),
+    },
+    {
+      label: t('开机自动启动'),
       type: 'checkbox',
       checked: app.getLoginItemSettings().openAtLogin,
       click: item => app.setLoginItemSettings({ openAtLogin: item.checked }),
     },
     { type: 'separator' },
-    { label: '退出', click: () => app.quit() },
+    { label: t('退出'), click: () => app.quit() },
   ])
+}
+
+/** Rebuild the menu when the language changed (from the panel or the menu). */
+function refreshTray(force = false) {
+  if (tray === null) return
+  const lang = currentLang()
+  if (!force && lang === trayLang) return
+  trayLang = lang
+  tray.setContextMenu(trayMenu())
 }
 
 function createTray() {
   const icon = nativeImage.createFromPath(join(HERE, 'build', 'tray.png'))
   tray = new Tray(icon)
   tray.setToolTip('DSH Piggy')
-  tray.setContextMenu(trayMenu())
+  refreshTray(true)
   tray.on('click', () => { if (process.platform === 'win32') tray.popUpContextMenu(trayMenu()) })
+  setInterval(() => refreshTray(), 3000).unref?.()
 }
 
 // ---- self-check (no screen recording needed) ------------------------------------
@@ -199,6 +239,8 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     app.dock?.hide()
+    // A brand-new pig speaks the system language; existing saves keep theirs.
+    if (!process.env.PIG_LANG) process.env.PIG_LANG = app.getLocale()
     server = await openServer(userFile('state.json'))
     createWindow(server.url + 'desk')
     createTray()

@@ -20,9 +20,34 @@
 <body>
 <div class="hint">
   <b>🐖 dsh-piggy · Claude Code</b><br>
-  猪在右下角：<b>右键</b>开关菜单，<b>左键</b>摸摸，可拖动。<br>
-  <small>它吃你在 Claude Code 里的真实工作长大（提问、回合、工具调用）。</small>
+  <span data-hint="how">猪在右下角：<b>右键</b>开关菜单，<b>左键</b>摸摸，可拖动。</span><br>
+  <small data-hint="why">它吃你在 Claude Code 里的真实工作长大（提问、回合、工具调用）。</small>
 </div>
+<script>
+  // [dsh-piggy-claude-code mod] the hint follows the pig's language.
+  const HINTS = {
+    zh: {
+      how: '猪在右下角：<b>右键</b>开关菜单，<b>左键</b>摸摸，可拖动。',
+      why: '它吃你在 Claude Code 里的真实工作长大（提问、回合、工具调用）。',
+    },
+    ja: {
+      how: 'ブタは右下にいます：<b>右クリック</b>でメニュー、<b>左クリック</b>でなでなで、ドラッグで移動。',
+      why: 'Claude Code でのあなたの本当の作業（質問・ターン・ツール呼び出し）を食べて育ちます。',
+    },
+    en: {
+      how: 'The pig is in the corner: <b>right-click</b> for the menu, <b>left-click</b> to pat it, drag to move.',
+      why: 'It grows on your real work in Claude Code (prompts, turns, tool calls).',
+    },
+  }
+  const showHints = lang => {
+    const text = HINTS[lang]
+    if (!text) return
+    for (const node of document.querySelectorAll('[data-hint]')) node.innerHTML = text[node.dataset.hint]
+  }
+  const refreshHints = () => fetch('/pig/peek').then(r => r.json()).then(p => showHints(p.lang)).catch(() => {})
+  refreshHints()
+  setInterval(refreshHints, 4000)
+</script>
 <script>
   // Stand-in for DSH's module loader: capture the bundle's self-registration,
   // then mount it the way DSH would. client.js itself is upstream, unmodified.

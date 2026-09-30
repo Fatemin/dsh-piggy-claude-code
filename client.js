@@ -55,6 +55,261 @@ window.__ModuleLoader__.load({
     var DEV_KEY = 'dsh-pig:dev'
     var DEV_TAB = { key: 'dev', label: '调试', emoji: '🔧' }
 
+    // -------------------------------------------------------------------
+    // [dsh-piggy-claude-code mod] Chinese · Japanese · English.
+    //
+    // Same idea as the host's i18n.js, which this bundle cannot import:
+    // gettext style, the Chinese text in the code IS the key, a missing key
+    // falls back to Chinese, and `{name}` placeholders are filled from params
+    // so word order can differ per language. Terms follow locales/GLOSSARY.md.
+    // Only text the client itself owns goes through here; every label the host
+    // sends (items, jobs, stages, illnesses, announcements…) arrives already
+    // translated and must not be translated twice.
+    // -------------------------------------------------------------------
+    var LANG_KEYS = ['zh', 'ja', 'en']
+    var LANG_NAMES = { zh: '中文', ja: '日本語', en: 'English' }
+    var I18N = {
+      ja: {
+        // tabs
+        '状态': 'ようす', '学习': '勉強', '打工': 'バイト', '商店': 'おみせ',
+        '旅行': '旅行', '背包': 'バッグ', '调试': 'デバッグ',
+        // care
+        '喂食': 'ごはん', '洗澡': 'おふろ', '玩耍': 'あそぶ', '摸摸': 'なでなで',
+        // the box
+        '里面好像有东西…': 'なにか入ってるみたい…',
+        '动了！再戳一下！': 'うごいた！もう一回つついて！',
+        '戳三下': '3回つついて', '哇——！': 'わあ——！',
+        '一个{box}': '{box}がひとつ',
+        '点开拆开它': 'つついてあけよう',
+        '门口放着一个纸盒，里面窸窸窣窣 📦': '玄関にダンボール箱がひとつ。中でごそごそ音がする 📦',
+        '拆开纸盒': '箱をあける',
+        '拆开就会蹦出一只小猪 —— 不用敲命令': 'あけるとこブタが飛び出すよ —— コマンドはいらないよ',
+        // empty shelves
+        '没有吃的啦，快去买一点 🍎': 'たべものがないよ、買いに行こう 🍎',
+        '没有洗浴用品了，去买点吧 🧼': 'おふろ用品がないよ、買いに行こう 🧼',
+        '没有玩具了，去商店看看 🪀': 'おもちゃがないよ、おみせを見てみて 🪀',
+        // shop shelves and item kinds
+        '食物': 'たべもの', '洗浴': 'おふろ用品', '玩具': 'おもちゃ', '药品': 'くすり', '复活': 'よみがえり',
+        '对症！': 'これが効く！', '药': 'くすり', '复活用': 'よみがえり用',
+        // school
+        '小学': '小学校', '大学': '大学', '研究生': '大学院',
+        // fallbacks for fields an older host did not send
+        '猪猪': 'ブーちゃん', '小猪': 'こブタ', '还不错': 'まあまあ', '生病': 'びょうき',
+        '工作': 'しごと', '课': 'じゅぎょう', '学段': '学校', '目的地': '行き先',
+        '物品': 'アイテム', '外面': 'おでかけ先', '纸盒': 'ダンボール箱',
+        // the pig itself
+        '左键摸摸 · 右键打开面板 · 拖动可移动': '左クリックでなでなで · 右クリックでパネル · ドラッグで移動',
+        '孵出来啦！': '出てきた！', '吃掉了！': 'たべた！', '洗干净啦～': 'きれいになった～',
+        '好开心！': 'たのしい！', '好舒服…': 'きもちいい…', '出门打工！': 'バイトに行ってくる！',
+        '上学去！': '学校に行ってくる！', '出发旅行！': '旅行に出発！', '提前回来了…': '早めに帰ってきた…',
+        '买到了！': '買えた！', '用掉了。': '使った。', '我长大啦！': '大きくなったよ！',
+        '在忙': 'はたらき中', '在念书': '勉強中', '在路上': '旅行中', '在外面': 'おでかけ中',
+        '{what}：{label}': '{what}：{label}',
+        // status tab
+        '饱食': 'おなか', '心情': 'きげん', '清洁': 'きれいさ', '健康': '健康',
+        '智力': 'かしこさ', '魅力': 'みりょく', '武力': 'ちから', '体重': '体重', '年龄': '年齢',
+        '再长 {kg} kg 就长成下一阶段了': 'あと {kg} kg で次の姿に育つよ',
+        '老年猪': 'おじいブタ', '原版': 'オリジナル',
+        '不在家': 'おでかけ中', '{n}s': '{n}秒', '语言': '言語',
+        // care item picker
+        '喂点什么？': 'なにを食べさせる？', '用哪个洗澡？': 'どれでおふろにする？',
+        '拿哪个玩具？': 'どのおもちゃにする？', '用哪个？': 'どれを使う？',
+        '{label}（自带）': '{label}（いつでもある）', '用': '使う', '算了': 'やめる',
+        // study tab
+        '宿主还没提供课程表。': 'ホストからまだ時間割が届いていないよ。',
+        '{time} · 学费 {tuition} 🪙 · 属性 +{gain}': '{time} · 授業料 {tuition} 🪙 · 能力 +{gain}',
+        '要先念完{label}（{done}/{need}）': '先に{label}を卒業してね（{done}/{need}）',
+        '已上 {n} 次': 'じゅぎょう {n} 回',
+        // work tab
+        '宿主还没提供工作列表。': 'ホストからまだバイトのリストが届いていないよ。',
+        '赚 {coins} 🪙': '{coins} 🪙 もらえる', '省 {pct}% 时间': '時間 {pct}% 短縮',
+        '报酬 +{pct}%': '報酬 +{pct}%', '去上课就能涨': 'じゅぎょうで上がるよ', '出发': '出発',
+        // shop tab
+        '宿主还没提供货架。': 'ホストからまだ商品が届いていないよ。',
+        '现在需要': 'いま必要', '买': '買う',
+        // travel and bag tabs
+        '宿主还没提供目的地。': 'ホストからまだ行き先が届いていないよ。',
+        '纪念品': 'おみやげ', '还没出过远门。': 'まだ遠くへ行ったことがないよ。',
+        '背包空空的 —— 去「商店」买点东西。': 'バッグはからっぽ —— 「おみせ」でなにか買おう。',
+        '使用': '使う', '收藏册还空着。': 'コレクションはまだからっぽ。',
+        // durations
+        '{n} 天': '{n}日', '{n} 小时': '{n}時間', '{n} 分钟': '{n}分',
+        // banners
+        '宿主是旧版本': 'ホストが古いバージョンです',
+        '金币、健康、打工、商店这些是新增的，重启 dsh（不是刷新页面）之后才会出现。':
+          'コイン・健康・バイト・おみせは新しい機能です。dsh を再起動すると出てきます（ページの再読み込みではなく）。',
+        '{name} 走了': '{name} はいってしまった',
+        '{name} 走了，灵魂还留在墓碑上 👻': '{name} はいってしまった。たましいがまだおはかにいるよ 👻',
+        '用还魂丹可以把它叫回来，或者领养一只新的小猪': 'よみがえりの薬で呼びもどせるよ。新しい子をむかえることもできるよ',
+        '在「背包」里用还魂丹就能救回来（金币、收藏、上过的课都保留）':
+          '「バッグ」でよみがえりの薬を使えば助かるよ（コイン・コレクション・じゅぎょうはそのまま）',
+        '领养新猪': '新しい子をむかえる',
+        '{name}（第 {stage}/4 期）': '{name}（{stage}/4 期）',
+        '需要「{cure}」—— 去商店买对应的药': '「{cure}」が必要 —— おみせで病気に合ったくすりを買おう',
+        '带病也能出门，但报酬只有一半；在外面病情会走得更快，躺着养最省':
+          'びょうきでもおでかけできるけど報酬は半分。外ではびょうきが早く進むから、休むのがいちばん',
+        '钱不够也没关系 —— 先去打工，赚够 {price} 🪙 买「{item}」':
+          'お金が足りなくても大丈夫 —— バイトで {price} 🪙 かせいで「{item}」を買おう',
+        '在外面：{label}': 'おでかけ中：{label}', '还有 {n} 秒': 'あと {n} 秒', '叫它回来': '呼びもどす',
+        // messages
+        '猪有新消息': 'ブタからお知らせ', '连接不上宿主': 'ホストにつながらない',
+        '背包里没有能用的东西': 'バッグに使えるものがないよ',
+        '还要等 {n} 秒': 'あと {n} 秒まってね', '钱不够': 'お金が足りない', '它在外面': 'おでかけ中だよ',
+        '太虚弱了，先养好再出门': '弱ってるよ。元気になってからおでかけしよう', '太饿了': 'おなかぺこぺこ',
+        '药不对症': 'くすりが合ってない', '背包里没有': 'バッグにないよ', '它没生病': 'びょうきじゃないよ',
+        '它已经走了…': 'もういってしまった…', '它没在外面': 'おでかけしてないよ',
+        '不认识这种语言': 'その言語はわからないよ',
+        '这个操作没成': 'うまくいかなかった', '操作没送到宿主': 'ホストに届かなかった',
+        // developer mode
+        '开发者模式 · Ctrl+Shift+D 关闭': '開発者モード · Ctrl+Shift+D でオフ',
+        '还没有猪。先「拆开纸盒」再调。': 'まだブタがいないよ。先に「箱をあける」してね。',
+        '开发者模式已开': '開発者モード オン', '开发者模式已关': '開発者モード オフ',
+        '资源': 'リソース', '生死': '生と死', '面板': 'パネル',
+        '满状态': '全回復', '饿': 'はらぺこ', '脏': 'よごれ', '孤单': 'さみしい', '困': 'ねむい',
+        '感冒一期': 'かぜ（1期）', '肺炎': '肺炎', '肺结核': '結核', '胃癌': '胃がん', '治好': '治す',
+        '青年': 'わかブタ', '中年': 'おとなブタ', '老年': 'おじいブタ', '老死': '寿命',
+        '全套药': 'くすりセット', '弄死': '死なせる', '领养': '新しい子をむかえる', '重置': 'リセット',
+        '展开/收起': '開く/閉じる', '+1 小时': '+1 時間', '+1 天': '+1 日',
+        '当前：{stage} · 健康 {health} · 🪙 {coins}': '今：{stage} · 健康 {health} · 🪙 {coins}',
+      },
+      en: {
+        // tabs
+        '状态': 'Status', '学习': 'Study', '打工': 'Work', '商店': 'Shop',
+        '旅行': 'Travel', '背包': 'Bag', '调试': 'Debug',
+        // care
+        '喂食': 'Feed', '洗澡': 'Bathe', '玩耍': 'Play', '摸摸': 'Pat',
+        // the box
+        '里面好像有东西…': 'Something is in there…',
+        '动了！再戳一下！': 'It moved! Poke it again!',
+        '戳三下': 'Poke 3 times', '哇——！': 'Whoa—!',
+        '一个{box}': 'A {box}',
+        '点开拆开它': 'Poke it open',
+        '门口放着一个纸盒，里面窸窸窣窣 📦': 'There is a box at the door, and something is rustling inside 📦',
+        '拆开纸盒': 'Open the box',
+        '拆开就会蹦出一只小猪 —— 不用敲命令': 'Open it and a piglet pops out — no commands needed',
+        // empty shelves
+        '没有吃的啦，快去买一点 🍎': 'No food left, go buy some 🍎',
+        '没有洗浴用品了，去买点吧 🧼': 'No bath things left, go buy some 🧼',
+        '没有玩具了，去商店看看 🪀': 'No toys left, have a look in the shop 🪀',
+        // shop shelves and item kinds
+        '食物': 'Food', '洗浴': 'Bath', '玩具': 'Toys', '药品': 'Medicine', '复活': 'Revival',
+        '对症！': 'The right medicine!', '药': 'medicine', '复活用': 'for revival',
+        // school
+        '小学': 'Primary school', '大学': 'University', '研究生': 'Graduate school',
+        // fallbacks for fields an older host did not send
+        '猪猪': 'Piggy', '小猪': 'Piglet', '还不错': 'Doing fine', '生病': 'Sick',
+        '工作': 'Job', '课': 'Lesson', '学段': 'School', '目的地': 'Destination',
+        '物品': 'Item', '外面': 'somewhere', '纸盒': 'box',
+        // the pig itself
+        '左键摸摸 · 右键打开面板 · 拖动可移动': 'Left-click to pat · right-click for the panel · drag to move',
+        '孵出来啦！': 'Out it comes!', '吃掉了！': 'Yum, all gone!', '洗干净啦～': 'Squeaky clean～',
+        '好开心！': 'So much fun!', '好舒服…': 'That feels nice…', '出门打工！': 'Off to work!',
+        '上学去！': 'Off to school!', '出发旅行！': 'Off on a trip!', '提前回来了…': 'Back early…',
+        '买到了！': 'Got it!', '用掉了。': 'Used it.', '我长大啦！': 'I grew up!',
+        '在忙': 'Working', '在念书': 'Studying', '在路上': 'Traveling', '在外面': 'Out',
+        '{what}：{label}': '{what}: {label}',
+        // status tab
+        '饱食': 'Fullness', '心情': 'Mood', '清洁': 'Cleanliness', '健康': 'Health',
+        '智力': 'Smarts', '魅力': 'Charm', '武力': 'Strength', '体重': 'Weight', '年龄': 'Age',
+        '再长 {kg} kg 就长成下一阶段了': '{kg} kg more to grow into the next stage',
+        '老年猪': 'Elder pig', '原版': 'Original',
+        '不在家': 'out', '{n}s': '{n}s', '语言': 'Language',
+        // care item picker
+        '喂点什么？': 'What should it eat?', '用哪个洗澡？': 'Bathe with what?',
+        '拿哪个玩具？': 'Which toy?', '用哪个？': 'Use which one?',
+        '{label}（自带）': '{label} (always there)', '用': 'Use', '算了': 'Never mind',
+        // study tab
+        '宿主还没提供课程表。': 'The host has not sent a timetable yet.',
+        '{time} · 学费 {tuition} 🪙 · 属性 +{gain}': '{time} · tuition {tuition} 🪙 · stats +{gain}',
+        '要先念完{label}（{done}/{need}）': 'Finish {label} first ({done}/{need})',
+        '已上 {n} 次': '{n} lessons so far',
+        // work tab
+        '宿主还没提供工作列表。': 'The host has not sent any jobs yet.',
+        '赚 {coins} 🪙': 'earns {coins} 🪙', '省 {pct}% 时间': '{pct}% faster',
+        '报酬 +{pct}%': 'pay +{pct}%', '去上课就能涨': 'lessons raise this', '出发': 'Go',
+        // shop tab
+        '宿主还没提供货架。': 'The host has not stocked the shop yet.',
+        '现在需要': 'needed now', '买': 'Buy',
+        // travel and bag tabs
+        '宿主还没提供目的地。': 'The host has not sent any destinations yet.',
+        '纪念品': 'Souvenirs', '还没出过远门。': 'No trips yet.',
+        '背包空空的 —— 去「商店」买点东西。': 'The bag is empty — buy something in the Shop.',
+        '使用': 'Use', '收藏册还空着。': 'The collection is still empty.',
+        // durations
+        '{n} 天': '{n} days', '{n} 小时': '{n} h', '{n} 分钟': '{n} min',
+        // banners
+        '宿主是旧版本': 'The host is out of date',
+        '金币、健康、打工、商店这些是新增的，重启 dsh（不是刷新页面）之后才会出现。':
+          'Coins, health, work and the shop are new. They appear after restarting dsh (not just reloading the page).',
+        '{name} 走了': '{name} has passed away',
+        '{name} 走了，灵魂还留在墓碑上 👻': '{name} has passed away; its soul still lingers at the grave 👻',
+        '用还魂丹可以把它叫回来，或者领养一只新的小猪': 'A revival pill can call it back, or you can adopt a new piglet',
+        '在「背包」里用还魂丹就能救回来（金币、收藏、上过的课都保留）':
+          'Use a revival pill from the Bag to bring it back (coins, collection and lessons are kept)',
+        '领养新猪': 'Adopt a new pig',
+        '{name}（第 {stage}/4 期）': '{name} (stage {stage}/4)',
+        '需要「{cure}」—— 去商店买对应的药': 'Needs "{cure}" — buy the right medicine in the Shop',
+        '带病也能出门，但报酬只有一半；在外面病情会走得更快，躺着养最省':
+          'It can still go out while sick, but for half pay, and the illness gets worse faster outside. Resting is best.',
+        '钱不够也没关系 —— 先去打工，赚够 {price} 🪙 买「{item}」':
+          'Short of coins? Go to work first and earn {price} 🪙 for "{item}"',
+        '在外面：{label}': 'Out: {label}', '还有 {n} 秒': '{n}s left', '叫它回来': 'Call back',
+        // messages
+        '猪有新消息': 'News from your pig', '连接不上宿主': "Can't reach the host",
+        '背包里没有能用的东西': 'Nothing usable in the bag',
+        '还要等 {n} 秒': 'Wait {n}s more', '钱不够': 'Not enough coins', '它在外面': "It's out",
+        '太虚弱了，先养好再出门': 'Too weak. Rest up before going out', '太饿了': 'Too hungry',
+        '药不对症': 'Wrong medicine', '背包里没有': 'Not in the bag', '它没生病': "It isn't sick",
+        '它已经走了…': "It's gone…", '它没在外面': "It isn't out",
+        '不认识这种语言': 'Unknown language',
+        '这个操作没成': "That didn't work", '操作没送到宿主': "Couldn't reach the host",
+        // developer mode
+        '开发者模式 · Ctrl+Shift+D 关闭': 'Developer mode · Ctrl+Shift+D to turn off',
+        '还没有猪。先「拆开纸盒」再调。': 'No pig yet. Open the box first.',
+        '开发者模式已开': 'Developer mode on', '开发者模式已关': 'Developer mode off',
+        '资源': 'Resources', '生死': 'Life and death', '面板': 'Panel',
+        '满状态': 'Max all', '饿': 'Hungry', '脏': 'Dirty', '孤单': 'Lonely', '困': 'Sleepy',
+        '感冒一期': 'Cold, stage 1', '肺炎': 'Pneumonia', '肺结核': 'Tuberculosis', '胃癌': 'Stomach cancer', '治好': 'Cure',
+        '青年': 'Young pig', '中年': 'Grown pig', '老年': 'Elder pig', '老死': 'Old age',
+        '全套药': 'All medicines', '弄死': 'Kill', '领养': 'Adopt', '重置': 'Reset',
+        '展开/收起': 'Open/close', '+1 小时': '+1 h', '+1 天': '+1 day',
+        '当前：{stage} · 健康 {health} · 🪙 {coins}': 'Now: {stage} · Health {health} · 🪙 {coins}',
+      },
+    }
+    // English singulars, picked when `params.n === 1`. Japanese and Chinese
+    // have no plural, so this is the only language that needs them.
+    var I18N_EN_ONE = {
+      '{n} 天': '{n} day',
+      '已上 {n} 次': '{n} lesson so far',
+    }
+
+    var normalizeLang = v => (typeof v === 'string' && LANG_KEYS.indexOf(v) >= 0 ? v : 'zh')
+
+    function fillParams(text, params) {
+      if (params === undefined || params === null) return text
+      return text.replace(/\{(\w+)\}/g, function (whole, key) {
+        return Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : whole
+      })
+    }
+
+    /** Translate one Chinese source string into `lang`, falling back to the Chinese. */
+    function tr(lang, zh, params) {
+      if (typeof zh !== 'string') return zh
+      var target = normalizeLang(lang)
+      var text = zh
+      if (target === 'en' && params && params.n === 1 && I18N_EN_ONE[zh] !== undefined) {
+        text = I18N_EN_ONE[zh]
+      } else if (target !== 'zh' && Object.prototype.hasOwnProperty.call(I18N[target], zh)) {
+        text = I18N[target][zh]
+      }
+      return fillParams(text, params)
+    }
+
+    // The language of the last rendered snapshot (`view.lang`). Text is built
+    // on every render, so a switch shows up on the next one without a reload.
+    var currentLang = 'zh'
+    function T(zh, params) { return tr(currentLang, zh, params) }
+
     var MODES = ['feed', 'bathe', 'play', 'pet']
     var CARE_LABEL = { feed: ['喂食', '🍎'], bathe: ['洗澡', '🛁'], play: ['玩耍', '🎾'], pet: ['摸摸', '❤️'] }
     // What the pig says when the shelf it needs is bare. Being told plainly
@@ -71,7 +326,7 @@ window.__ModuleLoader__.load({
       bath: '没有洗浴用品了，去买点吧 🧼',
       toy: '没有玩具了，去商店看看 🪀',
     }
-    var KIND_TITLE = { food: '🍎 食物', bath: '🧼 洗浴', toy: '🪀 玩具', medicine: '💊 药品', revive: '✨ 复活' }
+    var KIND_TITLE = { food: ['🍎', '食物'], bath: ['🧼', '洗浴'], toy: ['🪀', '玩具'], medicine: ['💊', '药品'], revive: ['✨', '复活'] }
     var KIND_ORDER = ['food', 'bath', 'toy', 'medicine', 'revive']
     var STAGES = [
       { key: 'primary', label: '小学' },
@@ -98,20 +353,26 @@ window.__ModuleLoader__.load({
       var d = obj(raw)
       var pig = isObj(d.pig) ? d.pig : null
       var legacy = pig !== null && !('coins' in pig) && !('health' in pig)
+      // [dsh-piggy-claude-code mod] the pig's language; the fallbacks below
+      // speak it too, since the host never sent them.
+      var lang = normalizeLang(d.lang)
+      var L = zh => tr(lang, zh)
 
       return {
+        lang: lang,
+        langs: normalizeLangs(d.langs),
         legacy: legacy,
         // Trust the flag when the host sends one. Older hosts did not, and for
         // those "a pig exists" is still the right answer.
         hatched: d.hatched === true || (d.hatched === undefined && pig !== null),
         dead: d.dead === true || (pig !== null && num(pig.health, 5) <= 0),
         pig: pig === null ? null : {
-          name: str(pig.name, '猪猪'),
+          name: str(pig.name, L('猪猪')),
           // The pig is measured in days now; `stage` carries how big it is and
           // what it looks like.
           stage: {
             key: str(obj(pig.stage).key, 'piglet'),
-            label: str(obj(pig.stage).label, '小猪'),
+            label: str(obj(pig.stage).label, L('小猪')),
             emoji: str(obj(pig.stage).emoji, '🐖'),
             size: num(obj(pig.stage).size, 56),
             line: str(obj(pig.stage).line, ''),
@@ -127,7 +388,7 @@ window.__ModuleLoader__.load({
           soul: pig.soul === true,
           mood: str(pig.mood, 'fine'),
           moodEmoji: str(pig.moodEmoji, '😊'),
-          moodLabel: str(pig.moodLabel, '还不错'),
+          moodLabel: str(pig.moodLabel, L('还不错')),
           satiety: Math.round(num(pig.satiety, 0)),
           happiness: Math.round(num(pig.happiness, 0)),
           cleanliness: Math.round(num(pig.cleanliness, 0)),
@@ -138,8 +399,8 @@ window.__ModuleLoader__.load({
           xp: num(pig.xp, 0),
           stageLine: str(pig.stageLine, ''),
           illness: isObj(pig.illness) ? {
-            name: str(pig.illness.name, '生病'),
-            cure: str(pig.illness.cure, '药'),
+            name: str(pig.illness.name, L('生病')),
+            cure: str(pig.illness.cure, L('药')),
             stage: num(pig.illness.stage, 1),
           } : null,
           traits: {
@@ -154,7 +415,7 @@ window.__ModuleLoader__.load({
         actions: normalizeActions(d.actions),
         jobs: arr(d.jobs).map(job => ({
           key: str(obj(job).key, ''),
-          label: str(obj(job).label, '工作'),
+          label: str(obj(job).label, L('工作')),
           emoji: str(obj(job).emoji, '💼'),
           minutes: num(obj(job).minutes, 0),
           coins: num(obj(job).coins, 0),
@@ -170,7 +431,7 @@ window.__ModuleLoader__.load({
         })).filter(job => job.key !== ''),
         subjects: arr(d.subjects).map(sub => ({
           key: str(obj(sub).key, ''),
-          label: str(obj(sub).label, '课'),
+          label: str(obj(sub).label, L('课')),
           emoji: str(obj(sub).emoji, '📘'),
           traitLabel: str(obj(sub).traitLabel, ''),
           level: num(obj(sub).level, 0),
@@ -178,7 +439,7 @@ window.__ModuleLoader__.load({
         })).filter(sub => sub.key !== ''),
         stages: arr(d.stages).map(stage => ({
           key: str(obj(stage).key, ''),
-          label: str(obj(stage).label, '学段'),
+          label: str(obj(stage).label, L('学段')),
           minutes: num(obj(stage).minutes, 0),
           tuition: num(obj(stage).tuition, 0),
           gain: num(obj(stage).gain, 0),
@@ -193,7 +454,7 @@ window.__ModuleLoader__.load({
         })).filter(stage => stage.key !== ''),
         trips: arr(d.trips).map(trip => ({
           key: str(obj(trip).key, ''),
-          label: str(obj(trip).label, '目的地'),
+          label: str(obj(trip).label, L('目的地')),
           emoji: str(obj(trip).emoji, '🧳'),
           minutes: num(obj(trip).minutes, 0),
           cost: num(obj(trip).cost, 0),
@@ -202,7 +463,7 @@ window.__ModuleLoader__.load({
         })).filter(trip => trip.key !== ''),
         shop: arr(d.shop).map(item => ({
           key: str(obj(item).key, ''),
-          label: str(obj(item).label, '物品'),
+          label: str(obj(item).label, L('物品')),
           emoji: str(obj(item).emoji, '📦'),
           price: num(obj(item).price, 0),
           kind: str(obj(item).kind, 'food'),
@@ -218,7 +479,7 @@ window.__ModuleLoader__.load({
           for (const action of ['feed', 'bathe', 'play']) {
             out[action] = arr(source[action]).map(entry => ({
               key: str(obj(entry).key, ''),
-              label: str(obj(entry).label, '物品'),
+              label: str(obj(entry).label, L('物品')),
               emoji: str(obj(entry).emoji, '📦'),
               default: obj(entry).default === true,
               count: typeof obj(entry).count === 'number' ? obj(entry).count : null,
@@ -232,7 +493,7 @@ window.__ModuleLoader__.load({
         activity: isObj(d.activity) ? {
           kind: str(d.activity.kind, 'work'),
           key: str(d.activity.key, ''),
-          label: str(d.activity.label, '外面'),
+          label: str(d.activity.label, L('外面')),
           emoji: str(d.activity.emoji, '💼'),
           secondsLeft: num(d.activity.secondsLeft, 0),
           progress: num(d.activity.progress, 0),
@@ -240,14 +501,24 @@ window.__ModuleLoader__.load({
         canGoOut: d.canGoOut === true,
         boxStage: isObj(d.boxStage) ? {
           key: str(d.boxStage.key, 'box'),
-          label: str(d.boxStage.label, '纸盒'),
+          label: str(d.boxStage.label, L('纸盒')),
           emoji: str(d.boxStage.emoji, '📦'),
           size: num(d.boxStage.size, 58),
-        } : { key: 'box', label: '纸盒', emoji: '📦', size: 58 },
+        } : { key: 'box', label: L('纸盒'), emoji: '📦', size: 58 },
         awayBlocked: typeof d.awayBlocked === 'string' ? d.awayBlocked : null,
         pending: arr(d.pending).filter(e => isObj(e) && typeof e.at === 'number'),
         maxHealth: num(d.maxHealth, 5),
       }
+    }
+
+    /** The languages the host offers; the full set when it sent none. */
+    function normalizeLangs(raw) {
+      var out = arr(raw).map(entry => ({
+        key: str(obj(entry).key, ''),
+        label: str(obj(entry).label, LANG_NAMES[str(obj(entry).key, '')] ?? ''),
+      })).filter(entry => LANG_KEYS.indexOf(entry.key) >= 0 && entry.label !== '')
+      if (out.length > 0) return out
+      return LANG_KEYS.map(key => ({ key: key, label: LANG_NAMES[key] }))
     }
 
     function normalizeActions(raw) {
@@ -319,6 +590,10 @@ window.__ModuleLoader__.load({
       // pig's box and the panel can be parked anywhere around it without ever
       // nudging the pig. `fitPanel` places the panel.
       'display:block}',
+      // Japanese text wants Japanese glyph shapes, not the Simplified Chinese
+      // ones Noto Sans SC would draw for the shared kanji.
+      '[data-dsh-pig][lang="ja"]{--ac-font:Nunito,"Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN",',
+      '"Yu Gothic",-apple-system,sans-serif}',
       '[data-dsh-pig] *{box-sizing:border-box}',
       '[data-dsh-pig]>*{pointer-events:auto}',
       // `hidden` MUST win. The UA sheet's `[hidden]{display:none}` ties on
@@ -618,7 +893,11 @@ window.__ModuleLoader__.load({
       '.dp-count{margin-left:2px;font-size:9px;font-weight:700;color:var(--ac-text-2);',
       'background:var(--ac-bg-content);border-radius:var(--ac-pill);padding:0 5px}',
       '.dp-btn[data-open-picker="true"]{background:var(--ac-active);border-color:#9db0d6}',
-      '.dp-looks .dp-btn[aria-pressed="true"]{background:var(--ac-active);border-color:#9db0d6}',
+      '.dp-looks .dp-btn[aria-pressed="true"],',
+      '.dp-langs .dp-btn[aria-pressed="true"]{background:var(--ac-active);border-color:#9db0d6}',
+      // [dsh-piggy-claude-code mod] the language switcher: one pill per language.
+      '.dp-langs{grid-template-columns:repeat(3,1fr);margin-top:4px}',
+      '.dp-langs .dp-btn{padding:6px 4px}',
       '.dp-seg button[data-locked="true"]{color:var(--ac-text-disabled);',
       'border-style:dashed;background:var(--ac-bg-disabled)}',
       '.dp-seg button[data-locked="true"]:hover{background:var(--ac-bg-disabled)}',
@@ -815,7 +1094,7 @@ window.__ModuleLoader__.load({
       var scene = el('div', 'dp-scene')
 
       var hud = el('div', 'dp-hud')
-      var hudName = el('div', null, '猪猪')
+      var hudName = el('div', null, T('猪猪'))
       var hudCoins = el('div', null, '🪙 0')
       var hudHealth = el('div', null, '💚 5/5')
       hud.appendChild(hudName)
@@ -844,7 +1123,8 @@ window.__ModuleLoader__.load({
       // rather than a decorative cardboard box sitting in the corner.
       var pokeHint = el('div', 'dp-poke-hint')
       pokeHint.appendChild(el('span', null, '👆'))
-      pokeHint.appendChild(el('span', null, '戳三下'))
+      var pokeHintText = el('span', null, T('戳三下'))
+      pokeHint.appendChild(pokeHintText)
       pokeHint.hidden = true
       scene.appendChild(pokeHint)
 
@@ -864,10 +1144,13 @@ window.__ModuleLoader__.load({
       pig.appendChild(pigEmoji)
       scene.appendChild(pig)
       // Right-click is not discoverable on its own, so the native tooltip says so.
-      scene.title = '左键摸摸 · 右键打开面板 · 拖动可移动'
+      scene.title = T('左键摸摸 · 右键打开面板 · 拖动可移动')
 
       var bar = el('div', 'dp-bar')
       var icons = {}
+      // Each icon's caption and its Chinese key, so a language switch can
+      // relabel the bar in place without rebuilding it.
+      var iconLabels = {}
 
       /** The tabs on show right now: the normal six, plus 调试 when dev mode is on. */
       function visibleTabs() {
@@ -890,13 +1173,24 @@ window.__ModuleLoader__.load({
             select(tab.key)
           })
           btn.appendChild(el('span', 'dp-ico-e', tab.emoji))
-          btn.appendChild(el('span', null, tab.label))
+          var caption = el('span', null, T(tab.label))
+          btn.appendChild(caption)
+          btn.setAttribute('aria-label', T(tab.label))
           icons[tab.key] = btn
+          iconLabels[tab.key] = { node: caption, zh: tab.label }
           bar.appendChild(btn)
         })(tab)
       }
 
       for (var t = 0; t < TABS.length; t += 1) buildIcon(TABS[t])
+
+      /** Re-caption the icon bar in the current language. */
+      function relabelBar() {
+        for (var k in iconLabels) {
+          iconLabels[k].node.textContent = T(iconLabels[k].zh)
+          if (icons[k] !== undefined) icons[k].setAttribute('aria-label', T(iconLabels[k].zh))
+        }
+      }
 
       var content = el('div', 'dp-content')
 
@@ -988,7 +1282,7 @@ window.__ModuleLoader__.load({
         if (spec === undefined) return
         react(spec.kind, spec.ms)
         burst(spec.fx, spec.count)
-        showBubble(spec.say, 2200)
+        showBubble(T(spec.say), 2200)
       }
 
       var bubbleTimer = null
@@ -1051,24 +1345,24 @@ window.__ModuleLoader__.load({
        * can be checked at all.
        */
       function devTab() {
-        content.appendChild(el('div', 'dp-dev-note', '🔧 开发者模式 · Ctrl+Shift+D 关闭'))
+        content.appendChild(el('div', 'dp-dev-note', '🔧 ' + T('开发者模式 · Ctrl+Shift+D 关闭')))
 
         var p = view.pig
         if (p === null) {
-          content.appendChild(el('div', 'dp-empty', '还没有猪。先「拆开纸盒」再调。'))
+          content.appendChild(el('div', 'dp-empty', T('还没有猪。先「拆开纸盒」再调。')))
           return
         }
 
         /** A row of small buttons under a caption. */
         function group(title, entries) {
           var head = el('div', 'dp-title')
-          head.appendChild(el('b', null, title))
+          head.appendChild(el('b', null, T(title)))
           content.appendChild(head)
           var wrap = el('div', 'dp-dev-row')
           for (var i = 0; i < entries.length; i += 1) {
             (function (entry) {
               var btn = button('dp-mini dp-dev-btn', { 'data-dev': entry.key }, function () { entry.run() })
-              btn.textContent = entry.label
+              btn.textContent = devLabel(entry.label)
               wrap.appendChild(btn)
             })(entries[i])
           }
@@ -1076,6 +1370,13 @@ window.__ModuleLoader__.load({
         }
 
         var patch = function (body) { send('dev', { patch: body }) }
+
+        /** '🍎 饿' → emoji kept, the words translated. */
+        function devLabel(label) {
+          var space = label.indexOf(' ')
+          if (space < 0) return T(label)
+          return label.slice(0, space) + ' ' + T(label.slice(space + 1))
+        }
 
         group('状态', [
           { key: 'full', label: '😊 满状态', run: function () { patch({ satiety: 100, happiness: 100, cleanliness: 100, health: 5 }) } },
@@ -1123,7 +1424,7 @@ window.__ModuleLoader__.load({
         ])
 
         content.appendChild(el('div', 'dp-dev-note',
-          '当前：' + p.stage.label + ' · 健康 ' + p.health + ' · 🪙 ' + p.coins
+          T('当前：{stage} · 健康 {health} · 🪙 {coins}', { stage: p.stage.label, health: p.health, coins: p.coins })
           + (p.illness === null ? '' : ' · ' + p.illness.name)))
       }
 
@@ -1139,34 +1440,34 @@ window.__ModuleLoader__.load({
       function statusTab() {
         var p = view.pig
         if (p === null) return
-        labelledBar('🍚 饱食', p.satiety, p.satiety + '%')
-        labelledBar('❤️ 心情', p.happiness, p.happiness + '%', 'dp-mood')
-        labelledBar('🫧 清洁', p.cleanliness, p.cleanliness + '%', 'dp-clean')
-        labelledBar('💚 健康', p.healthPercent, p.health + '/' + view.maxHealth, 'dp-health')
+        labelledBar('🍚 ' + T('饱食'), p.satiety, p.satiety + '%')
+        labelledBar('❤️ ' + T('心情'), p.happiness, p.happiness + '%', 'dp-mood')
+        labelledBar('🫧 ' + T('清洁'), p.cleanliness, p.cleanliness + '%', 'dp-clean')
+        labelledBar('💚 ' + T('健康'), p.healthPercent, p.health + '/' + view.maxHealth, 'dp-health')
 
         var traits = el('div', 'dp-traits')
-        traits.appendChild(el('span', null, '🧠 智力 ' + p.traits.intel))
-        traits.appendChild(el('span', null, '✨ 魅力 ' + p.traits.charm))
-        traits.appendChild(el('span', null, '💪 武力 ' + p.traits.strong))
+        traits.appendChild(el('span', null, '🧠 ' + T('智力') + ' ' + p.traits.intel))
+        traits.appendChild(el('span', null, '✨ ' + T('魅力') + ' ' + p.traits.charm))
+        traits.appendChild(el('span', null, '💪 ' + T('武力') + ' ' + p.traits.strong))
         content.appendChild(traits)
 
         var info = el('div', 'dp-row')
-        info.appendChild(el('span', null, '⚖️ 体重 ' + p.weight))
+        info.appendChild(el('span', null, '⚖️ ' + T('体重') + ' ' + p.weight))
         info.appendChild(el('b', null, '🪙 ' + p.coins))
         content.appendChild(info)
 
         var age = el('div', 'dp-row')
-        age.appendChild(el('span', null, '🎂 年龄'))
+        age.appendChild(el('span', null, '🎂 ' + T('年龄')))
         age.appendChild(el('b', null, p.ageLabel + ' · ' + p.stage.label))
         content.appendChild(age)
         // [dsh-piggy-claude-code mod] the pig grows by weight, not by age.
         if (p.kgToNextStage !== null) {
           content.appendChild(el('div', 'dp-empty',
-            '再长 ' + p.kgToNextStage.toFixed(1) + ' kg 就长成下一阶段了'))
+            T('再长 {kg} kg 就长成下一阶段了', { kg: p.kgToNextStage.toFixed(1) })))
         }
         if (p.canChooseLook) {
           var looks = el('div', 'dp-actions dp-looks')
-          var LOOK_CHOICES = [['elder', '👴 老年猪'], ['original', '🐷 原版']]
+          var LOOK_CHOICES = [['elder', '👴 ' + T('老年猪')], ['original', '🐷 ' + T('原版')]]
           for (var li = 0; li < LOOK_CHOICES.length; li += 1) {
             (function (key, label) {
               var pick = button('dp-btn', { 'data-look': key, 'aria-pressed': String(p.look === key) }, function () {
@@ -1197,15 +1498,15 @@ window.__ModuleLoader__.load({
             })
             btn.setAttribute('data-open-picker', picker === key ? 'true' : 'false')
             btn.appendChild(el('span', null, CARE_LABEL[key][1]))
-            btn.appendChild(el('span', null, CARE_LABEL[key][0]))
+            btn.appendChild(el('span', null, T(CARE_LABEL[key][0])))
             if (needsItem) btn.appendChild(el('span', 'dp-count', String(shelf.length)))
             // Trust but verify: a dead pig cannot be cared for even if the host
             // forgot to clear its readiness flags.
             if (!info.ready || view.dead) {
               btn.disabled = true
               if (view.dead) btn.appendChild(el('span', 'dp-wait', '—'))
-              else if (info.waitSeconds > 0) btn.appendChild(el('span', 'dp-wait', info.waitSeconds + 's'))
-              else if (info.blocked === 'away') btn.appendChild(el('span', 'dp-wait', '不在家'))
+              else if (info.waitSeconds > 0) btn.appendChild(el('span', 'dp-wait', T('{n}s', { n: info.waitSeconds })))
+              else if (info.blocked === 'away') btn.appendChild(el('span', 'dp-wait', T('不在家')))
             }
             grid.appendChild(btn)
           })(MODES[i])
@@ -1217,13 +1518,42 @@ window.__ModuleLoader__.load({
         if (p.memories.length > 0) {
           content.appendChild(el('div', 'dp-memo', p.memories.slice(-3).join('\n')))
         }
+
+        content.appendChild(langSwitcher())
+      }
+
+      /**
+       * [dsh-piggy-claude-code mod] 🌐 语言: one button per language the host
+       * offers, each named in its own language so it can be found from any of
+       * them. The current one is pressed; the others post `lang`.
+       */
+      function langSwitcher() {
+        var wrap = el('div', 'dp-lang')
+        var head = el('div', 'dp-row')
+        head.style.marginTop = '10px'
+        head.appendChild(el('span', null, '🌐 ' + T('语言')))
+        wrap.appendChild(head)
+        var row = el('div', 'dp-actions dp-langs')
+        row.style.marginTop = '4px'
+        for (var i = 0; i < view.langs.length; i += 1) {
+          (function (entry) {
+            var pick = button('dp-btn', { 'data-lang': entry.key, 'aria-pressed': String(view.lang === entry.key) }, function () {
+              if (view.lang !== entry.key) send('lang', { lang: entry.key })
+            })
+            pick.setAttribute('lang', entry.key)
+            pick.appendChild(el('span', null, entry.label))
+            row.appendChild(pick)
+          })(view.langs[i])
+        }
+        wrap.appendChild(row)
+        return wrap
       }
 
       /** The pig's bag for one care action: pick what to spend. */
       function pickerPanel(action) {
         var wrap = el('div', 'dp-pick')
         var asks = { feed: '喂点什么？', bathe: '用哪个洗澡？', play: '拿哪个玩具？' }
-        wrap.appendChild(el('div', 'dp-pick-head', asks[action] ?? '用哪个？'))
+        wrap.appendChild(el('div', 'dp-pick-head', T(asks[action] ?? '用哪个？')))
         var list = el('div', 'dp-list')
         var shelf = view.care[action] ?? []
         for (var i = 0; i < shelf.length; i += 1) {
@@ -1231,21 +1561,23 @@ window.__ModuleLoader__.load({
             var row = el('div', 'dp-item')
             row.appendChild(el('span', null, item.emoji))
             var grow = el('div', 'dp-grow')
-            grow.appendChild(el('div', null, item.label + (item.default ? '（自带）' : ' ×' + num(item.count, 0))))
+            grow.appendChild(el('div', null, item.default
+              ? T('{label}（自带）', { label: item.label })
+              : item.label + ' ×' + num(item.count, 0)))
             grow.appendChild(el('div', 'dp-dim', careEffectLine(action, item)))
             row.appendChild(grow)
             var use = button('dp-mini', { 'data-care': action + ':' + item.key }, function () {
               picker = null
               send(action, { item: item.key })
             })
-            use.textContent = '用'
+            use.textContent = T('用')
             row.appendChild(use)
             list.appendChild(row)
           })(shelf[i])
         }
         wrap.appendChild(list)
         var cancel = button('dp-cancel', {}, function () { picker = null; renderContent() })
-        cancel.textContent = '算了'
+        cancel.textContent = T('算了')
         wrap.appendChild(cancel)
         return wrap
       }
@@ -1254,21 +1586,21 @@ window.__ModuleLoader__.load({
       function careEffectLine(action, item) {
         var parts = []
         if (action === 'feed') {
-          parts.push('饱食 +' + item.satiety)
-          if (item.happiness) parts.push('心情 +' + item.happiness)
+          parts.push(T('饱食') + ' +' + item.satiety)
+          if (item.happiness) parts.push(T('心情') + ' +' + item.happiness)
         } else if (action === 'bathe') {
-          parts.push('清洁 +' + item.cleanliness)
-          if (item.happiness) parts.push('心情 +' + item.happiness)
+          parts.push(T('清洁') + ' +' + item.cleanliness)
+          if (item.happiness) parts.push(T('心情') + ' +' + item.happiness)
         } else {
-          parts.push('心情 +' + item.happiness)
-          if (item.satiety) parts.push('饱食 ' + item.satiety)
+          parts.push(T('心情') + ' +' + item.happiness)
+          if (item.satiety) parts.push(T('饱食') + ' ' + item.satiety)
         }
         return parts.join(' · ')
       }
 
       function studyTab() {
         if (view.subjects.length === 0) {
-          content.appendChild(el('div', 'dp-empty', '宿主还没提供课程表。'))
+          content.appendChild(el('div', 'dp-empty', T('宿主还没提供课程表。')))
           return
         }
         var seg = el('div', 'dp-seg')
@@ -1277,7 +1609,7 @@ window.__ModuleLoader__.load({
             var detail = null
             for (var k = 0; k < view.stages.length; k += 1) if (view.stages[k].key === entry.key) detail = view.stages[k]
             var locked = detail !== null && detail.unlocked === false
-            var label = entry.label + (detail ? ' · ' + detail.tuition + '🪙' : '') + (locked ? ' 🔒' : '')
+            var label = T(entry.label) + (detail ? ' · ' + detail.tuition + '🪙' : '') + (locked ? ' 🔒' : '')
             // A locked stage stays clickable on purpose: selecting it is how the
             // pig tells you what it is still missing. Only the courses inside it
             // are inert.
@@ -1296,14 +1628,15 @@ window.__ModuleLoader__.load({
         var detail = null
         for (var d = 0; d < view.stages.length; d += 1) if (view.stages[d].key === stage) detail = view.stages[d]
         if (detail !== null) {
-          var note = el('div', 'dp-empty', detail.minutes + ' 分钟 · 学费 ' + detail.tuition + ' 🪙 · 属性 +' + detail.gain)
+          var note = el('div', 'dp-empty', T('{time} · 学费 {tuition} 🪙 · 属性 +{gain}',
+            { time: formatMinutes(detail.minutes), tuition: detail.tuition, gain: detail.gain }))
           note.style.marginBottom = '7px'
           note.style.marginTop = '0'
           content.appendChild(note)
           // A gated stage says exactly what it is waiting for.
           if (detail.unlocked === false && detail.progress !== null) {
-            content.appendChild(el('div', 'dp-locked',
-              '🔒 要先念完' + detail.progress.label + '（' + detail.progress.done + '/' + detail.progress.need + '）'))
+            content.appendChild(el('div', 'dp-locked', '🔒 ' + T('要先念完{label}（{done}/{need}）',
+              { label: detail.progress.label, done: detail.progress.done, need: detail.progress.need })))
           }
         }
 
@@ -1319,7 +1652,7 @@ window.__ModuleLoader__.load({
             btn.appendChild(el('span', null, sub.emoji))
             var grow = el('div', 'dp-grow')
             grow.appendChild(el('div', null, sub.label))
-            grow.appendChild(el('div', 'dp-dim', sub.traitLabel + ' · 已上 ' + sub.level + ' 次'))
+            grow.appendChild(el('div', 'dp-dim', sub.traitLabel + ' · ' + T('已上 {n} 次', { n: sub.level })))
             btn.appendChild(grow)
             grid.appendChild(btn)
           })(view.subjects[i])
@@ -1329,7 +1662,7 @@ window.__ModuleLoader__.load({
 
       function workTab() {
         if (view.jobs.length === 0) {
-          content.appendChild(el('div', 'dp-empty', '宿主还没提供工作列表。'))
+          content.appendChild(el('div', 'dp-empty', T('宿主还没提供工作列表。')))
           return
         }
         var list = el('div', 'dp-list')
@@ -1339,19 +1672,19 @@ window.__ModuleLoader__.load({
             row.appendChild(el('span', null, job.emoji))
             var grow = el('div', 'dp-grow')
             grow.appendChild(el('div', null, job.label))
-            var line = job.minutes + ' 分钟 · 赚 ' + job.coins + ' 🪙'
+            var line = formatMinutes(job.minutes) + ' · ' + T('赚 {coins} 🪙', { coins: job.coins })
             if (job.traitPoints > 0) {
-              line += ' · 省 ' + job.speedPercent + '% 时间'
+              line += ' · ' + T('省 {pct}% 时间', { pct: job.speedPercent })
             }
             grow.appendChild(el('div', 'dp-dim', line))
             // Spell out which lessons are paying for this, or the linkage between
             // 学习 and 打工 is invisible.
             var byTrait = job.traitEmoji + job.traitLabel + ' ' + job.traitPoints
-              + (job.payPercent > 0 ? ' · 报酬 +' + job.payPercent + '%' : ' · 去上课就能涨')
+              + ' · ' + (job.payPercent > 0 ? T('报酬 +{pct}%', { pct: job.payPercent }) : T('去上课就能涨'))
             grow.appendChild(el('div', 'dp-dim', byTrait))
             row.appendChild(grow)
             var go = button('dp-mini', { 'data-job': job.key }, function () { send('work', { job: job.key }) })
-            go.textContent = '出发'
+            go.textContent = T('出发')
             go.disabled = !view.canGoOut
             row.appendChild(go)
             list.appendChild(row)
@@ -1362,11 +1695,11 @@ window.__ModuleLoader__.load({
 
       function shopTab() {
         if (view.shop.length === 0) {
-          content.appendChild(el('div', 'dp-empty', '宿主还没提供货架。'))
+          content.appendChild(el('div', 'dp-empty', T('宿主还没提供货架。')))
           return
         }
         var head = el('div', 'dp-title')
-        head.appendChild(el('b', null, '🛒 商店'))
+        head.appendChild(el('b', null, '🛒 ' + T('商店')))
         head.appendChild(el('span', null, '🪙 ' + view.pig.coins))
         content.appendChild(head)
         var list = el('div', 'dp-list')
@@ -1381,16 +1714,17 @@ window.__ModuleLoader__.load({
             // Shelves, so 21 items read as five short lists instead of one long one.
             if (item.kind !== shelf) {
               shelf = item.kind
-              list.appendChild(el('div', 'dp-shelf', KIND_TITLE[shelf] ?? shelf))
+              var title = KIND_TITLE[shelf]
+              list.appendChild(el('div', 'dp-shelf', title === undefined ? shelf : title[0] + ' ' + T(title[1])))
             }
             var row = el('div', 'dp-item' + (item.needed ? ' dp-wanted' : ''))
             row.appendChild(el('span', null, item.emoji))
             var grow = el('div', 'dp-grow')
             grow.appendChild(el('div', null, item.label))
-            grow.appendChild(el('div', 'dp-dim', item.price + ' 🪙' + (item.needed ? ' · 现在需要' : '')))
+            grow.appendChild(el('div', 'dp-dim', item.price + ' 🪙' + (item.needed ? ' · ' + T('现在需要') : '')))
             row.appendChild(grow)
             var buy = button('dp-mini', { 'data-buy': item.key }, function () { send('buy', { item: item.key }) })
-            buy.textContent = '买'
+            buy.textContent = T('买')
             buy.disabled = !item.affordable
             row.appendChild(buy)
             list.appendChild(row)
@@ -1401,7 +1735,7 @@ window.__ModuleLoader__.load({
 
       function travelTab() {
         if (view.trips.length === 0) {
-          content.appendChild(el('div', 'dp-empty', '宿主还没提供目的地。'))
+          content.appendChild(el('div', 'dp-empty', T('宿主还没提供目的地。')))
           return
         }
         var list = el('div', 'dp-list')
@@ -1411,10 +1745,10 @@ window.__ModuleLoader__.load({
             row.appendChild(el('span', null, trip.emoji))
             var grow = el('div', 'dp-grow')
             grow.appendChild(el('div', null, trip.label))
-            grow.appendChild(el('div', 'dp-dim', trip.minutes + ' 分钟 · ' + trip.cost + ' 🪙'))
+            grow.appendChild(el('div', 'dp-dim', formatMinutes(trip.minutes) + ' · ' + trip.cost + ' 🪙'))
             row.appendChild(grow)
             var go = button('dp-mini', { 'data-trip': trip.key }, function () { send('trip', { trip: trip.key }) })
-            go.textContent = '出发'
+            go.textContent = T('出发')
             go.disabled = !view.canGoOut || !trip.affordable
             row.appendChild(go)
             list.appendChild(row)
@@ -1425,9 +1759,9 @@ window.__ModuleLoader__.load({
         var souvenirs = view.pig.souvenirs
         var head = el('div', 'dp-title')
         head.style.marginTop = '10px'
-        head.appendChild(el('b', null, '🎁 纪念品 ' + souvenirs.length))
+        head.appendChild(el('b', null, '🎁 ' + T('纪念品') + ' ' + souvenirs.length))
         content.appendChild(head)
-        content.appendChild(el('div', 'dp-empty', souvenirs.length === 0 ? '还没出过远门。' : souvenirs.join(' · ')))
+        content.appendChild(el('div', 'dp-empty', souvenirs.length === 0 ? T('还没出过远门。') : souvenirs.join(' · ')))
       }
 
       function bagTab() {
@@ -1436,7 +1770,7 @@ window.__ModuleLoader__.load({
           if (num(view.inventory[view.shop[i].key], 0) > 0) owned.push(view.shop[i])
         }
         if (owned.length === 0) {
-          content.appendChild(el('div', 'dp-empty', '背包空空的 —— 去「商店」买点东西。'))
+          content.appendChild(el('div', 'dp-empty', T('背包空空的 —— 去「商店」买点东西。')))
         } else {
           var list = el('div', 'dp-list')
           for (var j = 0; j < owned.length; j += 1) {
@@ -1448,7 +1782,7 @@ window.__ModuleLoader__.load({
               grow.appendChild(el('div', 'dp-dim', kindLabel(item)))
               row.appendChild(grow)
               var use = button('dp-mini', { 'data-use': item.key }, function () { send('use', { item: item.key }) })
-              use.textContent = '使用'
+              use.textContent = T('使用')
               row.appendChild(use)
               list.appendChild(row)
             })(owned[j])
@@ -1459,23 +1793,29 @@ window.__ModuleLoader__.load({
         var souvenirs = view.pig.souvenirs
         var head = el('div', 'dp-title')
         head.style.marginTop = '10px'
-        head.appendChild(el('b', null, '🎁 纪念品 ' + souvenirs.length))
+        head.appendChild(el('b', null, '🎁 ' + T('纪念品') + ' ' + souvenirs.length))
         content.appendChild(head)
-        content.appendChild(el('div', 'dp-empty', souvenirs.length === 0 ? '收藏册还空着。' : souvenirs.join(' · ')))
+        content.appendChild(el('div', 'dp-empty', souvenirs.length === 0 ? T('收藏册还空着。') : souvenirs.join(' · ')))
       }
 
-      /** "3 天" / "12 小时" / "40 分钟" for an upcoming stage. */
+      /** "3 天" / "12 小时" / "40 分钟" for an upcoming stage, in the pig's language. */
       function formatDays(days) {
-        if (days >= 1) return Math.round(days) + ' 天'
+        if (days >= 1) return T('{n} 天', { n: Math.round(days) })
         const hours = days * 24
-        return hours >= 1 ? Math.round(hours) + ' 小时' : Math.max(1, Math.round(hours * 60)) + ' 分钟'
+        return hours >= 1 ? T('{n} 小时', { n: Math.round(hours) }) : formatMinutes(Math.max(1, Math.round(hours * 60)))
+      }
+
+      /** "40 分钟" · "40分" · "40 min". */
+      function formatMinutes(minutes) {
+        return T('{n} 分钟', { n: num(minutes, 0) })
       }
 
       function kindLabel(item) {
-        if (item.kind === 'medicine') return item.needed ? '对症！' : '药'
-        if (item.kind === 'revive') return '复活用'
-        if (item.kind === 'bath') return '洗浴'
-        return '食物'
+        if (item.kind === 'medicine') return T(item.needed ? '对症！' : '药')
+        if (item.kind === 'revive') return T('复活用')
+        if (item.kind === 'bath') return T('洗浴')
+        if (item.kind === 'toy') return T('玩具')
+        return T('食物')
       }
 
       function renderContent() {
@@ -1490,16 +1830,17 @@ window.__ModuleLoader__.load({
         // hatch affordance below is the only thing that may render then.
         if (view.legacy) {
           var legacy = el('div', 'dp-alert dp-legacy')
-          legacy.appendChild(el('b', null, '⚠️ 宿主是旧版本'))
-          legacy.appendChild(el('div', null, '金币、健康、打工、商店这些是新增的，重启 dsh（不是刷新页面）之后才会出现。'))
+          legacy.appendChild(el('b', null, '⚠️ ' + T('宿主是旧版本')))
+          legacy.appendChild(el('div', null, T('金币、健康、打工、商店这些是新增的，重启 dsh（不是刷新页面）之后才会出现。')))
           content.appendChild(legacy)
         }
         if (view.pig !== null && view.dead) {
           var dead = el('div', 'dp-alert dp-dead')
-          dead.appendChild(el('b', null, '🪦 ' + view.pig.name + ' 走了' + (view.pig.soul ? '，灵魂还留在墓碑上 👻' : '')))
-          dead.appendChild(el('div', null, view.pig.soul
+          dead.appendChild(el('b', null, '🪦 ' + T(view.pig.soul ? '{name} 走了，灵魂还留在墓碑上 👻' : '{name} 走了',
+            { name: view.pig.name })))
+          dead.appendChild(el('div', null, T(view.pig.soul
             ? '用还魂丹可以把它叫回来，或者领养一只新的小猪'
-            : '在「背包」里用还魂丹就能救回来（金币、收藏、上过的课都保留）'))
+            : '在「背包」里用还魂丹就能救回来（金币、收藏、上过的课都保留）')))
           content.appendChild(dead)
           // Adopting is available the moment the pig dies — not only once the
           // soul turns up a day later. Waiting a day to start over was a
@@ -1507,13 +1848,14 @@ window.__ModuleLoader__.load({
           var adoptWrap = el('div', 'dp-actions')
           var adopt = button('dp-btn dp-btn-wide', { 'data-action': 'adopt' }, function () { send('adopt') })
           adopt.appendChild(el('span', null, '📦'))
-          adopt.appendChild(el('span', null, '领养新猪'))
+          adopt.appendChild(el('span', null, T('领养新猪')))
           adoptWrap.appendChild(adopt)
           content.appendChild(adoptWrap)
         } else if (view.pig !== null && view.pig.illness !== null) {
           var sick = el('div', 'dp-alert dp-sick')
-          sick.appendChild(el('b', null, '🤒 ' + view.pig.illness.name + '（第 ' + view.pig.illness.stage + '/4 期）'))
-          sick.appendChild(el('div', null, '需要「' + view.pig.illness.cure + '」—— 去商店买对应的药'))
+          sick.appendChild(el('b', null, '🤒 ' + T('{name}（第 {stage}/4 期）',
+            { name: view.pig.illness.name, stage: view.pig.illness.stage })))
+          sick.appendChild(el('div', null, T('需要「{cure}」—— 去商店买对应的药', { cure: view.pig.illness.cure })))
           // If it cannot afford the cure, say the way out plainly: being ill is
           // not a reason to stay home, so it can go out and earn the medicine.
           // careView only carries the consumable shelves (feed/bathe/play), so
@@ -1522,35 +1864,38 @@ window.__ModuleLoader__.load({
           var cheapest = cures.length === 0 ? null : cures.reduce(function (a, b) { return a.price <= b.price ? a : b })
           if (view.canGoOut) {
             sick.appendChild(el('div', 'dp-dim',
-              '带病也能出门，但报酬只有一半；在外面病情会走得更快，躺着养最省'))
+              T('带病也能出门，但报酬只有一半；在外面病情会走得更快，躺着养最省')))
           }
           if (cheapest !== null && view.canGoOut && view.pig.coins < cheapest.price) {
             sick.appendChild(el('div', 'dp-dim',
-              '钱不够也没关系 —— 先去打工，赚够 ' + cheapest.price + ' 🪙 买「' + cheapest.label + '」'))
+              T('钱不够也没关系 —— 先去打工，赚够 {price} 🪙 买「{item}」', { price: cheapest.price, item: cheapest.label })))
           }
           content.appendChild(sick)
         } else if (view.pig !== null && view.activity !== null) {
           var away = el('div', 'dp-alert dp-work')
-          away.appendChild(el('b', null, view.activity.emoji + ' 在外面：' + view.activity.label))
-          away.appendChild(el('div', null, '还有 ' + view.activity.secondsLeft + ' 秒'))
+          away.appendChild(el('b', null, view.activity.emoji + ' ' + T('在外面：{label}', { label: view.activity.label })))
+          away.appendChild(el('div', null, T('还有 {n} 秒', { n: view.activity.secondsLeft })))
           content.appendChild(away)
           var wrap = el('div', 'dp-actions')
           var call = button('dp-btn dp-btn-wide', { 'data-action': 'calloff' }, function () { send('calloff') })
           call.appendChild(el('span', null, '↩️'))
-          call.appendChild(el('span', null, '叫它回来'))
+          call.appendChild(el('span', null, T('叫它回来')))
           wrap.appendChild(call)
           content.appendChild(wrap)
         }
 
         if (view.pig === null) {
-          content.appendChild(el('div', 'dp-empty', '门口放着一个纸盒，里面窸窸窣窣 📦'))
+          content.appendChild(el('div', 'dp-empty', T('门口放着一个纸盒，里面窸窸窣窣 📦')))
           var grid = el('div', 'dp-actions')
           var hatch = button('dp-btn dp-btn-wide', { 'data-action': 'hatch' }, function () { send('hatch') })
           hatch.appendChild(el('span', null, '🥚'))
-          hatch.appendChild(el('span', null, '拆开纸盒'))
+          hatch.appendChild(el('span', null, T('拆开纸盒')))
           grid.appendChild(hatch)
           content.appendChild(grid)
-          content.appendChild(el('div', 'dp-empty', '拆开就会蹦出一只小猪 —— 不用敲命令'))
+          content.appendChild(el('div', 'dp-empty', T('拆开就会蹦出一只小猪 —— 不用敲命令')))
+          // The language can be picked before the pig exists.
+          content.appendChild(langSwitcher())
+          fitPanel()
           return
         }
 
@@ -1575,6 +1920,13 @@ window.__ModuleLoader__.load({
 
       function render(next) {
         view = normalize(next)
+        // [dsh-piggy-claude-code mod] everything below is rebuilt from scratch
+        // on every render, so switching language needs nothing but this.
+        currentLang = view.lang
+        host.setAttribute('lang', view.lang)
+        relabelBar()
+        scene.title = T('左键摸摸 · 右键打开面板 · 拖动可移动')
+        pokeHintText.textContent = T('戳三下')
         host.setAttribute('data-dead', view.dead ? 'true' : 'false')
         host.setAttribute('data-open', isOpen ? 'true' : 'false')
       host.setAttribute('data-dev', 'false')
@@ -1587,7 +1939,7 @@ window.__ModuleLoader__.load({
           prop.textContent = view.activity.emoji
           progressFill.style.width = view.activity.progress + '%'
           work.setAttribute('data-kind', view.activity.kind)
-          work.title = (AWAY_LINE[view.activity.kind] ?? '在外面') + '：' + view.activity.label
+          work.title = T('{what}：{label}', { what: T(AWAY_LINE[view.activity.kind] ?? '在外面'), label: view.activity.label })
         }
 
         if (view.hatched !== true) {
@@ -1604,8 +1956,8 @@ window.__ModuleLoader__.load({
           host.setAttribute('data-faded', 'false')
           host.setAttribute('data-unhatched', 'true')
           pokeHint.hidden = false
-          hudName.textContent = '一个' + view.boxStage.label
-          hudCoins.textContent = '点开拆开它'
+          hudName.textContent = T('一个{box}', { box: view.boxStage.label })
+          hudCoins.textContent = T('点开拆开它')
           hudHealth.textContent = ''
           lastStage = null
         } else {
@@ -1640,7 +1992,7 @@ window.__ModuleLoader__.load({
           if (lastStage !== null && stage.key !== lastStage) {
             react('levelup', 950)
             burst(['✨', '🎉', '⭐'], 4)
-            showBubble('我长大啦！' + stage.emoji, 2600)
+            showBubble(T('我长大啦！') + stage.emoji, 2600)
           }
           lastStage = stage.key
         }
@@ -1654,7 +2006,7 @@ window.__ModuleLoader__.load({
           var event = view.pending[i]
           if (event.at <= lastPendingAt) continue
           lastPendingAt = event.at
-          toast(str(event.text, '猪有新消息'))
+          toast(str(event.text, T('猪有新消息')))
           if (event.kind === 'levelup') { react('levelup', 950); burst(['✨', '🎉'], 3) }
           else if (event.kind === 'cured') { react('cure', 900); burst(['💚', '✨'], 3) }
           else if (event.kind === 'death') react('refuse', 700)
@@ -1678,13 +2030,14 @@ window.__ModuleLoader__.load({
           render(await res.json())
         } catch (error) {
           if (stopped) return
-          showBubble('连接不上宿主', 4000)
+          showBubble(T('连接不上宿主'), 4000)
         }
       }
 
       async function send(action, extra) {
         if (busy || stopped) return
-        if (view.pig === null && action !== 'hatch') return
+        // The language can be switched before hatching, too.
+        if (view.pig === null && action !== 'hatch' && action !== 'lang') return
         busy = true
         flash(action)
         try {
@@ -1701,11 +2054,10 @@ window.__ModuleLoader__.load({
             react('refuse', 520)
             if (next.reason === 'no-item') {
               var emptyKind = str(next.kind, '')
-              showBubble(NO_ITEM_LINE[emptyKind] ?? '背包里没有能用的东西', 3200)
+              showBubble(T(NO_ITEM_LINE[emptyKind] ?? '背包里没有能用的东西'), 3200)
               return
             }
             var reasons = {
-              cooldown: '还要等 ' + num(next.wait, 0) + ' 秒',
               poor: '钱不够',
               away: '它在外面',
               weak: '太虚弱了，先养好再出门',
@@ -1715,11 +2067,14 @@ window.__ModuleLoader__.load({
               'not-sick': '它没生病',
               dead: '它已经走了…',
               idle: '它没在外面',
+              'bad-lang': '不认识这种语言',
             }
-            showBubble(reasons[next.reason] ?? '这个操作没成', 2400)
+            showBubble(next.reason === 'cooldown'
+              ? T('还要等 {n} 秒', { n: num(next.wait, 0) })
+              : T(reasons[next.reason] ?? '这个操作没成'), 2400)
           }
         } catch (error) {
-          showBubble('操作没送到宿主', 2600)
+          showBubble(T('操作没送到宿主'), 2600)
           react('refuse', 520)
         } finally {
           busy = false
@@ -1773,14 +2128,14 @@ window.__ModuleLoader__.load({
         if (boxPokes >= BOX_POKES_TO_OPEN) {
           boxPokes = 0
           host.removeAttribute('data-poke')
-          showBubble('哇——！', 1200)
+          showBubble(T('哇——！'), 1200)
           burst(['✨', '🎉', '💨'], 6)
           send('hatch')
           return
         }
         host.setAttribute('data-poke', String(boxPokes))
         burst(['💨'], 2)
-        showBubble(BOX_POKE_LINES[boxPokes - 1], 2200)
+        showBubble(T(BOX_POKE_LINES[boxPokes - 1]), 2200)
       }
 
       // Left click is a pat on the head. The menu is on the context menu, so a
@@ -1824,10 +2179,10 @@ window.__ModuleLoader__.load({
         if (devMode) {
           setOpen(true)
           select('dev')
-          showBubble('🔧 开发者模式已开', 2000)
+          showBubble('🔧 ' + T('开发者模式已开'), 2000)
         } else {
           if (tab === 'dev') select('status')
-          showBubble('开发者模式已关', 1600)
+          showBubble(T('开发者模式已关'), 1600)
         }
       }
 
@@ -1871,6 +2226,9 @@ window.__ModuleLoader__.load({
 
     exports.name = 'dsh-piggy'
     exports.apply = apply
+    // For tests and tooling, like the host's `dictionaries`.
+    exports.I18N = I18N
+    exports.tr = tr
     return module.exports
   },
 })

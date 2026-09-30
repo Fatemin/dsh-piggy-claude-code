@@ -1165,3 +1165,177 @@ test('right-click opens the menu and left-click only pats the pig', async () => 
   // The tooltip is the only discoverability right-click gets.
   assert.match(sceneOf(dom).title, /右键/, 'the pig must say how to open the menu')
 })
+
+// ===========================================================================
+// [dsh-piggy-claude-code mod] Languages: zh · ja · en
+// ===========================================================================
+
+const LANGS = [{ key: 'zh', label: '中文' }, { key: 'ja', label: '日本語' }, { key: 'en', label: 'English' }]
+const TAB_KEYS = ['status', 'study', 'work', 'shop', 'travel', 'bag']
+// The fake DOM keeps children when `textContent = ''` clears a node, so after
+// a re-render the freshest element is the last match, not the first.
+const findLastByAttr = (root, attr, value) => {
+  let last
+  root.walk(node => { if (node.attributes?.[attr] === value) last = node })
+  return last
+}
+const tabLabels = dom => TAB_KEYS.map(key => findByAttr(barOf(dom), 'data-tab', key).allText().replace(/\s+/g, ' ').trim())
+
+/** The dictionary and translator the bundle exposes for tests. */
+async function clientI18n() {
+  const { registration } = await loadClient()
+  const exports = registration.factory(() => {})
+  return { I18N: exports.I18N, tr: exports.tr }
+}
+
+test('an English snapshot renders the tabs and the status bars in English', async () => {
+  const { registration, dom } = await loadClient({ status: { ...SNAPSHOT, lang: 'en', langs: LANGS } })
+  registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(dom)
+
+  assert.deepEqual(tabLabels(dom), ['📋 Status', '📚 Study', '💼 Work', '🛒 Shop', '🧳 Travel', '🎒 Bag'])
+  const text = contentOf(dom).allText()
+  for (const label of ['Fullness', 'Mood', 'Cleanliness', 'Health', 'Smarts', 'Charm', 'Strength', 'Weight', 'Age', 'Feed', 'Bathe', 'Play', 'Pat']) {
+    assert.ok(text.includes(label), `expected "${label}" in: ${text}`)
+  }
+  for (const zh of ['饱食', '心情', '清洁', '智力', '喂食']) {
+    assert.ok(!text.includes(zh), `"${zh}" should be translated: ${text}`)
+  }
+  assert.equal(hostOf(dom).attributes.lang, 'en')
+  assert.doesNotMatch(sceneOf(dom).title, /右键/, 'the tooltip follows the language too')
+})
+
+test('a Japanese snapshot renders the tabs and the status bars in Japanese', async () => {
+  const { registration, dom } = await loadClient({ status: { ...SNAPSHOT, lang: 'ja', langs: LANGS } })
+  registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(dom)
+
+  assert.deepEqual(tabLabels(dom), ['📋 ようす', '📚 勉強', '💼 バイト', '🛒 おみせ', '🧳 旅行', '🎒 バッグ'])
+  const text = contentOf(dom).allText()
+  for (const label of ['おなか', 'きげん', 'きれいさ', '健康', 'かしこさ', 'みりょく', 'ちから', '体重', '年齢', 'ごはん', 'おふろ', 'あそぶ', 'なでなで']) {
+    assert.ok(text.includes(label), `expected "${label}" in: ${text}`)
+  }
+})
+
+test('labels the host sent are shown as sent, never translated twice', async () => {
+  const { registration, dom } = await loadClient({
+    status: { ...SNAPSHOT, lang: 'en', langs: LANGS, pig: { ...PIG, stage: { ...PIG.stage, label: '小猪' } } },
+  })
+  registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(dom)
+  const text = contentOf(dom).allText()
+  // '小猪' is a dictionary key, but here it came from the host, so it stays.
+  assert.ok(text.includes('小猪'), text)
+  pickTab(dom, 'work')
+  assert.ok(contentOf(dom).allText().includes('打零工'), 'job names are the host\'s business')
+})
+
+test('durations and counts read naturally in each language', async () => {
+  for (const [lang, expected] of [['zh', ['1 分钟', '已上 2 次']], ['ja', ['1分', 'じゅぎょう 2 回']], ['en', ['1 min', '2 lessons so far']]]) {
+    const { registration, dom } = await loadClient({ status: { ...SNAPSHOT, lang, langs: LANGS } })
+    registration.factory(() => {}).apply({})
+    await settle()
+    openPanel(dom)
+    pickTab(dom, 'work')
+    assert.ok(contentOf(dom).allText().includes(expected[0]), `${lang}: ${contentOf(dom).allText()}`)
+    pickTab(dom, 'study')
+    assert.ok(contentOf(dom).allText().includes(expected[1]), `${lang}: ${contentOf(dom).allText()}`)
+  }
+  const { tr } = await clientI18n()
+  assert.equal(tr('en', '{n} 天', { n: 1 }), '1 day')
+  assert.equal(tr('en', '{n} 天', { n: 3 }), '3 days')
+  assert.equal(tr('ja', '{n} 天', { n: 3 }), '3日')
+  assert.equal(tr('zh', '{n} 天', { n: 3 }), '3 天')
+})
+
+test('the language switcher sits on the status tab and posts the choice', async () => {
+  const { registration, dom, net } = await loadClient({
+    status: { ...SNAPSHOT, lang: 'zh', langs: LANGS },
+    actResult: { ...SNAPSHOT, ok: true, lang: 'ja', langs: LANGS },
+  })
+  registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(dom)
+
+  const text = contentOf(dom).allText()
+  assert.ok(text.includes('🌐 语言'), text)
+  const zh = findByAttr(contentOf(dom), 'data-lang', 'zh')
+  const ja = findByAttr(contentOf(dom), 'data-lang', 'ja')
+  const en = findByAttr(contentOf(dom), 'data-lang', 'en')
+  assert.ok(zh && ja && en, 'one button per language')
+  assert.equal(zh.attributes['aria-pressed'], 'true')
+  assert.equal(ja.attributes['aria-pressed'], 'false')
+  // Each language is named in its own language.
+  assert.equal(ja.allText().trim(), '日本語')
+  assert.equal(en.allText().trim(), 'English')
+  assert.match(findByClass(contentOf(dom), 'dp-langs').className, /dp-actions/)
+
+  ja.fire('click')
+  await settle()
+  await settle()
+  const post = net.calls.find(call => call.method === 'POST')
+  assert.deepEqual(JSON.parse(post.body), { action: 'lang', lang: 'ja' })
+
+  // The reply is rendered straight away: no reload, the whole panel switches.
+  assert.equal(tabLabels(dom)[0], '📋 ようす')
+  assert.ok(contentOf(dom).allText().includes('🌐 言語'), contentOf(dom).allText())
+  assert.equal(findLastByAttr(contentOf(dom), 'data-lang', 'ja').attributes['aria-pressed'], 'true')
+  assert.equal(findLastByAttr(contentOf(dom), 'data-lang', 'zh').attributes['aria-pressed'], 'false')
+})
+
+test('the language can be switched while the pig is still a box', async () => {
+  const box = { ok: true, hatched: false, dead: false, pig: null, pending: [], lang: 'zh', langs: LANGS }
+  const { registration, dom, net } = await loadClient({ status: box, actResult: { ...box, lang: 'ja' } })
+  registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(dom)
+
+  assert.notEqual(findByAttr(contentOf(dom), 'data-action', 'hatch'), undefined)
+  const ja = findByAttr(contentOf(dom), 'data-lang', 'ja')
+  assert.notEqual(ja, undefined, 'the switcher is there before hatching')
+  ja.fire('click')
+  await settle()
+  await settle()
+  const post = net.calls.find(call => call.method === 'POST')
+  assert.deepEqual(JSON.parse(post.body), { action: 'lang', lang: 'ja' })
+  assert.ok(findLastByAttr(contentOf(dom), 'data-action', 'hatch').allText().includes('箱をあける'))
+})
+
+test('a host that sends no language list still offers all three', async () => {
+  const { registration, dom } = await loadClient({ status: { ...SNAPSHOT, lang: 'klingon', langs: 'nope' } })
+  registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(dom)
+  // An unknown language falls back to Chinese, like the host's normalizeLang.
+  assert.equal(tabLabels(dom)[0], '📋 状态')
+  for (const key of ['zh', 'ja', 'en']) {
+    assert.notEqual(findByAttr(contentOf(dom), 'data-lang', key), undefined, key)
+  }
+})
+
+test('every Japanese key has an English twin and vice versa', async () => {
+  const { I18N } = await clientI18n()
+  const ja = Object.keys(I18N.ja).sort()
+  const en = Object.keys(I18N.en).sort()
+  assert.ok(ja.length > 100, `expected a real dictionary, got ${ja.length}`)
+  assert.deepEqual(ja.filter(key => !(key in I18N.en)), [], 'in ja but not en')
+  assert.deepEqual(en.filter(key => !(key in I18N.ja)), [], 'in en but not ja')
+  // Placeholders must survive translation, or a value silently disappears.
+  const holes = text => (text.match(/\{\w+\}/g) ?? []).sort().join()
+  for (const key of ja) {
+    assert.equal(holes(I18N.ja[key]), holes(key), `ja placeholders for "${key}"`)
+    assert.equal(holes(I18N.en[key]), holes(key), `en placeholders for "${key}"`)
+  }
+})
+
+test('every string the bundle translates has a translation', async () => {
+  const { I18N } = await clientI18n()
+  const source = await readSource()
+  const used = [...source.matchAll(/\b[TL]\('((?:[^'\\]|\\.)+)'/g)].map(m => m[1])
+  assert.ok(used.length > 50, `expected many T() calls, got ${used.length}`)
+  const missing = [...new Set(used)].filter(key => !(key in I18N.ja) || !(key in I18N.en))
+  assert.deepEqual(missing, [], 'T() keys missing from the dictionary')
+})

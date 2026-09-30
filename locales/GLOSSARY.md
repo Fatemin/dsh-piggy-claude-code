@@ -19,7 +19,7 @@ The pig is referred to as "it" in English and by name or 「この子」 in Japa
 | 体重 | 体重 | Weight |
 | 年龄 | 年齢 | Age |
 | 经验 | けいけんち | XP |
-| 状态 · 学习 · 打工 · 商店 · 旅行 · 背包 (six tabs) | ステータス · 勉強 · バイト · ショップ · 旅行 · バッグ | Status · Study · Work · Shop · Travel · Bag |
+| 状态 · 学习 · 打工 · 商店 · 旅行 · 背包 (six tabs) | ようす · 勉強 · バイト · おみせ · 旅行 · バッグ | Status · Study · Work · Shop · Travel · Bag |
 | 喂食 · 洗澡 · 玩耍 · 摸摸 | ごはん · おふろ · あそぶ · なでなで | Feed · Bathe · Play · Pat |
 | 纸盒 | ダンボール箱 | box |
 | 拆开纸盒 | 箱をあける | Open the box |

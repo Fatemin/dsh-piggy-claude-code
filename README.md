@@ -133,6 +133,7 @@ pig hatch | feed | bathe | play | pet
 pig study <科目> <小学|大学|研究生>    pig work <odd|site|office>    pig trip <suburb|mountain|sea|abroad>
 pig shop | buy <物品> | use <物品> | calloff | weigh | name <名字>
 pig look 老年 | 原版                  80 kg 以后切换老年猪 / 原版小猪的样子
+pig lang zh | ja | en                 切换语言
 pig serve                            面板服务
 pig status-line                      一行状态
 ```
@@ -151,8 +152,18 @@ pig status-line                      一行状态
 | 体重从哪来 | 每个事件、每次喂食固定加几克 | **只来自真正吃下去的饱食度**：每点约 98 g，80 kg 后约 50 g。吃饱了再喂不长肉 |
 | 长大要多久 | — | 正常照顾（饱食度每天自然消耗约 115 点）：约 1 周到 80 kg，约 2 周到 120 kg |
 | 寿命 | 第 14 天老死 | **不会老死**；生病拖到健康归零仍会死，还魂丹照样能救 |
+| 语言 | 只有中文 | **中文 / 日本語 / English** 随时切换：面板状态页、托盘 / 菜单栏菜单、`pig lang zh\|ja\|en` |
 
 改动集中在 `data.js`（`GROWTH`、`LIFE_STAGES`）、`core.js`（`lifeStageFor`、`growFromFood`、`setLook`）、`index.js`、`store.js`、`client.js`，都标了 `[dsh-piggy-claude-code mod]`。
+
+### 多语言
+
+语言跟着存档走：面板、状态栏、托盘 / 菜单栏、终端命令都用同一只猪的语言。
+
+- 新猪默认用 `PIG_LANG`；桌面猪和独立桌宠 App 会把系统语言传进去，所以第一次打开就是你电脑的语言。没有设置时是中文
+- 这个功能出现之前的老存档一律保持中文，不会自己变
+- 翻译以中文原文为键（gettext 方式），词典在 `locales/`，术语表在 [`locales/GLOSSARY.md`](locales/GLOSSARY.md)；缺翻译时回落到中文
+- 切换前已经写下的回忆和公告保持原来的语言，之后的新内容用新语言
 
 ## 怎么接上的
 

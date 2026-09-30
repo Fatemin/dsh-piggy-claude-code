@@ -10,19 +10,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let statusLineItem = NSMenuItem(title: "🐖 …", action: nil, keyEquivalent: "")
     private var toggleItem: NSMenuItem?
     private var peekTimer: Timer?
+    /// The pig's language (zh · ja · en), read from the panel server.
+    private var lang = "zh"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
         Task { @MainActor in
             guard await server.ensureRunning() else {
-                statusLineItem.title = "面板服务没起来：检查 \(server.root.path)"
+                statusLineItem.title = t("面板服务没起来：检查 {path}").replacingOccurrences(of: "{path}", with: server.root.path)
                 return
             }
             pet.load(server.deskURL)
             pet.show()
-            refreshToggleTitle()
             await refreshPeek()
-            peekTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+            peekTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
                 Task { @MainActor in await self?.refreshPeek() }
             }
         }
@@ -41,18 +42,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             item.button?.title = "🐖"
         }
+        rebuildMenu()
+    }
+
+    /// Menu titles follow the pig's language, so the menu is rebuilt when it changes.
+    private func rebuildMenu() {
         let menu = NSMenu()
         menu.addItem(statusLineItem)
         menu.addItem(.separator())
-        let toggle = NSMenuItem(title: "隐藏猪", action: #selector(togglePet), keyEquivalent: "")
-        toggle.target = self
+        let toggle = action(pet.isVisible ? t("隐藏猪") : t("显示猪"), #selector(togglePet))
         toggleItem = toggle
         menu.addItem(toggle)
-        menu.addItem(action("猪回到右下角", #selector(resetPosition)))
-        menu.addItem(action("在浏览器打开面板", #selector(openInBrowser)))
-        menu.addItem(action("重新载入", #selector(reload)))
+        menu.addItem(action(t("猪回到右下角"), #selector(resetPosition)))
+        menu.addItem(action(t("在浏览器打开面板"), #selector(openInBrowser)))
+        menu.addItem(action(t("重新载入"), #selector(reload)))
         menu.addItem(.separator())
-        menu.addItem(action("退出", #selector(quit)))
+        let languages = NSMenuItem(title: "🌐 " + t("语言"), action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        for (key, name) in Self.languages {
+            let choice = action(name, #selector(chooseLanguage(_:)))
+            choice.representedObject = key
+            choice.state = key == lang ? .on : .off
+            submenu.addItem(choice)
+        }
+        languages.submenu = submenu
+        menu.addItem(languages)
+        menu.addItem(.separator())
+        menu.addItem(action(t("退出"), #selector(quit)))
         item.menu = menu
     }
 
@@ -63,13 +79,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshPeek() async {
-        let line = await server.peek() ?? "🐖 面板服务无响应"
-        statusLineItem.title = line
-        item.button?.toolTip = line
+        guard let peek = await server.peek() else {
+            statusLineItem.title = t("🐖 面板服务无响应")
+            return
+        }
+        statusLineItem.title = peek.line
+        item.button?.toolTip = peek.line
+        if let next = peek.lang, next != lang {
+            lang = next
+            rebuildMenu()
+        }
     }
 
     private func refreshToggleTitle() {
-        toggleItem?.title = pet.isVisible ? "隐藏猪" : "显示猪"
+        toggleItem?.title = pet.isVisible ? t("隐藏猪") : t("显示猪")
     }
 
     @objc private func togglePet() {
@@ -91,7 +114,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pet.reload()
     }
 
+    @objc private func chooseLanguage(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String else { return }
+        Task { @MainActor in
+            await server.act(["action": "lang", "lang": key])
+            await refreshPeek()
+        }
+    }
+
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+
+    // MARK: language
+
+    private static let languages: [(String, String)] = [("zh", "中文"), ("ja", "日本語"), ("en", "English")]
+
+    /// Menu strings; Chinese is the key, like the pig's own i18n.js.
+    private static let strings: [String: [String: String]] = [
+        "ja": [
+            "隐藏猪": "ブタをかくす",
+            "显示猪": "ブタを表示",
+            "猪回到右下角": "ブタを右下にもどす",
+            "在浏览器打开面板": "ブラウザでパネルを開く",
+            "重新载入": "再読み込み",
+            "语言": "言語",
+            "退出": "終了",
+            "🐖 面板服务无响应": "🐖 パネルサーバーが応答しません",
+            "面板服务没起来：检查 {path}": "パネルサーバーを起動できません：{path} を確認してください",
+        ],
+        "en": [
+            "隐藏猪": "Hide the pig",
+            "显示猪": "Show the pig",
+            "猪回到右下角": "Move the pig back to the corner",
+            "在浏览器打开面板": "Open the panel in a browser",
+            "重新载入": "Reload",
+            "语言": "Language",
+            "退出": "Quit",
+            "🐖 面板服务无响应": "🐖 The panel server is not answering",
+            "面板服务没起来：检查 {path}": "The panel server did not start: check {path}",
+        ],
+    ]
+
+    private func t(_ zh: String) -> String {
+        Self.strings[lang]?[zh] ?? zh
     }
 }
