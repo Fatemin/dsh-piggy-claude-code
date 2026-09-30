@@ -16,6 +16,8 @@
 | 网页面板 | 上游原版的六图标面板（手绘小猪 / 老年猪 SVG），浏览器打开 | 全平台 |
 | 桌面悬浮猪 | 透明、置顶的桌面宠物 + 菜单栏图标，点击猪以外的地方直接穿透 | macOS |
 
+> **不用 Claude Code、只想要一只桌宠？** 用 `app/` 里的独立桌面版（Windows + macOS，双击安装，自带运行时，不需要命令行），见下面「独立桌宠 App」。
+
 ## 需要
 
 - Claude Code（带 `PostToolUseFailure` / `StopFailure` hook 的版本；在 2.1.285 上验证）
@@ -100,6 +102,28 @@ node ~/dsh-piggy-claude-code/bin/pig.js serve
 > 如果 `swift build` 报 `Invalid manifest` / 链接失败（部分 macOS 版本上 Command Line Tools 自带的 Swift 会这样），`brew install swift` 后再构建即可，`build.command` 会自动优先用 Homebrew 的工具链。
 
 自检：用 `PIGGY_DEBUG_SNAPSHOT=<目录>` 启动时，App 会把窗口渲染（收起 / 展开）和点击穿透判定写进该目录，不需要录屏权限。
+
+## 独立桌宠 App（Windows + macOS）
+
+`app/` 是 Electron 版的桌面猪：不接 Claude Code，双击就能用，适合只想养猪的人。猪的逻辑、面板和上面的桌面悬浮猪是同一份（`app/scripts/sync.mjs` 把根目录的运行时拷进去）。
+
+- Mac：`.dmg`，通用包（Intel + Apple 芯片）；Windows：一键安装的 `Setup.exe`（x64，免管理员）
+- 右键开菜单、左键摸摸、拖动移动，猪以外的区域点击穿透；托盘 / 菜单栏图标可隐藏、复位、开机自启、退出
+- 存档在系统的应用数据目录（Mac `~/Library/Application Support/DSH Piggy/`，Windows `%APPDATA%\DSH Piggy\`），和 Claude Code 版互不影响
+
+```bash
+cd app && npm install
+```
+
+```bash
+npm run dist:mac
+```
+
+```bash
+npm run dist:win
+```
+
+产物在 `app/dist/`。未签名：Mac 首次打开要在「系统设置 → 隐私与安全性」里点「仍要打开」，Windows 要在 SmartScreen 里点「更多信息 → 仍要运行」。给不熟悉电脑的人的说明见 [`app/share-readme.txt`](app/share-readme.txt)。开发时 `npm start` 直接运行。
 
 ## 命令
 

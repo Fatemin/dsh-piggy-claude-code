@@ -1,0 +1,76 @@
+{
+  "name": "dsh-piggy-desk",
+  "productName": "DSH Piggy",
+  "version": "0.2.0",
+  "description": "🐖 dsh-piggy as a standalone desktop pet for Windows and macOS",
+  "main": "main.mjs",
+  "private": true,
+  "license": "MIT",
+  "author": "dsh-piggy-claude-code contributors",
+  "homepage": "https://github.com/Fatemin/dsh-piggy-claude-code",
+  "scripts": {
+    "sync": "node scripts/sync.mjs",
+    "start": "npm run sync && electron .",
+    "dist:mac": "npm run sync && electron-builder --mac",
+    "dist:win": "npm run sync && electron-builder --win"
+  },
+  "build": {
+    "appId": "io.github.dsh-piggy.desk",
+    "productName": "DSH Piggy",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.mjs",
+      "preload.cjs",
+      "package.json",
+      "pig/**",
+      "build/tray.png",
+      "build/tray@2x.png"
+    ],
+    "asar": false,
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.entertainment",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "extendInfo": {
+        "LSUIElement": true
+      },
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "title": "DSH Piggy"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "DSH Piggy",
+      "createDesktopShortcut": true,
+      "runAfterFinish": true
+    }
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  }
+}
