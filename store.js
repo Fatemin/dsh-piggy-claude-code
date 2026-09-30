@@ -23,6 +23,7 @@ import {
   act as coreAct,
   buy as coreBuy,
   setLook as coreSetLook,
+  setLang as coreSetLang,
   callOffActivity as coreCallOff,
   decay,
   drainPending,
@@ -170,6 +171,15 @@ export function createStore(filePath = defaultStatePath(), options = {}) {
 
     /** [dsh-piggy-claude-code mod] Elder look: 'elder' or 'original'. */
     setLook: look => mutate(live => coreSetLook(live, look, now())),
+
+    /**
+     * [dsh-piggy-claude-code mod] Language: zh · ja · en. Works before there is a
+     * pig too — the choice is kept on an unopened box.
+     */
+    setLang(lang) {
+      if (state === null) state = coreReset(now())
+      return mutate(live => coreSetLang(live, lang, now()))
+    },
 
     /** Use one item from the backpack. */
     useItem: itemKey => mutate(live => coreUseItem(live, itemKey, now())),

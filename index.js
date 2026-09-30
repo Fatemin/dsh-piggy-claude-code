@@ -40,6 +40,7 @@ import {
   daysToNextStage,
   kgToNextStage,
   canChooseLook,
+  langOf,
   hasSoul,
   LIFE_STAGES,
   lifeStageFor,
@@ -64,6 +65,7 @@ import {
   renderWorkReport,
 } from './render.js'
 import { createStore } from './store.js'
+import { LANGS, LANG_NAMES, tr } from './i18n.js'
 
 export const name = 'dsh-piggy'
 
@@ -124,6 +126,7 @@ const OPERATIONS = {
   calloff: store => store.callOffActivity(),
   // [dsh-piggy-claude-code mod] switch an elder pig's drawing.
   look: (store, body) => store.setLook(str(body.look)),
+  lang: (store, body) => store.setLang(str(body.lang)),
   buy: (store, body) => store.buy(str(body.item)),
   use: (store, body) => store.useItem(str(body.item)),
 }
@@ -233,7 +236,7 @@ export function apply(ctx, config = {}) {
     commandCtx.commands.register({
       name: commandName,
       description: 'your pig 🐖: status · study · work · shop · travel · bag',
-      input: { hint: '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|about]' },
+      input: { hint: '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]' },
       handler: invocation => {
         try {
           return dispatch(store, commandName, String(invocation.rawInput ?? ''))
@@ -283,6 +286,9 @@ function activityProgress(activity, nowMs) {
   return Math.max(0, Math.min(100, Math.round(((nowMs - activity.startedAt) / span) * 100)))
 }
 
+/** [dsh-piggy-claude-code mod] Languages the panel offers, each named in itself. */
+const langChoices = () => LANGS.map(key => ({ key, label: LANG_NAMES[key] }))
+
 export function snapshot(store, options = {}) {
   const drain = options.drain !== false
   const state = store.freshen()
@@ -291,6 +297,7 @@ export function snapshot(store, options = {}) {
   if (state === null) {
     return {
       ok: true, hatched: false, dead: false, pig: null,
+      lang: langOf(null), langs: langChoices(),
       actions: actionsFor(null, nowMs),
       jobs: jobsFor(null),
       subjects: subjectsFor(null),
@@ -315,6 +322,8 @@ export function snapshot(store, options = {}) {
 
   return {
     ok: true,
+    // [dsh-piggy-claude-code mod] the pig's language, and what it can switch to.
+    lang: langOf(state), langs: langChoices(),
     // The REAL flag, not "a save exists". A box produced by reset/adopt has a
     // save but is not hatched, and conflating the two made the box un-pokeable.
     hatched: state.hatched === true,
@@ -556,6 +565,11 @@ export function dispatch(store, commandName, rawInput) {
     case 'weigh': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
       return { kind: 'success', text: renderWeigh(state, nowMs) }
+    }
+    case 'lang': {
+      const result = store.setLang(argument.trim())
+      if (!result.ok) return { kind: 'error', text: `/${commandName} lang zh | ja | en` }
+      return { kind: 'success', text: `🐖 ${LANG_NAMES[result.lang]}` }
     }
     case 'look': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }

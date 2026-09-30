@@ -62,6 +62,7 @@ import {
   subjectByKey,
   tripByKey,
 } from './data.js'
+import { defaultLang, langOf, normalizeLang, tr } from './i18n.js'
 
 /** Bumped when the saved shape changes in a way migrate() must handle. */
 export const STATE_VERSION = 5
@@ -205,6 +206,19 @@ export function kgToNextStage(state, nowMs) {
   return next === null ? null : Math.max(0, next.fromKg - state.weightG / 1000)
 }
 
+/**
+ * [dsh-piggy-claude-code mod] Switch the pig's language: zh · ja · en.
+ * @returns {{ok: boolean, reason?: string, lang?: string}}
+ */
+export function setLang(state, lang, nowMs) {
+  const next = normalizeLang(lang)
+  if (next === null) return { ok: false, reason: 'bad-lang' }
+  state.lang = next
+  return { ok: true, lang: next }
+}
+
+export { langOf }
+
 /** Upstream's countdown in days; stages no longer follow age, so there is none. */
 export function daysToNextStage(state, nowMs) {
   return null
@@ -341,6 +355,11 @@ export function applyDevPatch(state, patch, nowMs) {
 /** Start over with a fresh box. The old pig's story stays in `memories`. */
 export function adopt(state, nowMs) {
   const fresh = layEgg(nowMs)
+  // [dsh-piggy-claude-code mod] a new pig keeps the owner's language.
+  if (normalizeLang(state?.lang) !== null) {
+    fresh.lang = state.lang
+    fresh.name = tr(fresh.lang, '猪猪')
+  }
   if (state !== null && Array.isArray(state.memories)) {
     fresh.memories = state.memories.slice(-MEMORY_LIMIT)
     remember(fresh, '又领养了一只，纸盒里传来窸窸窣窣的声音 📦', nowMs)
@@ -353,9 +372,12 @@ export function adopt(state, nowMs) {
 // ---------------------------------------------------------------------------
 
 export function layEgg(nowMs) {
+  // [dsh-piggy-claude-code mod] a new pig speaks the host's default language.
+  const lang = defaultLang()
   return {
+    lang,
     version: STATE_VERSION,
-    name: '猪猪',
+    name: tr(lang, '猪猪'),
     bornAt: nowMs,
     hatched: false,
     dead: false,
@@ -460,6 +482,8 @@ export function migrate(raw) {
   if (typeof raw.diedAt !== 'number') state.diedAt = state.dead === true ? (raw.lastSeenAt ?? egg.bornAt) : null
   if (typeof state.stage !== 'string') state.stage = state.hatched === true ? 'piglet' : 'box'
   if (typeof state.name !== 'string' || state.name.trim() === '') state.name = egg.name
+  // [dsh-piggy-claude-code mod] saves from before languages existed stay Chinese.
+  state.lang = normalizeLang(raw.lang) ?? 'zh'
 
   state.health = clamp(Math.round(state.health), 0, MAX.health)
   state.satiety = clamp100(state.satiety)
