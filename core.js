@@ -732,9 +732,15 @@ export function decay(state, nowMs) {
   if (state.dead !== true && state.hatched === true) {
     const stage = lifeStageFor(state, nowMs)
     if (state.stage !== stage.key) {
+      // A save from the age-based rules can name a later stage than its weight
+      // has reached; re-rank it quietly instead of announcing a step backwards.
+      const rank = key => LIFE_STAGES.findIndex(candidate => candidate.key === key)
+      const grewUp = rank(stage.key) > rank(state.stage)
       state.stage = stage.key
-      remember(state, `长成了${stage.label} ${stage.emoji}`, nowMs)
-      announce(state, 'stage', `${state.name} 长成了${stage.label} ${stage.emoji}`)
+      if (grewUp) {
+        remember(state, `长成了${stage.label} ${stage.emoji}`, nowMs)
+        announce(state, 'stage', `${state.name} 长成了${stage.label} ${stage.emoji}`)
+      }
     }
   }
 

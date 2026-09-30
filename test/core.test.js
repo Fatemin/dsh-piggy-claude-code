@@ -1126,3 +1126,18 @@ test('developer mode can force any state, but only valid ones', () => {
   }
 })
 
+
+test('a save from the age-based rules is re-ranked quietly, never announced backwards', () => {
+  const DAY = 86_400_000
+  const old = hatchEgg(T0)
+  old.stage = 'middle' // what upstream called a 4-day-old pig
+  old.pending = []
+  decay(old, T0 + 4 * DAY)
+  assert.equal(old.stage, 'piglet', 'weight decides now')
+  assert.ok(!old.pending.some(event => event.kind === 'stage'), 'no "grew into a piglet" announcement')
+
+  old.weightG = 25_000
+  decay(old, T0 + 4 * DAY + 1000)
+  assert.equal(old.stage, 'young')
+  assert.ok(old.pending.some(event => event.kind === 'stage'), 'growing up is still announced')
+})
