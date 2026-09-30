@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-piggy desk</title>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+</style>
+</head>
+<body>
+<script>
+  // Page for the macOS floating window (desktop/). Same unmodified client.js as
+  // the browser panel; this file only adds the two things a desktop pet needs
+  // from the native side:
+  //
+  //   __pigHit(x, y)  — is there pig (or its panel) under this point? The
+  //                     window lets clicks fall through everywhere else.
+  //   drag bridge     — dragging the pig moves the whole window, instead of
+  //                     moving the pig around inside a small transparent box.
+  let entry = null
+  window.__ModuleLoader__ = { load: e => { entry = e } }
+
+  const native = window.webkit?.messageHandlers?.pig ?? null
+
+  window.__pigHit = (x, y) => {
+    const el = document.elementFromPoint(x, y)
+    return el !== null && el.closest('[data-dsh-pig]') !== null
+  }
+
+  // Capture phase on window runs before client.js's own listeners on the pig.
+  let drag = null
+  addEventListener('pointerdown', event => {
+    if (native === null || event.button !== 0) return
+    const scene = event.target.closest?.('.dp-scene')
+    if (!scene) return
+    drag = { scene, x: event.screenX, y: event.screenY, moved: false }
+  }, true)
+  addEventListener('pointermove', event => {
+    if (drag === null) return
+    const dx = event.screenX - drag.x
+    const dy = event.screenY - drag.y
+    event.stopImmediatePropagation()
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return
+    drag.moved = true
+    drag.x = event.screenX
+    drag.y = event.screenY
+    native.postMessage({ type: 'drag', dx, dy })
+  }, true)
+  addEventListener('pointerup', event => {
+    if (drag === null) return
+    const { scene, moved } = drag
+    drag = null
+    if (!moved) return
+    // A drag, not a pat: end client.js's pending press without petting.
+    event.stopImmediatePropagation()
+    scene.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true }))
+    native.postMessage({ type: 'dragEnd' })
+  }, true)
+</script>
+<script src="/client.js"></script>
+<script>
+  if (entry !== null) entry.factory(() => {}).apply({})
+</script>
+</body>
+</html>

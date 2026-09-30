@@ -1,0 +1,12 @@
+{
+  "name": "dsh-piggy-claude-code",
+  "owner": { "name": "Fatemin" },
+  "description": "dsh-piggy for Claude Code: a QQ-pet-style pig that grows on your real work",
+  "plugins": [
+    {
+      "name": "dsh-piggy",
+      "source": "./",
+      "description": "🐖 A QQ-pet-style pig that grows on your real Claude Code work. Zero tokens."
+    }
+  ]
+}

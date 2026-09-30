@@ -1,0 +1,20 @@
+{
+  "description": "dsh-piggy: feed the pig from real Claude Code work. Silent, async, never blocks.",
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/pig-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bin/pig-hook.js\" message", "async": true, "timeout": 5 }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/pig-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bin/pig-hook.js\" turn", "async": true, "timeout": 5 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "*", "hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/pig-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bin/pig-hook.js\" tool", "async": true, "timeout": 5 }] }
+    ],
+    "PostToolUseFailure": [
+      { "matcher": "*", "hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/pig-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bin/pig-hook.js\" toolError", "async": true, "timeout": 5 }] }
+    ],
+    "StopFailure": [
+      { "hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/pig-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bin/pig-hook.js\" agentError", "async": true, "timeout": 5 }] }
+    ]
+  }
+}

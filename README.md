@@ -1,382 +1,171 @@
-# dsh-piggy 🐖
+# dsh-piggy for Claude Code 🐖
 
-> 包名是 `dsh-piggy`（npm 上的 `dsh-pig` 已被一个无关的包占用）。
-> 插件在运行时注册的名字、它的 HTTP 路由 `/dsh-pig/`、以及存档目录
-> `$DSH_HOME/dsh-pig/` 都保留了 `dsh-pig` —— **存档路径尤其不能动，
-> 那是你正在养的那只猪**。
+把 [dsh-piggy](https://github.com/CLICGGER-TYPES/dsh-piggy)——那只住在 DeepSeek Harness 里、照 QQ 宠物（怀旧服 v1.2.4）复刻的猪——搬进 **Claude Code**。
 
-一只住在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 里的猪。
+它吃你在 Claude Code 里的**真实工作**长大：你提的每个问题、每一轮回复、每一次工具调用都是它的口粮。会上课、打工、旅行、生病，玩法和数值见上游的 [原版说明](README.dsh.md)。
 
-它吃你的**真实工作**长大，会**上课学习**、**出门打工**、**出去旅行带纪念品**，
-会**饿会脏会生病**，病了得**对症下药**，撑不住会**死**——但用**还魂丹**能救回来。
+- **零 token**：只用 hooks 和 statusLine，hook 永不输出，模型不知道猪存在（`claude plugin details` 显示常驻开销 ~0）
+- **不拖慢工作**：所有 hook 都是 `async`，出了任何问题也永远 `exit 0`
+- **上游代码零修改**：本仓库是上游的 fork，根目录的 `index.js` / `core.js` / `client.js` 等保持原样，适配层全部在新增目录里，可以直接 merge 上游更新
 
-玩法与数值参考 **QQ 宠物（怀旧服 v1.2.4）**：
-[xuemian168/qqpet_automation](https://github.com/xuemian168/qqpet_automation)（逆向源码）
-与 [ice-cream-headache.github.io](https://github.com/ice-cream-headache/ice-cream-headache.github.io)（界面截图）。
+三种看猪的方式：
 
-- **六个图标的面板** —— 状态 / 学习 / 打工 / 商店 / 旅行 / 背包，**不用敲命令**
-- **零 token** —— 不注册模型工具、不注入上下文，模型不知道它存在
-- **零依赖** —— 纯 JS，不用打包器
+| | 是什么 | 平台 |
+|---|---|---|
+| 状态栏 | Claude Code 底部一行：`🐖 猪猪 · 🍚79 ❤️73 🫧90 💚5/5 · 🪙500 · 😊` | 全平台 |
+| 网页面板 | 上游原版的六图标面板（手绘小猪 / 老年猪 SVG），浏览器打开 | 全平台 |
+| 桌面悬浮猪 | 透明、置顶的桌面宠物 + 菜单栏图标，点击猪以外的地方直接穿透 | macOS |
 
----
+## 需要
+
+- Claude Code（带 `PostToolUseFailure` / `StopFailure` hook 的版本；在 2.1.285 上验证）
+- Node.js ≥ 20
+- 桌面悬浮猪另需 macOS 13+ 和 Swift 6 工具链（Xcode 或 Command Line Tools）
 
 ## 安装
 
-```sh
-dsh plugin --profile web add /path/to/dsh-pig
+**1. 插件（喂猪的 hooks）**
+
+```bash
+claude plugin marketplace add Fatemin/dsh-piggy-claude-code
 ```
 
-装完**重启 dsh**（宿主半边在启动时注册命令与路由），然后刷新页面。
-
-## 界面
-
-平时就是一只**透明背景的 🐖** 浮在右下角。点它，面板从**上方**展开：
-
-```
-┌──────────────────────────────┐
-│ 🍚 饱食 ▓▓▓▓▓▓░░░░ 62%        │  ← 内容区（带标签的属性条）
-│ ❤️ 心情 ▓▓▓▓▓▓▓░░░ 74%        │
-│ 🫧 清洁 ▓▓▓░░░░░░░ 41%        │
-│ 💚 健康 ▓▓▓▓▓▓▓▓░░ 4/5        │
-│ 🧠 智力 5  ✨ 魅力 3  💪 武力 2 │
-│ [🍎喂食][🛁洗澡][🎾玩耍][❤️摸摸] │
-├──────────────────────────────┤
-│ 📋  📚  💼  🛒  🧳  🎒        │  ← 六个图标
-│ 状态 学习 打工 商店 旅行 背包  │
-└──────────────────────────────┘
-  ┌─────────┐  ┌───────┐
-  │猪猪 Lv.3│  │好舒服…│          ← 状态 + 气泡（浅色胶囊）
-  │🪙 60    │  └───────┘
-  │💚 4/5   │
-  └─────────┘
-              🐖                  ← 猪固定在这里，永远不动
+```bash
+claude plugin install dsh-piggy@dsh-piggy-claude-code
 ```
 
-**猪是面板的兄弟节点，不是子节点。**
+重启 Claude Code 后生效。
+
+**2. 克隆一份（命令行、状态栏、面板、桌面猪都用它）**
+
+```bash
+git clone https://github.com/Fatemin/dsh-piggy-claude-code.git ~/dsh-piggy-claude-code
+```
+
+**3. 孵一只猪**
+
+```bash
+node ~/dsh-piggy-claude-code/bin/pig.js hatch
+```
+
+（或者在面板 / 桌面猪里戳三下纸盒。）
+
+## 状态栏
+
+在 `~/.claude/settings.json` 里：
+
+```json
+"statusLine": { "type": "command", "command": "sh ~/dsh-piggy-claude-code/bin/statusline.sh" }
+```
+
+已经有自己的 statusLine？把原命令当参数传进去，猪会接在后面：
+
+```json
+"statusLine": { "type": "command", "command": "sh ~/dsh-piggy-claude-code/bin/statusline.sh ~/.claude/my-statusline" }
+```
+
+状态栏只读，不会写存档。
+
+## 网页面板
+
+```bash
+node ~/dsh-piggy-claude-code/bin/pig.js serve
+```
+
+打开 <http://127.0.0.1:41717/>，右键猪开菜单，左键摸摸。
+
+## 桌面悬浮猪（macOS）
+
+```bash
+~/dsh-piggy-claude-code/desktop/build.command
+```
+
+```bash
+~/dsh-piggy-claude-code/desktop/.build/release/DshPiggyDesk
+```
+
+- **右键猪**开关菜单，**左键**摸摸，**拖动猪**移动整个窗口（位置会记住）
+- 猪以外的透明区域，点击**直接穿透**到下面的窗口
+- 菜单栏小猪：状态一行、显示/隐藏、回到右下角、在浏览器打开面板、退出
+- 自己拉起面板服务（已有就复用），退出时一起停；App 意外退出，服务 2 秒内自行退出并保存
+
+开机自启（LaunchAgent）：
+
+```bash
+~/dsh-piggy-claude-code/desktop/install-autostart.command
+```
+
+撤销：`desktop/uninstall-autostart.command`。
+
+> 如果 `swift build` 报 `Invalid manifest` / 链接失败（部分 macOS 版本上 Command Line Tools 自带的 Swift 会这样），`brew install swift` 后再构建即可，`build.command` 会自动优先用 Homebrew 的工具链。
+
+自检：用 `PIGGY_DEBUG_SNAPSHOT=<目录>` 启动时，App 会把窗口渲染（收起 / 展开）和点击穿透判定写进该目录，不需要录屏权限。
+
+## 命令
 
 ```
-host [data-dsh-pig]   ← 固定在右下角
-├── .dp-card   面板（收起时整体隐藏）
-└── .dp-scene  猪（永远在最底部）
+pig                                  状态卡
+pig hatch | feed | bathe | play | pet
+pig study <科目> <小学|大学|研究生>    pig work <odd|site|office>    pig trip <suburb|mountain|sea|abroad>
+pig shop | buy <物品> | use <物品> | calloff | weigh | name <名字>
+pig serve                            面板服务
+pig status-line                      一行状态
 ```
 
-所以展开时**面板只能向上生长，猪一个像素都不移动** —— 不管窗口多矮。
-（曾经不是这样：猪在面板内部，展开时被顶到 452px 卡片的顶端，400px 高的窗口里
-直接飞出屏幕上边缘。实测 `top: -24`，只剩两只脚。）
+（`pig` = `node ~/dsh-piggy-claude-code/bin/pig.js`，可以自己 alias。）刻意不做成 Claude Code 斜杠命令——那样每次都要经过模型、花 token。
 
-| 交互 | 结果 |
+## 怎么接上的
+
+| DSH | Claude Code |
 |---|---|
-| **右键猪** | 收起 ↔ 展开菜单 |
-| **左键猪** | 摸摸（专属动画 + ❤️），不会开关菜单 |
-| 拖动 | 移动位置（记住） |
-| 点图标 | 切换内容区 |
+| `agent/inbox/claimed` | `UserPromptSubmit` → `message` |
+| `agent/turn-stopping` | `Stop` → `turn` |
+| `tools/result`（成功 / 失败） | `PostToolUse` / `PostToolUseFailure` → `tool` / `toolError` |
+| `agent/error` | `StopFailure` → `agentError` |
+| `ctx.webServer` + 客户端挂载 | `pig serve` + `web/index.html`（浏览器）/ `web/desk.html`（桌面猪） |
+| `/pig` 斜杠命令 | 终端里的 `pig` |
 
-菜单**永远不会超出页面**：它默认开在猪的上方，上方空间不够时自动翻到下方；
-靠窗口左边停放时会自动平移回来。而且**菜单出现不会移动猪**（面板脱离文档流，
-外层容器的尺寸只由猪决定）。
+`lib/host.js` 伪造了上游 `apply(ctx)` 用到的四个接口（`on` / `inject` / `effect` / 服务注册），上游插件以为自己还在 DSH 里。
 
-拖动只受一个限制：别把猪推出窗口。**包括输入框旁边 —— 随便放。**
-
-## 视觉：动森风格
-
-配色、圆角、边框、阴影、动效全部照
-[guokaigdg/animal-island-ui](https://github.com/guokaigdg/animal-island-ui)
-的 `docs/design-system` 实现（那个项目把规范单独成套，其中 `css-variables.md`
-就是给"不装库也复刻这套风格"用的）。
-
-| | |
+| 目录 | 内容 |
 |---|---|
-| 奶油羊皮纸底 | `#f8f8f0` 面板 · `rgb(247,243,223)` 图标栏 · `#fffbe7` 按钮 |
-| 暖棕文字 | `#794f27` 标题 · `#725d42` 正文 · `#9f927d` 次要 |
-| 2px 暖棕边框 | `#e5dcc6` 常态 · `#a89878` 悬停 |
-| 薄荷青主色 | `#19c8b9`，主按钮带 `0 3px 0` **游戏 3D 底边** |
-| 淡紫选中态 | `#b7c6e5`（取它的侧边栏 token） |
-| 属性条配色 | 饱食 `#f7cd67` · 心情 `#f8a6b2` · 清洁 `#82d5bb` · 健康 `#8ac68a` |
-| 圆体 | Nunito + Noto Sans SC（Google Fonts，离线自动回退系统字体） |
-
-规范里的硬规则也照做了：卡片**用边框而不是投影**表达层次、厚 3D 底边**只给主按钮**
-（全加会"太重、太游戏化"）、**禁止纯黑文字与冷灰背景**、焦点环用青/黄不用蓝、
-过渡统一 `cubic-bezier(.4,0,.2,1)` 且 0.15–0.35s。
-
-> token 声明在组件根节点而**不是 `:root`** —— 宿主页面的自定义属性既不该被污染，
-> 也不该能反过来覆盖这里。
-
-## 六个图标
-
-### 📋 状态
-四条带标签的属性条 + 智魅武三维 + 体重/金币/经验，以及四个照顾按钮。
-
-**喂食 / 洗澡 / 玩耍都要花道具**（照 QQ 宠物：它的背包本来就分
-`food` / `commodity` / `medicine` 三类）。点按钮会**弹出背包**，
-告诉你有什么、还剩几个、每样加多少：
-
-```
-喂点什么？
- 🍎 苹果 ×2      饱食 +22 · 心情 +3    [用]
- 🍖 肉骨头 ×1    饱食 +45 · 心情 +8    [用]
- [算了]
-```
-
-| 按钮 | 消耗 | 冷却 |
-|---|---|---|
-| 🍎 喂食 | 一件**食物** | 60 秒 |
-| 🛁 洗澡 | 一件**洗浴用品** | 90 秒 |
-| 🎾 玩耍 | 一件**玩具**（`🎾 小皮球` 自带、免费、永不消耗） | 45 秒 |
-| ❤️ 摸摸 | 什么都不花 | 无 |
-
-背包里没有对应道具时，动作会被明确拒绝并说明原因 —— 不会静默失败。
-
-### 📚 学习
-**9 门课 × 3 学段**（照原版 `img_res/study/` 的 `xx-` / `dx-` / `yjs-`）。
-
-**学校是阶梯，不是菜单** —— QQ 宠物所有宠物都从小学起步：
-
-| 学段 | 时长 | 学费 | 属性 | 解锁条件 |
-|---|---|---|---|---|
-| 小学 | 30 分钟 | 40 金币 | +1 | 无 |
-| 大学 | 2 小时 | 220 金币 | +2 | **小学九门课各上一次** |
-| 研究生 | 6 小时 | 900 金币 | +4 | **大学九门课各上一次** |
-
-锁住的学段**可以点进去看**还差多少（`🔒 要先念完小学九门课各上一次（3/9）`），
-只是里面的课点不了。老存档已有的课时会算作小学课时。
-
-九门课：
-
-| 科目 | 涨什么 |
-|---|---|
-| 📖 语文 · 🔢 数学 · ⚖️ 政治 | 🧠 智力 |
-| 🎨 美术 · 🎵 音乐 · 🎩 礼仪 | ✨ 魅力 |
-| 🏃 体育 · 🥋 武术 · 🧺 劳动 | 💪 武力 |
-
-
-### 💼 打工
-| 工作 | 时长 | 报酬 |
-|---|---|---|
-| 🧹 打零工 | 15 分钟 | 30 金币 |
-| 🧱 搬砖 | 1 小时 | 160 金币 |
-| 💼 上班 | 4 小时 | 900 金币 |
-
-### 🛒 商店
-| 货架 | 商品 |
-|---|---|
-| 🍎 食物 | 苹果(6) · 肉骨头(15) · 奶油蛋糕(40) |
-| 🧼 洗浴 | 香皂(6) · 沐浴露(12) · 泡泡浴(28) |
-| 🪀 玩具 | 小皮球(**自带免费**) · 悠悠球(30) · 布偶(75) · 旋转木马(260) |
-| 💊 药品 | 普通药(12) · 特效药(26) · 进口药(52) · 秘方药(95) |
-| ✨ 复活 | 还魂丹(150) |
-
-生病时，**需要的那味药会在商店和背包里高亮标注**。
-
-### 🧳 旅行
-| 目的地 | 时长 | 花费 | 心情 |
-|---|---|---|---|
-| 🏞 郊游 | 1 小时 | 60 金币 | +10 |
-| 🏔 名山大川 | 3 小时 | 200 金币 | +16 |
-| 🌊 看海 | 8 小时 | 620 金币 | +24 |
-| 🌍 出国 | 1 天 | 2000 金币 | +38 |
-
-每趟带回一件**纪念品**进收藏册（每个目的地 3 种，轮换发放保证都能收集到）。
-
-### 🎒 背包
-买到的东西在这里使用。药品必须**对症**；还魂丹只在死后可用。
-
-## 外出时的样子
-
-猪出去打工 / 上学 / 旅行时不再只是原地站着 —— 场景里会多出它正在用的东西，
-猪也有各自的姿势，进度条告诉你还要多久：
-
-| 活动 | 猪 | 道具 |
-|---|---|---|
-| 💼 打工 | 打字的小幅抖动 | 💻 上班 · 🧹 打零工 · 🧱 搬砖 |
-| 📚 学习 | 慢速歪头，像在看书 | 📖 语文 · 🔢 数学 · 🎵 音乐 … |
-| 🧳 旅行 | 走路的弹跳 | 🌊 看海 · 🏔 名山 · 🏞 郊游 … |
-
-道具在猪的**左边**、场景向左扩，所以猪自己不会移动。
-
-## 数值节奏
-
-衰减按活动时长重新标定过（活动是小时级的，不是分钟级的）：
-
-| | 每分钟 |
-|---|---|
-| 饱食 | 0.08 |
-| 心情 | 0.06 |
-| 清洁 | 0.07 |
-| 在外 | ×1.4 |
-
-实测净消耗：打零工 15 分钟几乎无感（92/95/99）· 搬砖 1 小时（77/80/95）·
-上班 4 小时（39/50/80，两顿饭一次澡回本）· 看海 8 小时（15/53/60）·
-出国 1 天（15/15/15）—— **任何活动都不会把任何一条清零**（下限 15），
-而且**在外不会生病**，猪回来是饿，等着你喂它。
-
-## 生病与死亡
-
-**饿着或脏着太久**（饱食 <25 或 清洁 <30 累计 12 分钟）就会得病。三条疾病链，各四期：
-
-| 链 | 一期 | 二期 | 三期 | 四期 |
-|---|---|---|---|---|
-| 🤧 | 感冒 | 发烧 | 重感冒 | 肺炎 |
-| 😷 | 咳嗽 | 支气管炎 | 哮喘 | 肺结核 |
-| 🤢 | 肚子胀 | 胃炎 | 胃溃疡 | 胃癌 |
-
-- 每期占用**一点健康**（上限 **5**，和原版一致）
-- 不治每 **25 分钟**加重一期
-- **必须吃对应的药**（一期普通药，四期秘方药），吃错无效也不消耗
-- **健康归零就是死** —— 但**等级、经验、金币、纪念品全部保留**，
-  用 **✨ 还魂丹**救回来
-
-## 外出期间
-
-打工 / 上课 / 旅行共用一个"不在家"状态：
-
-- **不能喂食洗澡**（但可以摸摸）
-- **消耗 ×1.8**
-- 随时可以「叫它回来」：**打工白跑没钱**，**学习和旅行退款**
-
-## 数值体系（对齐 QQ 宠物）
-
-| | QQ 宠物 | 本插件 |
-|---|---|---|
-| 饥饿 | 上限 3100，<720 报警 | 饱食 0-100，<25 报警 |
-| 清洁 | 上限 3100，<1080 报警 | 清洁 0-100，<35 报警 |
-| 心情 | 上限 1000，<100 报警 | 心情 0-100，<35 报警 |
-| 健康 | **5**（0 = 死亡） | **5**（原样） |
-| 喂食/洗澡/逗玩 | +1000 / +1000 / +100 | +22 / +50 / +16 |
-
-## 一生
-
-猪不是一条经验条，而是一段**按天数计的生命**：
-
-| 阶段 | 形象 | 大小 | 什么时候 |
-|---|---|---|---|
-| 纸盒 | 📦 | 54px | 一开始就放在那儿 |
-| 小猪 | 🐖 手绘 | 40px | 拆开纸盒，蹦出来 |
-| 青年猪 | 🐖 | 50px | 第 1 天 |
-| 中年猪 | 🐖 | 62px | 第 3 天 |
-| 老年猪 | 🐖 手绘 | 56px | 第 7 天 |
-| 墓碑 | 🪦 | 54px | 第 14 天自然老去，或病死 |
-| 墓碑 + 👻 | | | 死后 1 天还没人管它 |
-
-**年龄按真实时间走** —— 关掉 DSH 期间猪照样在长大，回来时它老了一天。
-
-![一生](/home/clicgger/Documents/deepseek-harness/default-workspace/dsh-pig/docs/screenshots/15-life-stages.png)
-
-所有阶段都是同一只 🐖，靠**体型**区分；小猪和老年猪另外有两张手绘形象
-（[`assets/piglet.svg`](assets/piglet.svg) / [`assets/elder.svg`](assets/elder.svg)，
-由插件自己的 `/dsh-pig/art/` 路由伺服）。看形象对照：
-`xdg-open tools/art.html`。
-
-**XP 不再是等级，改喂体重** —— 「吃你的真实工作长大」还在，长的是分量。
-
-### 死了之后
-
-墓碑立起来，你有两条路：
-
-- **还魂丹**（150 金币）把它叫回来 —— 金币、收藏、上过的课都保留
-- **领养新猪** —— 从新的纸盒开始，旧猪的回忆留在记忆里
-
-两条都不选，一天之后墓碑上会多一个 👻。
+| `.claude-plugin/` · `hooks/` | 插件清单、marketplace、5 个 hook |
+| `bin/` | `pig.js`（命令行 / 服务）、`pig-hook.js`（hook 入口）、`statusline.sh`、`pig-node.sh`（在 PATH 不含 node 的环境里找 node） |
+| `lib/` | 宿主模拟、存档锁、面板服务、状态栏 |
+| `web/` | 浏览器面板与桌面猪的外壳页 |
+| `desktop/` | macOS 悬浮猪（SwiftPM） |
+| 根目录其余文件 | 上游 dsh-piggy，未修改 |
 
 ## 存档
 
-`$DSH_HOME/dsh-pig/state.json`
+默认 `~/.claude/pig/state.json`，可用环境变量 `PIG_STATE` 改；面板端口默认 `41717`，可用 `PIG_PORT` 改。
 
-**原子写**（临时文件 → fsync → rename）+ 1.5 秒节流。存档版本 **v4**，旧存档自动迁移。
+每个 hook 都是独立的短进程，还可能有多个会话同时在跑，所以：
 
-**打工、上课、旅行、疾病、衰减全部基于时间戳惰性结算** —— 没有任何定时器。
-所以关掉 DSH 期间猪照样在饿、班照样会打完、病照样会加重，重开时一次性结清并弹公告。
+1. 面板服务（`pig serve` 或桌面猪）在跑时，它持有存档锁、是**唯一写者**，hook 只通知它；
+2. 服务没跑时，hook 拿锁后直接读 → 喂 → **立即落盘**；
+3. 1 秒内拿不到锁就丢掉这一口——少吃一口没事，卡住 Claude Code 不行。
 
-## 配置
+锁是带 pid 的目录，持有者进程死了会被自动接管。
 
-```yaml
-- id: dsh-pig
-  name: dsh-pig
-  config:
-    command: pig                              # 改斜杠命令名
-    statePath: /abs/path/to/state.json        # 改存档位置
-```
+## 安全
 
-## HTTP 接口
-
-```
-GET  /dsh-pig/state   完整快照
-POST /dsh-pig/act     执行操作
-```
-
-操作白名单：`hatch` · `feed` · `bathe` · `play` · `pet` · `work` · `study` · `trip` · `calloff` · `buy` · `use`
-请求体上限 2 KB。状态响应**不含任务标题**。
-
-> ⚠️ 插件通过 `ctx.webServer.register()` 注册的路由**不走主应用的鉴权围栏**
-> （DSH 既有行为，whale-girl 等插件同样如此）。服务只绑 `127.0.0.1`，
-> 但本机其他进程能读到这些数字，也能触发操作。
-
-## 命令（不想点鼠标时才用）
-
-```
-/pig                                   状态卡
-/pig hatch                             孵一只
-/pig feed | bathe | play | pet         照顾
-/pig study <科目> <小学|大学|研究生>     上课
-/pig work <odd|site|office>            打工      /pig trip <suburb|mountain|sea|abroad>  旅行
-/pig calloff                           叫回来
-/pig shop                              看货架    /pig buy <物品>   /pig use <物品>
-/pig weigh | name <名字> | about
-```
-
-## 项目结构
-
-```
-dsh-pig/
-├── package.json          插件清单（dsh.bundle + dsh.client）
-├── cordis.patch.yml      profile 配置层
-├── data.js       171 行  静态游戏表：疾病链 / 课程 / 工作 / 商店 / 阈值
-├── core.js       797 行  纯状态机：成长、衰减、动作、外出、疾病、商店（无 IO）
-├── store.js      210 行  持久化：原子写 + 节流 + 时间戳惰性结算
-├── render.js     355 行  所有文案与 ASCII 立绘
-├── index.js      476 行  宿主半边：事件接线 + /pig 命令 + state/act 路由
-├── client.js     975 行  客户端半边：手写 __ModuleLoader__ + 六图标面板 + 动画
-├── test/                 103 个测试
-│   ├── core.test.js      游戏模型（含疾病链、学习、旅行、存档迁移）
-│   ├── host.test.js      路由与命令胶水（含"拒绝必须诚实"、"webServer 延迟到达"回归）
-│   └── client.test.js    在伪造 DOM 里真跑 client.js（含 hidden 与 CSS 的一致性守卫）
-├── tools/
-│   └── preview.html      真实浏览器预览台（不连宿主就能看面板）
-├── docs/
-│   ├── DESIGN.md         设计说明：参考调研、数值映射、架构决策
-│   └── PROCESS.md        开发过程记录：每一轮反馈、每个 bug、每条验证证据
-├── CHANGELOG.md          版本变更历史
-└── LICENSE               MIT（含对 QQ 宠物逆向成果的致谢与声明）
-```
+面板服务只绑 `127.0.0.1`；校验 `Host`（防 DNS rebinding），带 `Origin` 时必须是本服务，POST 必须是 `application/json`（别的网页发不了"简单请求"来戳猪）。本机其他进程仍然可以访问它。
 
 ## 测试
 
-```sh
-node --test test/*.test.js      # 103 个
+```bash
+node --test test/*.test.js
 ```
 
-## 看界面（不用连宿主）
+包含上游自带的测试和适配层测试（`test/cc.test.js`）。
 
-```sh
-# 直接用浏览器打开
-xdg-open tools/preview.html
-```
+## 已知限制
 
-预览台伪造 `window.__ModuleLoader__` 和 `fetch`，把一份完整快照喂给 `client.js`，
-所以在**不启动 DSH** 的情况下就能看到收起/展开两种状态和全部六个页签。
-页面上有 `window.pigStub.setOpen(true|false)` 和 `pigStub.tab('study')` 可以操作。
+- `StopFailure` 已接线，但没有端到端验证（难以人为制造 API 错误）
+- 桌面悬浮猪目前只有 macOS 版
+- 过期锁接管在"两个进程同时发现过期锁"的极端情况下有很小的竞态窗口
 
-> **为什么需要它**：假 DOM 没有 CSS 引擎。有一条 bug 是"JS 里 `bar.hidden = true`
-> 完全正确、103 个测试全绿，但浏览器里图标栏照画不误"——因为
-> `.dp-bar{display:grid}` 和 UA 的 `[hidden]{display:none}` 权重相同而我赢了。
-> **断言标志位证明不了元素不可见**，只能真去浏览器看。
+## 许可与致谢
 
-## 文档
-
-- [CHANGELOG.md](CHANGELOG.md) —— 版本变更历史
-- [docs/DESIGN.md](docs/DESIGN.md) —— 为什么是这样：参考调研、数值映射、架构决策
-- [docs/PROCESS.md](docs/PROCESS.md) —— 怎么变成这样：每一轮反馈、每个 bug、每条验证证据
-
-## 许可
-
-MIT。游戏数值与名称取自 QQ 宠物逆向成果，未包含任何原版代码或美术资源；
-QQ 宠物是腾讯的商标，本项目为独立的非官方致敬作品。
+MIT，见 [LICENSE](LICENSE)。游戏本体、数值、美术来自 [CLICGGER-TYPES/dsh-piggy](https://github.com/CLICGGER-TYPES/dsh-piggy)；游戏数值与名称取自 QQ 宠物逆向成果，QQ 宠物是腾讯的商标，本项目为独立的非官方致敬作品。

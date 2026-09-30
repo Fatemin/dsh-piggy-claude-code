@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh-piggy</title>
+<style>
+  :root { color-scheme: light; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #f7f3df;
+    color: #725d42;
+    font: 14px/1.6 Nunito, "Noto Sans SC", system-ui, sans-serif;
+  }
+  .hint { position: fixed; left: 16px; top: 16px; max-width: 360px; }
+  .hint b { color: #794f27; }
+  .hint small { color: #9f927d; }
+</style>
+</head>
+<body>
+<div class="hint">
+  <b>🐖 dsh-piggy · Claude Code</b><br>
+  猪在右下角：<b>右键</b>开关菜单，<b>左键</b>摸摸，可拖动。<br>
+  <small>它吃你在 Claude Code 里的真实工作长大（提问、回合、工具调用）。</small>
+</div>
+<script>
+  // Stand-in for DSH's module loader: capture the bundle's self-registration,
+  // then mount it the way DSH would. client.js itself is upstream, unmodified.
+  let entry = null
+  window.__ModuleLoader__ = { load: e => { entry = e } }
+</script>
+<script src="/client.js"></script>
+<script>
+  if (entry !== null) entry.factory(() => {}).apply({})
+</script>
+</body>
+</html>
