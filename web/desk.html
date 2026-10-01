@@ -9,14 +9,18 @@
 </head>
 <body>
 <script>
-  // Page for the macOS floating window (desktop/). Same unmodified client.js as
-  // the browser panel; this file only adds the two things a desktop pet needs
-  // from the native side:
+  // Page for the desktop apps' floating pig (Swift desktop/ and Electron app/).
+  // Same client.js as the browser panel; this file only adds what a desktop pet
+  // needs from the native side:
   //
   //   __pigHit(x, y)  — is there pig (or its panel) under this point? The
   //                     window lets clicks fall through everywhere else.
   //   drag bridge     — dragging the pig moves the whole window, instead of
-  //                     moving the pig around inside a small transparent box.
+  //                     moving the pig around inside a transparent box.
+  //   openPanel       — the panel's ⤢ button asks the host for the big window.
+  //
+  // The window is larger than the pig and its panel (the panel can be resized),
+  // and everything transparent in it is click-through.
   let entry = null
   window.__ModuleLoader__ = { load: e => { entry = e } }
 
@@ -59,7 +63,11 @@
 </script>
 <script src="/client.js"></script>
 <script>
-  if (entry !== null) entry.factory(() => {}).apply({})
+  if (entry !== null) {
+    entry.factory(() => {}).apply(native === null ? {} : {
+      openPanel: () => native.postMessage({ type: 'openPanel' }),
+    })
+  }
 </script>
 </body>
 </html>

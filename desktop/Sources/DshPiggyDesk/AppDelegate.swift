@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 statusLineItem.title = t("面板服务没起来：检查 {path}").replacingOccurrences(of: "{path}", with: server.root.path)
                 return
             }
+            pet.onOpenPanel = { [weak self] in self?.openInBrowser() }
             pet.load(server.deskURL)
             pet.show()
             await refreshPeek()

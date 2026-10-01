@@ -17,10 +17,10 @@ import { startServer } from './pig/lib/server.js'
 import { readSnapshot } from './pig/lib/status.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-// Tall enough for the panel above a 200 px (120 kg) pig; shorter screens get
-// a shorter window and the panel shrinks to fit.
-const WIDTH = 340
-const MAX_HEIGHT = 800
+// Room for the panel above a 200 px (120 kg) pig, and for the player to
+// resize the panel bigger; everything transparent in it is click-through.
+const WIDTH = 760
+const MAX_HEIGHT = 1200
 const windowSize = () => ({ width: WIDTH, height: Math.min(MAX_HEIGHT, screen.getPrimaryDisplay().workArea.height - 16) })
 // Fixed so the page's origin (and its remembered UI state) is stable.
 const PREFERRED_PORT = 41727
@@ -79,15 +79,26 @@ function onScreen({ x, y }) {
     corner.x < a.x + a.width && corner.x + corner.width > a.x && corner.y < a.y + a.height && corner.y + corner.height > a.y)
 }
 
+/**
+ * Where the pig is: the window's bottom-right corner, since the pig lives
+ * there and the window's size can change between versions. Older saves kept
+ * the top-left of the 340×800 window; convert those.
+ */
 function savedPosition() {
   const saved = readJson(userFile('window.json'), null)
-  return saved && Number.isFinite(saved.x) && Number.isFinite(saved.y) && onScreen(saved) ? saved : defaultPosition()
+  const size = windowSize()
+  let anchor = null
+  if (saved && Number.isFinite(saved.right) && Number.isFinite(saved.bottom)) anchor = saved
+  else if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) anchor = { right: saved.x + 340, bottom: saved.y + 800 }
+  if (anchor === null) return defaultPosition()
+  const position = { x: anchor.right - size.width, y: anchor.bottom - size.height }
+  return onScreen(position) ? position : defaultPosition()
 }
 
 function savePosition() {
   if (win === null) return
-  const [x, y] = win.getPosition()
-  try { writeFileSync(userFile('window.json'), JSON.stringify({ x, y })) } catch { /* not worth failing over */ }
+  const { x, y, width, height } = win.getBounds()
+  try { writeFileSync(userFile('window.json'), JSON.stringify({ right: x + width, bottom: y + height })) } catch { /* not worth failing over */ }
 }
 
 // ---- the pig window ----------------------------------------------------------
@@ -141,6 +152,9 @@ ipcMain.on('pig', (event, message) => {
     case 'dragEnd':
       savePosition()
       break
+    case 'openPanel':
+      openPanelWindow()
+      break
     default:
       break
   }
@@ -158,8 +172,8 @@ function openPanelWindow() {
     return
   }
   panelWin = new BrowserWindow({
-    width: 960,
-    height: 720,
+    width: 1100,
+    height: 760,
     minWidth: 420,
     minHeight: 560,
     title: 'DSH Piggy',

@@ -41,6 +41,21 @@ window.__ModuleLoader__.load({
     // the glyph plus this padding; clamping by the glyph alone leaves it a few
     // pixels over the edge.
     var PIG_PADDING_X = 6
+    // [dsh-piggy-claude-code mod] the floating panel can be resized from its
+    // top-left corner and its top/left edges. The size the user chose; the
+    // default width (PANEL_WIDTH) is also the smallest one.
+    var CARD_SIZE_KEY = 'dsh-pig:cardSize'
+    var CARD_MIN_HEIGHT = 360
+    // [dsh-piggy-claude-code mod] the big panel (`ctx.layout === 'split'`):
+    // which skin, whether the spreadsheet shows the pig as a picture, and how
+    // quickly two Escapes must follow each other to count as the boss key.
+    var SKIN_KEY = 'dsh-pig:skin'
+    var PIC_KEY = 'dsh-pig:xlPic'
+    var BOSS_ESC_MS = 600
+    var XL_TITLE = '季度预算.xlsx - Excel'
+    var XL_RIBBON = ['文件', '开始', '插入', '页面布局', '公式', '数据', '审阅', '视图']
+    var XL_COLUMNS = 'ABCDEFGHIJKLMNOPQRST'
+    var XL_ROWS = 300
 
     var TABS = [
       { key: 'status', label: '状态', emoji: '📋' },
@@ -194,6 +209,18 @@ window.__ModuleLoader__.load({
         '已生效': '発動中', '🔒 集齐后解锁': '🔒 コンプリートで解放', '去{place}能带回来': '{place}で手に入るよ',
         '以前的纪念品：{list}': 'むかしのおみやげ：{list}', '已获得称号': '称号ゲット！',
         '环球旅行家': '世界一周トラベラー', '地区': 'エリア',
+        // [dsh-piggy-claude-code mod] the resizable panel and the big panel
+        '打开大面板': '大きいパネルを開く', '拖动调整大小 · 双击还原': 'ドラッグでサイズ変更 · ダブルクリックで元にもどす',
+        '金币': 'コイン', '伪装成表格': '表計算に変装',
+        '老板键：连按两次 Esc 或 Ctrl+Shift+E': 'ボスキー：Esc を2回 または Ctrl+Shift+E',
+        // the spreadsheet disguise, in Excel's own Japanese wording
+        '季度预算.xlsx - Excel': '四半期予算.xlsx - Excel',
+        '文件': 'ファイル', '开始': 'ホーム', '插入': '挿入', '页面布局': 'ページ レイアウト',
+        '公式': '数式', '数据': 'データ', '审阅': '校閲', '视图': '表示',
+        '粘贴': '貼り付け', '条件格式': '条件付き書式', '图片': '画像', '显示/隐藏小猪': 'ブタの表示/非表示',
+        '名称框': '名前ボックス', '新工作表': '新しいシート', '就绪': '準備完了',
+        '平均值：{n}': '平均: {n}', '计数：{n}': 'データの個数: {n}', '求和：{n}': '合計: {n}',
+        '普通': '標準', '返回游戏': 'ゲームにもどる',
       },
       en: {
         // tabs
@@ -320,6 +347,18 @@ window.__ModuleLoader__.load({
         '已生效': 'active', '🔒 集齐后解锁': '🔒 unlocks on completion', '去{place}能带回来': 'Found in {place}',
         '以前的纪念品：{list}': 'Old souvenirs: {list}', '已获得称号': 'Title earned!',
         '环球旅行家': 'Globetrotter', '地区': 'Region',
+        // [dsh-piggy-claude-code mod] the resizable panel and the big panel
+        '打开大面板': 'Open the big panel', '拖动调整大小 · 双击还原': 'Drag to resize · double-click to reset',
+        '金币': 'Coins', '伪装成表格': 'Disguise as a spreadsheet',
+        '老板键：连按两次 Esc 或 Ctrl+Shift+E': 'Boss key: Esc twice or Ctrl+Shift+E',
+        // the spreadsheet disguise, in Excel's own English wording
+        '季度预算.xlsx - Excel': 'Quarterly Budget.xlsx - Excel',
+        '文件': 'File', '开始': 'Home', '插入': 'Insert', '页面布局': 'Page Layout',
+        '公式': 'Formulas', '数据': 'Data', '审阅': 'Review', '视图': 'View',
+        '粘贴': 'Paste', '条件格式': 'Conditional Formatting', '图片': 'Picture', '显示/隐藏小猪': 'Show/hide the pig',
+        '名称框': 'Name Box', '新工作表': 'New sheet', '就绪': 'Ready',
+        '平均值：{n}': 'Average: {n}', '计数：{n}': 'Count: {n}', '求和：{n}': 'Sum: {n}',
+        '普通': 'Normal', '返回游戏': 'Back to the game',
       },
     }
     // English singulars, picked when `params.n === 1`. Japanese and Chinese
@@ -1149,6 +1188,287 @@ window.__ModuleLoader__.load({
       'animation:dp-toast 4.6s var(--ac-ease) forwards}',
       '@keyframes dp-toast{0%{opacity:0;transform:translateY(-8px)}8%{opacity:1;transform:translateY(0)}',
       '82%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}',
+
+      /* ---------- [dsh-piggy-claude-code mod] a resizable panel ---------- */
+      // The panel hangs off the pig by its bottom-right corner, so it grows up
+      // and to the left: the grips sit on the top-left corner and the top and
+      // left edges. They are absolutely positioned, so the flex column (content,
+      // icon bar) never notices them. The card is a size container, so a wider
+      // panel gives its lists more columns instead of longer rows.
+      '.dp-card{container-type:inline-size;container-name:dp-card}',
+      '.dp-grip{position:absolute;z-index:4;touch-action:none;background-color:transparent;',
+      'transition:background-color .2s var(--ac-ease)}',
+      '.dp-grip:hover,[data-dsh-pig][data-resizing] .dp-grip{background-color:rgba(25,200,185,.16)}',
+      // Stripes start 10px in: the 20px corner radius clips anything closer.
+      '.dp-grip[data-resize="corner"]{left:0;top:0;width:24px;height:24px;cursor:nwse-resize;z-index:5;',
+      'background-image:linear-gradient(135deg,transparent 10px,var(--ac-border-hover) 10px 11.5px,',
+      'transparent 11.5px 14px,var(--ac-border-hover) 14px 15.5px,transparent 15.5px)}',
+      '.dp-grip[data-resize="top"]{left:24px;right:0;top:0;height:6px;cursor:ns-resize}',
+      '.dp-grip[data-resize="left"]{left:0;top:24px;bottom:0;width:6px;cursor:ew-resize}',
+      '[data-dsh-pig][data-resizing] .dp-card{box-shadow:var(--ac-shadow-lg),0 0 0 2px var(--ac-primary-hover)}',
+      // A slim header, only when the host can open the big panel (the ⤢).
+      '.dp-card-head{order:-1;flex:0 0 auto;display:flex;justify-content:flex-end;align-items:center;',
+      'padding:6px 10px 0 26px}',
+      '.dp-card-head .dp-icon-btn{font-size:11px;padding:2px 8px;color:var(--ac-text)}',
+      '@container dp-card (min-width:460px){',
+      '.dp-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}',
+      '.dp-list>.dp-shelf{grid-column:1/-1}',
+      '.dp-grid{grid-template-columns:repeat(3,minmax(0,1fr))}',
+      '.dp-region-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}',
+      '.dp-region-body>:not(.dp-item){grid-column:1/-1}',
+      '}',
+      '@container dp-card (min-width:720px){',
+      '.dp-list{grid-template-columns:repeat(3,minmax(0,1fr))}',
+      '.dp-grid{grid-template-columns:repeat(4,minmax(0,1fr))}',
+      '.dp-region-body{grid-template-columns:repeat(3,minmax(0,1fr))}',
+      '}',
+
+      /* ---------- [dsh-piggy-claude-code mod] the big panel: game skin ---------- */
+      // Two cream cards on a soft dotted meadow: the pig and its numbers on the
+      // left, the six tabs on the right. Same elements as the floating widget;
+      // only the frame around them changes.
+      '[data-dsh-pig][data-layout="split"]{position:fixed;inset:0;right:0;bottom:0;pointer-events:auto;',
+      'display:flex;flex-direction:column;overflow:hidden;color:var(--ac-text-body);',
+      '--pig-big:min(calc(var(--pig-size) * 2),240px);',
+      'background-color:#e9f4e0;background-image:radial-gradient(#d4e9c4 1.6px,transparent 1.8px);',
+      'background-size:22px 22px}',
+      '[data-dsh-pig][data-layout="split"] .dp-xl-top,[data-dsh-pig][data-layout="split"] .dp-xl-bottom,',
+      '[data-dsh-pig][data-layout="split"] .dp-xl-rows{display:none}',
+      '[data-dsh-pig][data-layout="split"] .dp-split{flex:1 1 auto;min-height:0;display:grid;',
+      'grid-template-columns:340px minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:18px;padding:18px;',
+      'width:100%;max-width:1280px;margin:0 auto}',
+      '[data-dsh-pig][data-layout="split"] .dp-left{min-height:0;overflow-y:auto;display:flex;flex-direction:column;',
+      'background:var(--ac-bg);border:2px solid var(--ac-border-light);border-radius:24px;box-shadow:var(--ac-shadow)}',
+      '[data-dsh-pig][data-layout="split"] .dp-card{position:relative;right:auto;bottom:auto;top:auto;width:auto;',
+      'max-width:none;max-height:none;min-height:0;border-radius:24px;box-shadow:var(--ac-shadow)}',
+      '[data-dsh-pig][data-layout="split"] .dp-bar{order:-1;border-top:0}',
+      '[data-dsh-pig][data-layout="split"] .dp-grip,[data-dsh-pig][data-layout="split"] .dp-card-head{display:none}',
+      '[data-dsh-pig][data-layout="split"][data-skin="game"] .dp-side,',
+      '[data-dsh-pig][data-layout="split"][data-skin="game"] .dp-card{zoom:1.1}',
+      // The pig, twice its floating size (capped), standing on a little lawn.
+      '[data-dsh-pig][data-layout="split"] .dp-scene{width:auto;min-width:0;flex:0 0 auto;cursor:default;',
+      'height:calc(var(--pig-big) + 104px);justify-content:center;padding:0 12px 16px;margin:12px 12px 0;',
+      'border-radius:18px;background:radial-gradient(120% 55% at 50% 100%,#cbe6ae 0,#dff0cc 55%,#f4f9ec 100%)}',
+      '[data-dsh-pig][data-layout="split"] .dp-pig-img{width:var(--pig-big);height:var(--pig-big)}',
+      '[data-dsh-pig][data-layout="split"] .dp-pig-emoji{font-size:var(--pig-big)}',
+      // Centred with margins, not transforms: the hint's bob animation owns transform.
+      '[data-dsh-pig][data-layout="split"] .dp-bubble{left:0;right:0;top:12px;margin:0 auto;',
+      'width:max-content;max-width:260px}',
+      '[data-dsh-pig][data-layout="split"] .dp-bubble::after{left:calc(50% - 5px)}',
+      '[data-dsh-pig][data-layout="split"] .dp-poke-hint{left:0;right:0;bottom:4px;margin:0 auto;width:max-content}',
+      '.dp-side{padding:12px 16px 16px;display:flex;flex-direction:column}',
+      '.dp-side-head{display:flex;flex-direction:column;align-items:center;gap:1px;margin:2px 0 10px;text-align:center}',
+      '.dp-side-name{font-size:17px;font-weight:800;color:var(--ac-text);overflow-wrap:anywhere}',
+      '.dp-side-sub{font-size:11px;font-weight:600;color:var(--ac-text-2)}',
+      '.dp-stat{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"k v" "m m";',
+      'align-items:center;font-size:11.5px;font-weight:600;color:var(--ac-text-body)}',
+      '.dp-stat-k{grid-area:k}',
+      '.dp-stat-v{grid-area:v;font-weight:700;color:var(--ac-text)}',
+      '.dp-stat .dp-meter{grid-area:m;margin:3px 0 8px}',
+      '.dp-kvs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:2px 0 4px}',
+      '.dp-kv{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:6px 4px;',
+      'border-radius:var(--ac-radius-sm);background:var(--ac-bg-content);border:2px solid var(--ac-border-light);',
+      'font-size:10px;font-weight:600;color:var(--ac-text-2);text-align:center}',
+      '.dp-kv b{font-size:12.5px;font-weight:800;color:var(--ac-text);overflow-wrap:anywhere}',
+      '.dp-side-away{margin:8px 0 0}',
+      '.dp-side-away .dp-progress{width:100%;height:9px;margin-top:5px}',
+      '.dp-side .dp-pick{margin-top:9px}',
+      '.dp-skin-btn{margin-top:14px;text-align:center}',
+      '@media (max-width:759px){',
+      // Stacked: each column takes its full content height and the page scrolls.
+      // (In a grid the left column could shrink below its content and slide
+      // under the right one.)
+      '[data-dsh-pig][data-layout="split"] .dp-split{display:flex;flex-direction:column;',
+      'overflow-y:auto;padding:12px;gap:12px}',
+      '[data-dsh-pig][data-layout="split"] .dp-left,[data-dsh-pig][data-layout="split"] .dp-card{',
+      'flex:0 0 auto;min-height:auto;overflow:visible}',
+      '[data-dsh-pig][data-layout="split"] .dp-content{overflow:visible}',
+      '}',
+
+      /* ---------- [dsh-piggy-claude-code mod] the big panel: spreadsheet skin ---------- */
+      // For slacking off. Redefining the design tokens does most of the work —
+      // white cells, grey hairlines, square corners, no shadows — and the rules
+      // below add the Excel chrome around the same content.
+      '[data-dsh-pig][data-skin="excel"]{',
+      '--ac-font:Calibri,"Segoe UI","Microsoft YaHei","Hiragino Sans","PingFang SC",sans-serif;',
+      '--ac-primary:#217346;--ac-primary-hover:#217346;--ac-primary-active:#185c37;--ac-primary-bg:#e2efda;',
+      '--ac-text:#1f1f1f;--ac-text-body:#262626;--ac-text-2:#6b6b6b;--ac-text-muted:#444;--ac-text-disabled:#a6a6a6;',
+      '--ac-bg:#fff;--ac-bg-content:#fff;--ac-bg-input:#fff;--ac-bg-disabled:#f2f2f2;',
+      '--ac-border:#d4d4d4;--ac-border-light:#d4d4d4;--ac-border-hover:#b7b7b7;',
+      '--ac-radius-sm:0;--ac-radius-card:0;--ac-pill:0;',
+      '--ac-shadow-sm:none;--ac-shadow:none;--ac-shadow-lg:none;--ac-inset:none;',
+      '--ac-active:#e2efda;--ac-hover:#f3f9f1;--ac-warning:#ffeb9c;',
+      '--xl-green:#217346;--xl-grid:#d4d4d4;--xl-head:#f3f3f3;--xl-link:#0563c1;',
+      '--xl-gut:36px;--xl-a:120px;--xl-b:200px;--xl-col:80px;--xl-row:20px;--pig-big:48px;',
+      'background:#fff;color:#262626;font-family:var(--ac-font)}',
+      '[data-dsh-pig][data-skin="excel"] *{font-size:12px;font-weight:400;letter-spacing:0;line-height:var(--xl-row)}',
+      '[data-dsh-pig][data-skin="excel"] b{font-weight:700}',
+      '[data-dsh-pig][data-skin="excel"] .dp-xl-top,[data-dsh-pig][data-skin="excel"] .dp-xl-bottom{display:block;flex:0 0 auto}',
+      '[data-dsh-pig][data-skin="excel"] .dp-skin-btn,[data-dsh-pig][data-skin="excel"] .dp-e,',
+      '[data-dsh-pig][data-skin="excel"] .dp-item>span:first-child,[data-dsh-pig][data-skin="excel"] .dp-ico span.dp-ico-e{display:none}',
+      // title bar · ribbon · formula bar · column headers
+      '.dp-xl-title{display:flex;align-items:center;height:32px;padding-left:10px;background:var(--xl-green);color:#fff}',
+      '.dp-xl-logo{flex:0 0 auto;width:18px;height:18px;margin-right:10px;display:flex;align-items:center;',
+      'justify-content:center;background:#fff;color:var(--xl-green);border-radius:2px}',
+      '[data-dsh-pig][data-skin="excel"] .dp-xl-logo{font-weight:700;line-height:18px}',
+      '.dp-xl-name{flex:1 1 auto;min-width:0;text-align:center;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.dp-xl-win{flex:0 0 auto;display:flex;align-self:stretch}',
+      '.dp-xl-win span{width:46px;display:flex;align-items:center;justify-content:center;color:#fff}',
+      '.dp-xl-win span:hover{background:rgba(255,255,255,.15)}',
+      '.dp-xl-win span:last-child:hover{background:#e81123}',
+      '.dp-xl-ribbon{display:flex;align-items:flex-end;gap:2px;height:28px;padding:0 6px;background:var(--xl-green);overflow:hidden}',
+      '.dp-xl-ribbon span{height:24px;padding:0 12px;display:flex;align-items:center;color:#fff;white-space:nowrap}',
+      '.dp-xl-ribbon span[data-active="true"]{background:var(--xl-head);color:var(--xl-green)}',
+      '.dp-xl-tools{display:flex;align-items:center;gap:4px;height:38px;padding:0 10px;background:var(--xl-head);',
+      'border-bottom:1px solid var(--xl-grid);overflow:hidden;white-space:nowrap;color:#444}',
+      '.dp-xl-sep{flex:0 0 1px;align-self:stretch;margin:6px 6px;background:var(--xl-grid)}',
+      '.dp-xl-box{display:inline-flex;align-items:center;height:22px;padding:0 6px;background:#fff;border:1px solid #c6c6c6}',
+      '.dp-xl-tool{padding:0 5px}',
+      '.dp-xl-tools button{font:inherit;height:26px;padding:0 8px;cursor:pointer;color:#444;background:none;border:1px solid transparent}',
+      '.dp-xl-tools button:hover{background:#e1e1e1;border-color:#c6c6c6}',
+      '.dp-xl-tools button[aria-pressed="true"]{background:#d2d2d2;border-color:#a6a6a6}',
+      '.dp-xl-fx{display:flex;align-items:center;height:26px;background:#fff;border-bottom:1px solid var(--xl-grid)}',
+      '.dp-xl-namebox{flex:0 0 96px;align-self:stretch;display:flex;align-items:center;padding:0 6px;',
+      'border-right:1px solid var(--xl-grid)}',
+      '.dp-xl-fxicons{flex:0 0 auto;display:flex;gap:12px;padding:0 12px;color:#8a8a8a;border-right:1px solid var(--xl-grid)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-xl-fxicons i{font-style:italic;font-family:Cambria,Georgia,serif;color:#444}',
+      '.dp-xl-formula{flex:1 1 auto;min-width:0;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.dp-xl-cols{display:flex;height:20px;background:var(--xl-head);border-bottom:1px solid #bfbfbf;overflow:hidden}',
+      '.dp-xl-cols span{flex:0 0 var(--xl-col);text-align:center;color:#444;border-right:1px solid var(--xl-grid)}',
+      '.dp-xl-cols span:first-child{flex-basis:var(--xl-gut);border-right-color:#bfbfbf}',
+      '.dp-xl-cols span:nth-child(2){flex-basis:var(--xl-a)}',
+      '.dp-xl-cols span:nth-child(3){flex-basis:var(--xl-b)}',
+      '.dp-xl-cols span[data-active="true"]{background:#d2d2d2;color:var(--xl-green);box-shadow:inset 0 -2px 0 var(--xl-green)}',
+      // the sheet: one scroll area — row numbers, the pig's columns A:B, the tab in C:
+      '[data-dsh-pig][data-skin="excel"] .dp-split{display:grid;gap:0;padding:0;max-width:none;margin:0;overflow:auto;',
+      'grid-template-columns:var(--xl-gut) calc(var(--xl-a) + var(--xl-b)) minmax(0,1fr);',
+      'grid-template-rows:minmax(100%,max-content);align-content:start;background-color:#fff;',
+      'background-image:linear-gradient(to bottom,transparent calc(var(--xl-row) - 1px),var(--xl-grid) 0);',
+      'background-size:100% var(--xl-row);background-attachment:local}',
+      '[data-dsh-pig][data-skin="excel"] .dp-xl-rows{display:block;grid-column:1;grid-row:1/-1;position:relative;',
+      'overflow:hidden;background:var(--xl-head);border-right:1px solid #bfbfbf}',
+      '.dp-xl-rows ol{position:absolute;left:0;right:0;top:0;margin:0;padding:0;list-style:none}',
+      '.dp-xl-rows li{height:var(--xl-row);text-align:center;color:#444;border-bottom:1px solid var(--xl-grid)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-left{grid-column:2;grid-row:1;position:relative;overflow:visible;',
+      'background:linear-gradient(to right,transparent calc(var(--xl-a) - 1px),var(--xl-grid) 0,',
+      'var(--xl-grid) var(--xl-a),transparent 0);border:0;border-right:1px solid #bfbfbf;border-radius:0;box-shadow:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-card{grid-column:3;grid-row:1;overflow:visible;border:0;border-radius:0;',
+      'box-shadow:none;background:linear-gradient(to right,transparent calc(var(--xl-col) - 1px),var(--xl-grid) 0);',
+      'background-size:var(--xl-col) 100%}',
+      '[data-dsh-pig][data-skin="excel"] .dp-content{padding:0;overflow:visible}',
+      // the pig as an inserted picture, with selection handles; off by default
+      '[data-dsh-pig][data-skin="excel"] .dp-scene{position:absolute;z-index:6;top:var(--xl-row);right:8px;',
+      'width:auto;height:auto;margin:0;padding:6px 10px;background:#fff;border:1px solid #8a8a8a;border-radius:0;',
+      'cursor:default}',
+      '[data-dsh-pig][data-skin="excel"] .dp-scene::before,[data-dsh-pig][data-skin="excel"] .dp-scene::after{content:"";',
+      'position:absolute;width:6px;height:6px;background:#fff;border:1px solid #8a8a8a}',
+      '[data-dsh-pig][data-skin="excel"] .dp-scene::before{left:-4px;top:-4px}',
+      '[data-dsh-pig][data-skin="excel"] .dp-scene::after{right:-4px;bottom:-4px}',
+      '[data-dsh-pig][data-skin="excel"][data-pic="false"] .dp-scene{display:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-work{margin:0 4px 0 0}',
+      '[data-dsh-pig][data-skin="excel"] .dp-bubble{left:auto;right:calc(100% + 10px);top:0;margin:0;width:max-content;',
+      'max-width:220px;padding:0 6px;background:#ffffe1;border:1px solid #767676}',
+      '[data-dsh-pig][data-skin="excel"] .dp-bubble::after{display:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-toast{left:auto;right:12px;width:300px;padding:4px 8px;background:#fff;',
+      'border:1px solid #a6a6a6;box-shadow:0 2px 8px rgba(0,0,0,.18)}',
+      // the pig's columns: label in A, value in B
+      '[data-dsh-pig][data-skin="excel"] .dp-side{display:block;padding:0}',
+      '[data-dsh-pig][data-skin="excel"] .dp-side-head,[data-dsh-pig][data-skin="excel"] .dp-stat,',
+      '[data-dsh-pig][data-skin="excel"] .dp-kv,[data-dsh-pig][data-skin="excel"] .dp-side .dp-actions{display:grid;',
+      'grid-template-columns:var(--xl-a) var(--xl-b);gap:0;margin:0;padding:0;align-items:center;text-align:left}',
+      '[data-dsh-pig][data-skin="excel"] .dp-side-head>*,[data-dsh-pig][data-skin="excel"] .dp-stat-k,',
+      '[data-dsh-pig][data-skin="excel"] .dp-kv>*{padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '[data-dsh-pig][data-skin="excel"] .dp-side-name{outline:2px solid var(--xl-green);outline-offset:-2px;font-weight:700;color:#000}',
+      '[data-dsh-pig][data-skin="excel"] .dp-stat{grid-template-areas:"k m"}',
+      '[data-dsh-pig][data-skin="excel"] .dp-stat-v{grid-area:m;z-index:1;padding:0 6px;font-weight:400;color:#000}',
+      '[data-dsh-pig][data-skin="excel"] .dp-stat .dp-meter{height:16px;margin:2px 3px 2px 2px;background:none;overflow:visible}',
+      '[data-dsh-pig][data-skin="excel"] .dp-meter i{transition:none;border:1px solid #638ec6;',
+      'background:linear-gradient(90deg,#638ec6,#b4c9e7 70%,#eef3fa)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-meter.dp-mood i{border-color:#ff555a;background:linear-gradient(90deg,#ff555a,#ffb1b3 70%,#fff1f1)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-meter.dp-clean i{border-color:#63be7b;background:linear-gradient(90deg,#63be7b,#b6dfc1 70%,#f0f8f2)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-meter.dp-health i{border-color:#ffb628;background:linear-gradient(90deg,#ffb628,#ffdc95 70%,#fff7e6)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-kvs{display:block;margin:0}',
+      '[data-dsh-pig][data-skin="excel"] .dp-kv{border:0;background:none;color:inherit}',
+      '[data-dsh-pig][data-skin="excel"] .dp-kv b{font-weight:400;text-align:right;color:#000}',
+      '[data-dsh-pig][data-skin="excel"] .dp-side-away .dp-progress{height:4px;margin:0 4px 0 0;width:auto}',
+      // cells, not cards: everything sits on the 20px row grid
+      '[data-dsh-pig][data-skin="excel"] .dp-item{min-height:calc(var(--xl-row) * 2);padding:0 6px;gap:6px;border:0;background:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-item.dp-wanted{background:#ffeb9c}',
+      '[data-dsh-pig][data-skin="excel"] .dp-item[aria-pressed="true"]{background:#e2efda}',
+      '[data-dsh-pig][data-skin="excel"] .dp-item:hover,[data-dsh-pig][data-skin="excel"] .dp-kv:hover,',
+      '[data-dsh-pig][data-skin="excel"] .dp-stat:hover{outline:2px solid var(--xl-green);outline-offset:-2px}',
+      '[data-dsh-pig][data-skin="excel"] .dp-list,[data-dsh-pig][data-skin="excel"] .dp-grid,',
+      '[data-dsh-pig][data-skin="excel"] .dp-seg,[data-dsh-pig][data-skin="excel"] .dp-actions,',
+      '[data-dsh-pig][data-skin="excel"] .dp-chips,[data-dsh-pig][data-skin="excel"] .dp-region-body{gap:0;margin:0;padding:0}',
+      '[data-dsh-pig][data-skin="excel"] .dp-title,[data-dsh-pig][data-skin="excel"] .dp-row,',
+      '[data-dsh-pig][data-skin="excel"] .dp-shelf,[data-dsh-pig][data-skin="excel"] .dp-note,',
+      '[data-dsh-pig][data-skin="excel"] .dp-empty,[data-dsh-pig][data-skin="excel"] .dp-memo,',
+      '[data-dsh-pig][data-skin="excel"] .dp-name,[data-dsh-pig][data-skin="excel"] .dp-badge,',
+      '[data-dsh-pig][data-skin="excel"] .dp-locked,[data-dsh-pig][data-skin="excel"] .dp-perk,',
+      '[data-dsh-pig][data-skin="excel"] .dp-world,[data-dsh-pig][data-skin="excel"] .dp-rename,',
+      '[data-dsh-pig][data-skin="excel"] .dp-pick,[data-dsh-pig][data-skin="excel"] .dp-region,',
+      '[data-dsh-pig][data-skin="excel"] .dp-dev-note{margin:0;padding:0 6px;border:0;border-radius:0;background:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-title b,[data-dsh-pig][data-skin="excel"] .dp-shelf{font-weight:700}',
+      '[data-dsh-pig][data-skin="excel"] .dp-alert{margin:0;padding:0 6px;border:0;border-radius:0}',
+      '[data-dsh-pig][data-skin="excel"] .dp-alert.dp-sick{background:#ffc7ce;color:#9c0006}',
+      '[data-dsh-pig][data-skin="excel"] .dp-alert.dp-work{background:#ddebf7}',
+      '[data-dsh-pig][data-skin="excel"] .dp-alert.dp-dead{background:#ededed}',
+      '[data-dsh-pig][data-skin="excel"] .dp-alert.dp-legacy{background:#ffeb9c;color:#9c5700}',
+      '[data-dsh-pig][data-skin="excel"] .dp-alert.dp-trip{background:#c6efce;color:#006100}',
+      '[data-dsh-pig][data-skin="excel"] .dp-region-head{padding:0 6px;font-weight:700}',
+      '[data-dsh-pig][data-skin="excel"] .dp-chip{padding:0 8px 0 0;border:0;background:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-chip[data-have="false"]{color:#a6a6a6}',
+      '[data-dsh-pig][data-skin="excel"] .dp-tag{padding:0 4px;background:none;color:#9c5700;border:0}',
+      '[data-dsh-pig][data-skin="excel"] .dp-input{height:var(--xl-row);padding:0 4px;border:1px solid var(--xl-green)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-progress{height:4px;width:60px}',
+      // buttons are hyperlinks: blue, underlined, no pill, no 3D edge
+      '[data-dsh-pig][data-skin="excel"] .dp-btn,[data-dsh-pig][data-skin="excel"] .dp-mini,',
+      '[data-dsh-pig][data-skin="excel"] .dp-link,[data-dsh-pig][data-skin="excel"] .dp-cancel,',
+      '[data-dsh-pig][data-skin="excel"] .dp-icon-btn{height:var(--xl-row);padding:0 6px;margin:0;border:0;',
+      'border-radius:0;background:none;box-shadow:none;color:var(--xl-link);text-decoration:underline;',
+      'justify-content:flex-start;text-align:left;width:auto;transform:none;transition:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-btn:hover:not(:disabled),[data-dsh-pig][data-skin="excel"] .dp-mini:hover:not(:disabled),',
+      '[data-dsh-pig][data-skin="excel"] .dp-link:hover,[data-dsh-pig][data-skin="excel"] .dp-cancel:hover{',
+      'background:none;color:#03449e;transform:none;box-shadow:none;outline:2px solid var(--xl-green);outline-offset:-2px}',
+      '[data-dsh-pig][data-skin="excel"] .dp-btn:disabled,[data-dsh-pig][data-skin="excel"] .dp-mini:disabled{',
+      'color:#a6a6a6;text-decoration:none;background:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-btn[aria-pressed="true"],[data-dsh-pig][data-skin="excel"] .dp-btn[data-open-picker="true"]{',
+      'background:#e2efda;color:#000;text-decoration:none;font-weight:700}',
+      '[data-dsh-pig][data-skin="excel"] .dp-seg button{border:0;border-radius:0;background:none;padding:0 6px;text-align:left;color:#262626}',
+      '[data-dsh-pig][data-skin="excel"] .dp-seg button[data-active="true"]{background:#e2efda;font-weight:700;',
+      'outline:2px solid var(--xl-green);outline-offset:-2px}',
+      '[data-dsh-pig][data-skin="excel"] .dp-seg button[data-locked="true"]{color:#a6a6a6;border:0}',
+      // sheet tabs at the bottom, then the status bar
+      '.dp-xl-sheets{display:flex;align-items:stretch;height:26px;background:var(--xl-head);border-top:1px solid var(--xl-grid)}',
+      '.dp-xl-nav{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:0 12px;color:#a6a6a6}',
+      '[data-dsh-pig][data-skin="excel"] .dp-bar{display:flex;gap:0;padding:0;background:none;border:0;overflow-x:auto;',
+      'scrollbar-width:none}',
+      '[data-dsh-pig][data-skin="excel"] .dp-ico{flex:0 0 auto;flex-direction:row;padding:0 16px;color:#444;',
+      'border:0;border-right:1px solid var(--xl-grid);border-radius:0;white-space:nowrap}',
+      '[data-dsh-pig][data-skin="excel"] .dp-ico:hover{background:#e1e1e1}',
+      '[data-dsh-pig][data-skin="excel"] .dp-ico[data-active="true"]{background:#fff;color:var(--xl-green);',
+      'font-weight:700;box-shadow:inset 0 -3px 0 var(--xl-green)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-ico[data-active="true"] span{font-weight:700}',
+      '.dp-xl-plus{flex:0 0 auto;width:30px;padding:0;font:inherit;cursor:pointer;color:#6b6b6b;background:none;border:0}',
+      '[data-dsh-pig][data-skin="excel"] .dp-xl-plus{font-size:17px}',
+      '.dp-xl-status{display:flex;align-items:center;gap:14px;height:24px;padding:0 10px;background:var(--xl-head);',
+      'border-top:1px solid var(--xl-grid);color:#444;white-space:nowrap;overflow:hidden}',
+      '.dp-xl-msg{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}',
+      '.dp-xl-views{display:flex;gap:2px}',
+      '.dp-xl-views button{width:24px;height:20px;padding:0;font:inherit;cursor:pointer;color:#444;',
+      'background:none;border:1px solid transparent}',
+      '.dp-xl-views button:hover{background:#e1e1e1}',
+      '.dp-xl-views button[aria-pressed="true"]{background:#d2d2d2;border-color:#a6a6a6}',
+      '.dp-xl-zoom{display:flex;align-items:center;gap:6px}',
+      '.dp-xl-track{position:relative;width:96px;height:1px;background:#8a8a8a}',
+      '.dp-xl-track i{position:absolute;left:50%;top:-5px;width:4px;height:11px;margin-left:-2px;background:#444}',
+      '@media (max-width:759px){',
+      '[data-dsh-pig][data-skin="excel"] .dp-split{grid-template-columns:var(--xl-gut) minmax(0,1fr);',
+      'grid-template-rows:auto minmax(100%,max-content)}',
+      '[data-dsh-pig][data-skin="excel"] .dp-card{grid-column:2;grid-row:2}',
+      '[data-dsh-pig][data-skin="excel"] .dp-left{border-right:0;border-bottom:1px solid #bfbfbf}',
+      '.dp-xl-nav,.dp-xl-zoom{display:none}',
+      '}',
     ].join('')
 
     // ---------------------------------------------------------------------
@@ -1197,14 +1517,20 @@ window.__ModuleLoader__.load({
       // A client plugin that throws while activating can take the whole web boot
       // down with it, so the pig never lets an exception escape.
       try {
-        return mount()
+        return mount(ctx)
       } catch (error) {
         console.warn('[dsh-pig] 挂载失败，猪先退到一边', error)
         return () => {}
       }
     }
 
-    function mount() {
+    function mount(ctx) {
+      // [dsh-piggy-claude-code mod] what the host asked for: the floating
+      // widget (default) or the big two-column panel, and whether it can open
+      // that big panel from the floating one (the ⤢ button).
+      var options = isObj(ctx) ? ctx : {}
+      var split = options.layout === 'split'
+      var openBigPanel = typeof options.openPanel === 'function' ? options.openPanel : null
       if (document.querySelector('[' + MOUNTED + ']') !== null) {
         console.warn('[dsh-pig] 已存在实例，跳过重复挂载')
         return () => {}
@@ -1237,8 +1563,13 @@ window.__ModuleLoader__.load({
           if (parsed && typeof parsed.bottom === 'number') userBottom = parsed.bottom
         } catch (error) { /* ignore */ }
       }
-      host.style.right = userRight + 'px'
-      host.style.bottom = userBottom + 'px'
+      if (split) {
+        // The big panel fills its window; the pig stands in the left column.
+        host.setAttribute('data-layout', 'split')
+      } else {
+        host.style.right = userRight + 'px'
+        host.style.bottom = userBottom + 'px'
+      }
 
       // Keep the pig itself on screen — and nothing more. There used to be a
       // composer-avoidance floor here that forced the widget above the input box:
@@ -1246,6 +1577,7 @@ window.__ModuleLoader__.load({
       // `pointer-events:none` solves that properly now, so the clamp only ever
       // stopped the user from parking their pet where they wanted it.
       function clampPig() {
+        if (split) return
         var vw = window.innerWidth || 0
         var vh = window.innerHeight || 0
         if (vw <= 0 || vh <= 0) return
@@ -1268,41 +1600,94 @@ window.__ModuleLoader__.load({
       }
 
       /**
+       * [dsh-piggy-claude-code mod] The panel size the user dragged out, or
+       * null for the default (292 px wide, as tall as its content).
+       */
+      function readCardSize() {
+        try {
+          var parsed = JSON.parse(readStore(CARD_SIZE_KEY) || 'null')
+          if (isObj(parsed) && typeof parsed.w === 'number' && typeof parsed.h === 'number'
+            && isFinite(parsed.w) && isFinite(parsed.h)) return { w: parsed.w, h: parsed.h }
+        } catch (error) { /* ignore */ }
+        return null
+      }
+      var cardSize = split ? null : readCardSize()
+
+      /**
+       * How much room the panel has: whichever side of the pig is roomier, and
+       * the widest it can be while staying inside the window.
+       */
+      function panelRoom() {
+        var vw = window.innerWidth || 0
+        var vh = window.innerHeight || 0
+        var rect = scene.getBoundingClientRect()
+        var roomAbove = rect.top - PANEL_GAP - PANEL_MARGIN
+        var roomBelow = vh - rect.bottom - PANEL_GAP - PANEL_MARGIN
+        // Ties go above, which is where a bottom-docked pig expects its menu —
+        // but a pig parked near the top must flip, otherwise its own menu opens
+        // off the screen.
+        var above = roomAbove >= roomBelow
+        return {
+          rect: rect,
+          above: above,
+          height: Math.max(PANEL_MIN_HEIGHT, Math.round(above ? roomAbove : roomBelow)),
+          width: Math.max(0, vw - 2 * PANEL_MARGIN),
+        }
+      }
+
+      /** A requested size, held between the minimum and what fits right now. */
+      function clampCardSize(w, h, room) {
+        var maxW = Math.max(PANEL_WIDTH, room.width)
+        var maxH = Math.max(PANEL_MIN_HEIGHT, room.height)
+        return {
+          w: Math.round(Math.min(Math.max(w, PANEL_WIDTH), maxW)),
+          h: Math.round(Math.min(Math.max(h, Math.min(CARD_MIN_HEIGHT, maxH)), maxH)),
+        }
+      }
+
+      /**
        * Place the panel so it is fully on screen, wherever the pig has been
        * parked. The pig itself is never moved by this: the panel is absolutely
-       * positioned, so it takes no space in the wrapper's box.
+       * positioned, so it takes no space in the wrapper's box. A size the user
+       * chose is honoured as far as the window allows, and re-clamped here on
+       * every resize — the stored size itself is kept, so a window that grows
+       * back gets the full panel back.
        */
       function fitPanel() {
-        if (!isOpen) return
+        if (!isOpen || split) return
         var vw = window.innerWidth || 0
         var vh = window.innerHeight || 0
         if (vw <= 0 || vh <= 0) return
 
-        var rect = scene.getBoundingClientRect()
-        var roomAbove = rect.top - PANEL_GAP - PANEL_MARGIN
-        var roomBelow = vh - rect.bottom - PANEL_GAP - PANEL_MARGIN
+        var room = panelRoom()
+        var rect = room.rect
 
-        // Open on whichever side has space. Ties go above, which is where a
-        // bottom-docked pig expects its menu — but a pig parked near the top
-        // must flip, otherwise its own menu opens off the screen.
         // Exactly one of top/bottom may apply. Clearing with '' would fall back
         // to the stylesheet's `bottom`, leaving both set — and an absolutely
         // positioned box with both edges pinned collapses to zero height.
-        if (roomAbove >= roomBelow) {
+        if (room.above) {
           card.style.top = 'auto'
           card.style.bottom = 'calc(100% + ' + PANEL_GAP + 'px)'
-          card.style.maxHeight = Math.max(PANEL_MIN_HEIGHT, Math.round(roomAbove)) + 'px'
         } else {
           card.style.bottom = 'auto'
           card.style.top = 'calc(100% + ' + PANEL_GAP + 'px)'
-          card.style.maxHeight = Math.max(PANEL_MIN_HEIGHT, Math.round(roomBelow)) + 'px'
         }
+        card.style.maxHeight = room.height + 'px'
 
         // Horizontal: the panel is wider than the pig, so anchoring its right
         // edge to the pig can push it off the left of the window. A negative
         // `right` moves the panel without touching the wrapper's width, so the
         // pig stays exactly where it was put.
         var width = Math.min(PANEL_WIDTH, vw - 2 * PANEL_MARGIN)
+        if (cardSize !== null) {
+          var fitted = clampCardSize(cardSize.w, cardSize.h, room)
+          width = Math.min(fitted.w, Math.max(0, vw - 2 * PANEL_MARGIN))
+          card.style.width = Math.round(width) + 'px'
+          card.style.height = fitted.h + 'px'
+        } else {
+          card.style.width = ''
+          card.style.height = ''
+        }
         card.style.maxWidth = Math.round(width) + 'px'
         var shift = PANEL_MARGIN - (rect.right - width)
         card.style.right = shift > 0 ? -Math.round(shift) + 'px' : '0px'
@@ -1418,6 +1803,150 @@ window.__ModuleLoader__.load({
         }
       }
 
+      /**
+       * [dsh-piggy-claude-code mod] The spreadsheet disguise: title bar, ribbon,
+       * formula bar and column letters on top; row numbers down the left; sheet
+       * tabs and the status bar at the bottom. Built once; `updateExcel` keeps
+       * the words, the selected cell and the numbers current.
+       */
+      function buildExcelChrome() {
+        var texts = []
+        /** Remember a node's Chinese key so a language switch can relabel it. */
+        function label(node, zh, attr) {
+          texts.push({ node: node, zh: zh, attr: attr || null })
+          return node
+        }
+        var top = el('div', 'dp-xl-top')
+        var title = el('div', 'dp-xl-title')
+        title.appendChild(el('span', 'dp-xl-logo', 'X'))
+        var name = label(el('span', 'dp-xl-name'), XL_TITLE)
+        title.appendChild(name)
+        var win = el('span', 'dp-xl-win')
+        win.setAttribute('aria-hidden', 'true')
+        win.appendChild(el('span', null, '—'))
+        win.appendChild(el('span', null, '☐'))
+        win.appendChild(el('span', null, '✕'))
+        title.appendChild(win)
+        top.appendChild(title)
+
+        var ribbon = el('div', 'dp-xl-ribbon')
+        for (var r = 0; r < XL_RIBBON.length; r += 1) {
+          var tabName = label(el('span'), XL_RIBBON[r])
+          tabName.setAttribute('data-ribbon', XL_RIBBON[r])
+          tabName.setAttribute('data-active', XL_RIBBON[r] === '开始' ? 'true' : 'false')
+          ribbon.appendChild(tabName)
+        }
+        top.appendChild(ribbon)
+
+        var tools = el('div', 'dp-xl-tools')
+        tools.appendChild(label(el('span', 'dp-xl-tool'), '粘贴'))
+        tools.appendChild(el('span', 'dp-xl-sep'))
+        tools.appendChild(el('span', 'dp-xl-box', 'Calibri'))
+        tools.appendChild(el('span', 'dp-xl-box', '11'))
+        var looks = [['B', 'fontWeight', '700'], ['I', 'fontStyle', 'italic'], ['U', 'textDecoration', 'underline']]
+        for (var k = 0; k < looks.length; k += 1) {
+          var glyph = el('span', 'dp-xl-tool', looks[k][0])
+          glyph.style[looks[k][1]] = looks[k][2]
+          tools.appendChild(glyph)
+        }
+        tools.appendChild(el('span', 'dp-xl-sep'))
+        tools.appendChild(el('span', 'dp-xl-tool', '%'))
+        tools.appendChild(el('span', 'dp-xl-tool', '.00'))
+        tools.appendChild(el('span', 'dp-xl-sep'))
+        tools.appendChild(label(el('span', 'dp-xl-tool'), '条件格式'))
+        tools.appendChild(el('span', 'dp-xl-sep'))
+        // The one tool that does something: show the pig as an inserted picture.
+        var pic = button(null, { 'data-xl-pic': 'toggle', 'aria-pressed': 'false' }, function () { setPic(!picOn) })
+        label(pic, '图片')
+        label(pic, '显示/隐藏小猪', 'title')
+        tools.appendChild(pic)
+        top.appendChild(tools)
+
+        var fx = el('div', 'dp-xl-fx')
+        var nameBox = label(el('span', 'dp-xl-namebox', 'B2'), '名称框', 'aria-label')
+        fx.appendChild(nameBox)
+        var fxIcons = el('span', 'dp-xl-fxicons')
+        fxIcons.setAttribute('aria-hidden', 'true')
+        fxIcons.appendChild(el('span', null, '✕'))
+        fxIcons.appendChild(el('span', null, '✓'))
+        fxIcons.appendChild(el('i', null, 'fx'))
+        fx.appendChild(fxIcons)
+        var formula = el('span', 'dp-xl-formula', '')
+        fx.appendChild(formula)
+        top.appendChild(fx)
+
+        var cols = el('div', 'dp-xl-cols')
+        cols.setAttribute('aria-hidden', 'true')
+        cols.appendChild(el('span', null, ''))
+        var colCells = {}
+        for (var c = 0; c < XL_COLUMNS.length; c += 1) {
+          colCells[XL_COLUMNS[c]] = el('span', null, XL_COLUMNS[c])
+          cols.appendChild(colCells[XL_COLUMNS[c]])
+        }
+        top.appendChild(cols)
+
+        var rows = el('div', 'dp-xl-rows')
+        rows.setAttribute('aria-hidden', 'true')
+        var list = el('ol')
+        for (var n = 1; n <= XL_ROWS; n += 1) list.appendChild(el('li', null, String(n)))
+        rows.appendChild(list)
+
+        var bottom = el('div', 'dp-xl-bottom')
+        var sheets = el('div', 'dp-xl-sheets')
+        var nav = el('span', 'dp-xl-nav')
+        nav.setAttribute('aria-hidden', 'true')
+        nav.appendChild(el('span', null, '◀'))
+        nav.appendChild(el('span', null, '▶'))
+        sheets.appendChild(nav)
+        // The six tabs are moved in here, before the "+" (which does nothing,
+        // like a real one would — it just looks the part).
+        var plus = button('dp-xl-plus', { 'data-xl-plus': 'true' }, function () {})
+        plus.textContent = '+'
+        label(plus, '新工作表', 'aria-label')
+        label(plus, '新工作表', 'title')
+        sheets.appendChild(plus)
+        bottom.appendChild(sheets)
+
+        var status = el('div', 'dp-xl-status')
+        var msg = el('span', 'dp-xl-msg', '')
+        status.appendChild(msg)
+        var stats = el('span', 'dp-xl-stats', '')
+        status.appendChild(stats)
+        var views = el('span', 'dp-xl-views')
+        var normal = button(null, { 'data-xl-view': 'normal', 'aria-pressed': 'true' }, function () {})
+        normal.textContent = '▦'
+        label(normal, '普通', 'title')
+        label(normal, '普通', 'aria-label')
+        views.appendChild(normal)
+        var page = button(null, { 'data-xl-view': 'layout', 'aria-pressed': 'false' }, function () {})
+        page.textContent = '▤'
+        label(page, '页面布局', 'title')
+        label(page, '页面布局', 'aria-label')
+        views.appendChild(page)
+        // The way back, dressed as Excel's third view button.
+        var back = button(null, { 'data-skin-toggle': 'game' }, function () { setSkin('game') })
+        back.textContent = '◫'
+        label(back, '返回游戏', 'title')
+        label(back, '返回游戏', 'aria-label')
+        views.appendChild(back)
+        status.appendChild(views)
+        var zoom = el('span', 'dp-xl-zoom')
+        zoom.setAttribute('aria-hidden', 'true')
+        zoom.appendChild(el('span', null, '－'))
+        var track = el('span', 'dp-xl-track')
+        track.appendChild(el('i'))
+        zoom.appendChild(track)
+        zoom.appendChild(el('span', null, '＋'))
+        zoom.appendChild(el('span', null, '100%'))
+        status.appendChild(zoom)
+        bottom.appendChild(status)
+
+        return {
+          top: top, rows: rows, bottom: bottom, texts: texts, nameBox: nameBox, formula: formula,
+          colCells: colCells, sheets: sheets, plus: plus, msg: msg, stats: stats, pic: pic,
+        }
+      }
+
       var content = el('div', 'dp-content')
 
       // Panel first, pig second: as flex siblings in a bottom-anchored column,
@@ -1425,8 +1954,54 @@ window.__ModuleLoader__.load({
       // not, and the panel can only ever grow upwards from it.
       card.appendChild(content)
       card.appendChild(bar)
-      host.appendChild(card)
-      host.appendChild(scene)
+
+      // [dsh-piggy-claude-code mod] Floating only: a ⤢ that asks the host for
+      // the big panel (when it can open one), and grips to resize the panel.
+      // Both are appended after the content and the icon bar — the header is
+      // pulled to the top with `order`, the grips are absolutely positioned —
+      // so the panel's flow is unchanged.
+      var expand = null
+      var grips = []
+      if (!split) {
+        if (openBigPanel !== null) {
+          var cardHead = el('div', 'dp-card-head')
+          expand = button('dp-icon-btn', { 'data-open-panel': 'true' }, function () {
+            try { openBigPanel() } catch (error) { console.warn('[dsh-pig] 打不开大面板', error) }
+          })
+          expand.textContent = '⤢'
+          cardHead.appendChild(expand)
+          card.appendChild(cardHead)
+        }
+        for (var g = 0; g < 3; g += 1) {
+          var grip = el('div', 'dp-grip')
+          grip.setAttribute('data-resize', ['corner', 'top', 'left'][g])
+          grips.push(grip)
+          card.appendChild(grip)
+        }
+      }
+
+      // [dsh-piggy-claude-code mod] The big panel: the very same scene, card,
+      // content and icon bar, framed as two columns — and, in the spreadsheet
+      // skin, wrapped in fake Excel chrome.
+      var side = null
+      var xl = null
+      if (split) {
+        var left = el('div', 'dp-left')
+        left.appendChild(scene)
+        side = el('div', 'dp-side')
+        left.appendChild(side)
+        xl = buildExcelChrome()
+        var sheet = el('div', 'dp-split')
+        sheet.appendChild(xl.rows)
+        sheet.appendChild(left)
+        sheet.appendChild(card)
+        host.appendChild(xl.top)
+        host.appendChild(sheet)
+        host.appendChild(xl.bottom)
+      } else {
+        host.appendChild(card)
+        host.appendChild(scene)
+      }
       if (document.body !== null && document.body !== undefined) {
         document.body.appendChild(host)
       } else {
@@ -1450,7 +2025,15 @@ window.__ModuleLoader__.load({
       var studyPicks = { stage: null, keys: [] }
       // The unfolded travel region: null until the player picks one.
       var openRegion = readStore(REGION_KEY)
-      var isOpen = readStore(OPEN_KEY) === 'true'
+      // The big panel is always open: there is no floating card to toggle.
+      var isOpen = split || readStore(OPEN_KEY) === 'true'
+      // [dsh-piggy-claude-code mod] the big panel's skin, the spreadsheet's
+      // optional pig picture, the page title to give back, the last Escape.
+      var skin = split && readStore(SKIN_KEY) === 'excel' ? 'excel' : 'game'
+      var picOn = readStore(PIC_KEY) === '1'
+      var originalTitle = typeof document.title === 'string' ? document.title : null
+      var lastEscape = 0
+      var xlMessage = null
       var lastStage = null
       var lastPendingAt = 0
       var pollTimer = null
@@ -1526,9 +2109,14 @@ window.__ModuleLoader__.load({
         if (bubbleTimer !== null) window.clearTimeout(bubbleTimer)
         bubble.textContent = text
         bubble.hidden = false
+        // The spreadsheet hides the pig, so what it says goes to the status bar.
+        xlMessage = text
+        updateExcelMessage()
         bubbleTimer = window.setTimeout(function () {
           bubble.hidden = true
           bubbleTimer = null
+          xlMessage = null
+          updateExcelMessage()
         }, ms || 2600)
       }
 
@@ -1540,6 +2128,7 @@ window.__ModuleLoader__.load({
 
       // ---- open / close ----
       function setOpen(next) {
+        if (split) next = true
         isOpen = next
         host.setAttribute('data-open', next ? 'true' : 'false')
         // Collapsed must be the pig and *nothing else*. One switch hides the
@@ -1548,10 +2137,11 @@ window.__ModuleLoader__.load({
         // actually assert.
         card.hidden = !next
         // The hud rides with the panel: a bare pig in the corner should not have
-        // a name and a coin count floating beside it.
-        hud.hidden = !next
+        // a name and a coin count floating beside it. The big panel's left
+        // column says all of that already.
+        hud.hidden = split || !next
         if (!next) bubble.hidden = true
-        writeStore(OPEN_KEY, next ? 'true' : 'false')
+        if (!split) writeStore(OPEN_KEY, next ? 'true' : 'false')
         if (next) {
           renderContent()
           fitPanel()
@@ -1564,6 +2154,8 @@ window.__ModuleLoader__.load({
           card.style.bottom = ''
           card.style.maxHeight = ''
           card.style.maxWidth = ''
+          card.style.width = ''
+          card.style.height = ''
         }
       }
 
@@ -1572,6 +2164,10 @@ window.__ModuleLoader__.load({
         picker = null
         renderContent()
         for (var k in icons) icons[k].setAttribute('data-active', k === tab ? 'true' : 'false')
+        if (split) {
+          renderSide()
+          updateExcel()
+        }
       }
 
       /**
@@ -1676,6 +2272,12 @@ window.__ModuleLoader__.load({
       function statusTab() {
         var p = view.pig
         if (p === null) return
+        // The big panel shows the numbers and the care buttons in its left
+        // column, so its status tab keeps only what lives nowhere else.
+        if (split) {
+          splitStatusTab()
+          return
+        }
         nameRow()
         labelledBar('🍚 ' + T('饱食'), p.satiety, p.satiety + '%')
         labelledBar('❤️ ' + T('心情'), p.happiness, p.happiness + '%', 'dp-mood')
@@ -1697,27 +2299,66 @@ window.__ModuleLoader__.load({
         age.appendChild(el('span', null, '🎂 ' + T('年龄')))
         age.appendChild(el('b', null, p.ageLabel + ' · ' + p.stage.label))
         content.appendChild(age)
-        // [dsh-piggy-claude-code mod] the pig grows by weight, not by age.
+        growthNote()
+        lookChoices()
+
+        content.appendChild(careGrid())
+        if (picker !== null && (view.care[picker] ?? []).length > 0) content.appendChild(pickerPanel(picker))
+
+        if (p.memories.length > 0) {
+          content.appendChild(el('div', 'dp-memo', p.memories.slice(-3).join('\n')))
+        }
+
+        content.appendChild(langSwitcher())
+      }
+
+      /** [dsh-piggy-claude-code mod] The big panel's status tab: name, looks, growth, memories. */
+      function splitStatusTab() {
+        var p = view.pig
+        nameRow()
+        if (p.stage.line !== '') content.appendChild(el('div', 'dp-note', p.stage.line))
+        growthNote()
+        lookChoices()
+        if (p.memories.length > 0) {
+          content.appendChild(el('div', 'dp-memo', p.memories.slice(-12).join('\n')))
+        }
+      }
+
+      /** [dsh-piggy-claude-code mod] the pig grows by weight, not by age. */
+      function growthNote() {
+        var p = view.pig
         if (p.kgToNextStage !== null) {
           content.appendChild(el('div', 'dp-empty',
             T('再长 {kg} kg 就长成下一阶段了', { kg: p.kgToNextStage.toFixed(1) })))
         }
-        if (p.canChooseLook) {
-          var looks = el('div', 'dp-actions dp-looks')
-          var LOOK_CHOICES = [['elder', '👴 ' + T('老年猪')], ['original', '🐷 ' + T('原版')]]
-          for (var li = 0; li < LOOK_CHOICES.length; li += 1) {
-            (function (key, label) {
-              var pick = button('dp-btn', { 'data-look': key, 'aria-pressed': String(p.look === key) }, function () {
-                if (p.look !== key) send('look', { look: key })
-              })
-              pick.appendChild(el('span', null, label))
-              looks.appendChild(pick)
-            })(LOOK_CHOICES[li][0], LOOK_CHOICES[li][1])
-          }
-          content.appendChild(looks)
-        }
+      }
 
-        var grid = el('div', 'dp-actions')
+      function lookChoices() {
+        var p = view.pig
+        if (!p.canChooseLook) return
+        var looks = el('div', 'dp-actions dp-looks')
+        var LOOK_CHOICES = [['elder', '👴 ' + T('老年猪')], ['original', '🐷 ' + T('原版')]]
+        for (var li = 0; li < LOOK_CHOICES.length; li += 1) {
+          (function (key, label) {
+            var pick = button('dp-btn', { 'data-look': key, 'aria-pressed': String(p.look === key) }, function () {
+              if (p.look !== key) send('look', { look: key })
+            })
+            pick.appendChild(el('span', null, label))
+            looks.appendChild(pick)
+          })(LOOK_CHOICES[li][0], LOOK_CHOICES[li][1])
+        }
+        content.appendChild(looks)
+      }
+
+      /** Wherever the care buttons live: the status tab, or the big panel's left column. */
+      function repaintCare() {
+        if (split) renderSide()
+        else renderContent()
+      }
+
+      /** Feed · bathe · play · pat. */
+      function careGrid() {
+        var grid = el('div', 'dp-actions dp-care')
         for (var i = 0; i < MODES.length; i += 1) {
           (function (key) {
             var info = view.actions[key]
@@ -1728,13 +2369,13 @@ window.__ModuleLoader__.load({
               // opens the pig's bag instead of guessing what to use.
               if (needsItem) {
                 picker = picker === key ? null : key
-                renderContent()
+                repaintCare()
               } else {
                 send(key)
               }
             })
             btn.setAttribute('data-open-picker', picker === key ? 'true' : 'false')
-            btn.appendChild(el('span', null, CARE_LABEL[key][1]))
+            btn.appendChild(el('span', 'dp-e', CARE_LABEL[key][1]))
             btn.appendChild(el('span', null, T(CARE_LABEL[key][0])))
             if (needsItem) btn.appendChild(el('span', 'dp-count', String(shelf.length)))
             // Trust but verify: a dead pig cannot be cared for even if the host
@@ -1748,15 +2389,169 @@ window.__ModuleLoader__.load({
             grid.appendChild(btn)
           })(MODES[i])
         }
-        content.appendChild(grid)
+        return grid
+      }
 
-        if (picker !== null && (view.care[picker] ?? []).length > 0) content.appendChild(pickerPanel(picker))
+      /**
+       * [dsh-piggy-claude-code mod] The big panel's left column: who the pig
+       * is, its four bars, traits, weight and coins, what it is off doing, the
+       * care buttons and the language. Rebuilt on every render, like the tabs.
+       * The spreadsheet skin lays the same rows out as label/value cells in
+       * columns A and B, with the bars as data bars and no emoji.
+       */
+      function renderSide() {
+        if (!split || side === null) return
+        side.textContent = ''
+        var game = skin === 'game'
+        var e = function (emoji) { return game ? emoji + ' ' : '' }
+        var p = view.pig
+        var head = el('div', 'dp-side-head')
+        if (view.hatched !== true || p === null) {
+          head.appendChild(el('b', 'dp-side-name', T('一个{box}', { box: view.boxStage.label })))
+          head.appendChild(el('span', 'dp-side-sub', T('点开拆开它')))
+          side.appendChild(head)
+          side.appendChild(langSwitcher())
+          side.appendChild(skinButton())
+          return
+        }
+        head.appendChild(el('b', 'dp-side-name', p.name))
+        head.appendChild(el('span', 'dp-side-sub', [p.stage.label, p.ageLabel].filter(Boolean).join(' · ')))
+        side.appendChild(head)
 
-        if (p.memories.length > 0) {
-          content.appendChild(el('div', 'dp-memo', p.memories.slice(-3).join('\n')))
+        var stats = el('div', 'dp-stats')
+        stats.appendChild(statRow(e('🍚') + T('饱食'), p.satiety, p.satiety + '%', ''))
+        stats.appendChild(statRow(e('❤️') + T('心情'), p.happiness, p.happiness + '%', 'dp-mood'))
+        stats.appendChild(statRow(e('🫧') + T('清洁'), p.cleanliness, p.cleanliness + '%', 'dp-clean'))
+        stats.appendChild(statRow(e('💚') + T('健康'), p.healthPercent, p.health + '/' + view.maxHealth, 'dp-health'))
+        side.appendChild(stats)
+
+        var kvs = el('div', 'dp-kvs')
+        kvs.appendChild(kv(e('🧠') + T('智力'), p.traits.intel))
+        kvs.appendChild(kv(e('✨') + T('魅力'), p.traits.charm))
+        kvs.appendChild(kv(e('💪') + T('武力'), p.traits.strong))
+        kvs.appendChild(kv(e('⚖️') + T('体重'), p.weight))
+        kvs.appendChild(kv(e('🪙') + T('金币'), p.coins))
+        side.appendChild(kvs)
+
+        var a = view.activity
+        if (a !== null) {
+          var away = el('div', 'dp-alert dp-work dp-side-away')
+          away.appendChild(el('b', null, e(a.emoji) + T('在外面：{label}', { label: a.label })))
+          away.appendChild(el('div', null, T('还有 {n} 秒', { n: a.secondsLeft })))
+          var track = el('div', 'dp-progress')
+          var fill = document.createElement('i')
+          fill.style.width = Math.max(0, Math.min(100, a.progress)) + '%'
+          track.appendChild(fill)
+          away.appendChild(track)
+          side.appendChild(away)
         }
 
-        content.appendChild(langSwitcher())
+        side.appendChild(careGrid())
+        if (picker !== null && (view.care[picker] ?? []).length > 0) side.appendChild(pickerPanel(picker))
+        side.appendChild(langSwitcher())
+        side.appendChild(skinButton())
+      }
+
+      /** One bar: label, value, and the meter (a data bar in the spreadsheet). */
+      function statRow(label, value, valueText, variant) {
+        var row = el('div', 'dp-stat')
+        row.appendChild(el('span', 'dp-stat-k', label))
+        row.appendChild(el('b', 'dp-stat-v', valueText))
+        row.appendChild(meter(value, variant))
+        return row
+      }
+
+      function kv(label, value) {
+        var row = el('div', 'dp-kv')
+        row.appendChild(el('span', null, label))
+        row.appendChild(el('b', null, String(value)))
+        return row
+      }
+
+      /** The game skin's way into the spreadsheet (the boss key is the quick one). */
+      function skinButton() {
+        var go = button('dp-link dp-skin-btn', { 'data-skin-toggle': 'excel' }, function () { setSkin('excel') })
+        go.textContent = '📊 ' + T('伪装成表格')
+        go.title = T('老板键：连按两次 Esc 或 Ctrl+Shift+E')
+        return go
+      }
+
+      /** Skin, picture and bar placement, from the current state. */
+      function applySkin() {
+        if (!split) return
+        host.setAttribute('data-skin', skin)
+        host.setAttribute('data-pic', picOn ? 'true' : 'false')
+        // Excel keeps its sheet tabs at the bottom of the window; the game skin
+        // keeps them on top of the right-hand card (CSS `order`).
+        bar.remove()
+        if (skin === 'excel') xl.sheets.insertBefore(bar, xl.plus)
+        else card.appendChild(bar)
+        updateExcel()
+      }
+
+      function setSkin(next) {
+        if (!split) return
+        next = next === 'excel' ? 'excel' : 'game'
+        if (next === skin) return
+        skin = next
+        writeStore(SKIN_KEY, skin)
+        picker = null
+        applySkin()
+        renderSide()
+        renderContent()
+      }
+
+      function setPic(on) {
+        picOn = on === true
+        writeStore(PIC_KEY, picOn ? '1' : '0')
+        host.setAttribute('data-pic', picOn ? 'true' : 'false')
+        if (xl !== null) xl.pic.setAttribute('aria-pressed', picOn ? 'true' : 'false')
+      }
+
+      /** "就绪", or whatever the (hidden) pig just said. */
+      function updateExcelMessage() {
+        if (xl === null) return
+        xl.msg.textContent = xlMessage !== null ? xlMessage : T('就绪')
+      }
+
+      /**
+       * The spreadsheet's moving parts: its words in the pig's language, the
+       * selected cell (one column per tab), a formula naming the pig, and the
+       * status bar's sums over the four bars. Also owns `document.title`.
+       */
+      function updateExcel() {
+        if (xl === null) return
+        try {
+          if (skin === 'excel') document.title = T(XL_TITLE)
+          else if (originalTitle !== null) document.title = originalTitle
+        } catch (error) { /* a read-only title */ }
+        for (var i = 0; i < xl.texts.length; i += 1) {
+          var entry = xl.texts[i]
+          if (entry.attr !== null) entry.node.setAttribute(entry.attr, T(entry.zh))
+          else entry.node.textContent = T(entry.zh)
+        }
+        var keys = visibleTabs().map(t => t.key)
+        var index = Math.max(0, keys.indexOf(tab))
+        var column = XL_COLUMNS.charAt(Math.min(XL_COLUMNS.length - 1, index + 1))
+        xl.nameBox.textContent = column + '2'
+        for (var letter in xl.colCells) xl.colCells[letter].setAttribute('data-active', letter === column ? 'true' : 'false')
+        var p = view.pig
+        if (view.hatched === true && p !== null) {
+          var call = tab === 'status' ? 'PIG' : 'PIG.' + tab.toUpperCase()
+          xl.formula.textContent = '=' + call + '("' + p.name.replace(/"/g, '""') + '")'
+          var values = [p.satiety, p.happiness, p.cleanliness, p.healthPercent]
+          var sum = values.reduce((total, v) => total + v, 0)
+          xl.stats.textContent = [
+            T('平均值：{n}', { n: Math.round(sum / values.length * 100) / 100 }),
+            T('计数：{n}', { n: values.length }),
+            T('求和：{n}', { n: sum }),
+          ].join('    ')
+        } else {
+          xl.formula.textContent = '=BOX()'
+          xl.stats.textContent = ''
+        }
+        xl.pic.setAttribute('aria-pressed', picOn ? 'true' : 'false')
+        updateExcelMessage()
       }
 
       /**
@@ -1935,7 +2730,7 @@ window.__ModuleLoader__.load({
           })(shelf[i])
         }
         wrap.appendChild(list)
-        var cancel = button('dp-cancel', {}, function () { picker = null; renderContent() })
+        var cancel = button('dp-cancel', {}, function () { picker = null; repaintCare() })
         cancel.textContent = T('算了')
         wrap.appendChild(cancel)
         return wrap
@@ -2504,8 +3299,9 @@ window.__ModuleLoader__.load({
           grid.appendChild(hatch)
           content.appendChild(grid)
           content.appendChild(el('div', 'dp-empty', T('拆开就会蹦出一只小猪 —— 不用敲命令')))
-          // The language can be picked before the pig exists.
-          content.appendChild(langSwitcher())
+          // The language can be picked before the pig exists (the big panel
+          // has its switcher in the left column).
+          if (!split) content.appendChild(langSwitcher())
           fitPanel()
           return
         }
@@ -2626,12 +3422,27 @@ window.__ModuleLoader__.load({
           else if (event.kind === 'trip') { react('away', 900); burst(['🧳', '🎁'], 3) }
         }
 
+        relabelChrome()
+        // The big panel's left column and spreadsheet chrome hold no input, so
+        // they always follow the snapshot.
+        renderSide()
+        updateExcel()
+
         // [dsh-piggy-claude-code mod] A poll lands every few seconds. Rebuilding
         // the field mid-word would break an IME composition (Japanese, Chinese),
         // so while the name field has focus the content area waits; the hud and
         // toasts above still update, and the next poll after blur catches up.
         if (renameHasFocus()) return
         renderContent()
+      }
+
+      /** [dsh-piggy-claude-code mod] Tooltips on the floating panel's ⤢ and grips. */
+      function relabelChrome() {
+        if (expand !== null) {
+          expand.title = T('打开大面板')
+          expand.setAttribute('aria-label', T('打开大面板'))
+        }
+        for (var i = 0; i < grips.length; i += 1) grips[i].title = T('拖动调整大小 · 双击还原')
       }
 
       // ---- talking to the host ----
@@ -2724,6 +3535,8 @@ window.__ModuleLoader__.load({
       var drag = null
       scene.addEventListener('pointerdown', function (event) {
         if (event.button !== 0) return
+        // The big panel's pig stands still in its column: a press is a pat.
+        if (split) return
         drag = {
           x: event.clientX, y: event.clientY,
           right: parseFloat(getComputedStyle(host).right) || 18,
@@ -2791,12 +3604,77 @@ window.__ModuleLoader__.load({
       scene.addEventListener('pointercancel', function () { endDrag() })
       scene.addEventListener('contextmenu', function (event) {
         event.preventDefault()
+        // Nothing to toggle in the big panel.
+        if (split) return
         setOpen(!isOpen)
         if (isOpen && view.pig !== null) flash('pet')
       })
 
+      // ---- [dsh-piggy-claude-code mod] resize the panel ----
+      // Grabbed by the top-left corner (both ways) or the top/left edge (one
+      // way). The panel is pinned at its bottom-right, so pulling up and left
+      // makes it bigger. Everything stops at the grip: a resize never reaches
+      // the pig, so it cannot pat it, toggle the menu or start a pig drag.
+      var sizing = null
+      function startResize(grip, event) {
+        if (event.button !== undefined && event.button !== 0) return
+        event.stopPropagation?.()
+        event.preventDefault?.()
+        var r = card.getBoundingClientRect()
+        sizing = {
+          grip: grip,
+          kind: grip.getAttribute('data-resize'),
+          x: num(event.clientX, 0),
+          y: num(event.clientY, 0),
+          w: r.width > 0 ? r.width : PANEL_WIDTH,
+          h: r.height > 0 ? r.height : CARD_MIN_HEIGHT,
+        }
+        // Hosts that pass clicks through transparent pixels can key off this
+        // to keep the pointer while it is dragged past the panel's edge.
+        host.setAttribute('data-resizing', sizing.kind)
+        grip.setPointerCapture?.(event.pointerId)
+      }
+      function moveResize(event) {
+        if (sizing === null) return
+        event.stopPropagation?.()
+        var dx = sizing.x - num(event.clientX, sizing.x)
+        var dy = sizing.y - num(event.clientY, sizing.y)
+        cardSize = clampCardSize(
+          sizing.kind === 'top' ? sizing.w : sizing.w + dx,
+          sizing.kind === 'left' ? sizing.h : sizing.h + dy,
+          panelRoom(),
+        )
+        fitPanel()
+      }
+      function endResize(event) {
+        if (sizing === null) return
+        event?.stopPropagation?.()
+        sizing.grip.releasePointerCapture?.(event?.pointerId)
+        sizing = null
+        host.removeAttribute('data-resizing')
+        if (cardSize !== null) writeStore(CARD_SIZE_KEY, JSON.stringify(cardSize))
+      }
+      function resetCardSize(event) {
+        event?.stopPropagation?.()
+        event?.preventDefault?.()
+        cardSize = null
+        writeStore(CARD_SIZE_KEY, '')
+        fitPanel()
+      }
+      for (var gi = 0; gi < grips.length; gi += 1) {
+        (function (grip) {
+          grip.addEventListener('pointerdown', function (event) { startResize(grip, event) })
+          grip.addEventListener('pointermove', moveResize)
+          grip.addEventListener('pointerup', endResize)
+          grip.addEventListener('pointercancel', endResize)
+          grip.addEventListener('dblclick', resetCardSize)
+          grip.addEventListener('click', function (event) { event.stopPropagation?.() })
+        })(grips[gi])
+      }
+
       // ---- life ----
       clampPig()
+      applySkin()
       setOpen(isOpen)
       render(view)
       refresh()
@@ -2833,6 +3711,25 @@ window.__ModuleLoader__.load({
         if (event.ctrlKey && event.shiftKey && (event.key === 'D' || event.key === 'd')) {
           event.preventDefault()
           setDevMode(!devMode)
+          return
+        }
+        if (!split) return
+        // [dsh-piggy-claude-code mod] The boss key: Ctrl+Shift+E, or Escape
+        // twice in quick succession, turns the big panel into a spreadsheet
+        // at once. Only the status bar's view button turns it back.
+        if (event.ctrlKey && event.shiftKey && (event.key === 'E' || event.key === 'e')) {
+          event.preventDefault?.()
+          setSkin('excel')
+          return
+        }
+        if (event.key === 'Escape') {
+          var now = Date.now()
+          if (now - lastEscape <= BOSS_ESC_MS) {
+            lastEscape = 0
+            setSkin('excel')
+          } else {
+            lastEscape = now
+          }
         }
       }
       window.addEventListener?.('keydown', onKeyDown)
@@ -2849,6 +3746,10 @@ window.__ModuleLoader__.load({
       function dispose() {
         stopped = true
         window.removeEventListener?.('resize', onResize)
+        window.removeEventListener?.('keydown', onKeyDown)
+        try {
+          if (split && originalTitle !== null) document.title = originalTitle
+        } catch (error) { /* a read-only title */ }
         if (pollTimer !== null) window.clearInterval(pollTimer)
         if (reactTimer !== null) window.clearTimeout(reactTimer)
         if (bubbleTimer !== null) window.clearTimeout(bubbleTimer)

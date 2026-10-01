@@ -17,13 +17,20 @@ private final class PetWebView: WKWebView {
 /// dragging the pig moves the whole window.
 @MainActor
 final class PetWindow: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
-    /// Tall enough for the panel above a 200 px (120 kg) pig; shorter screens
-    /// get a shorter window and the panel shrinks to fit.
+    /// Room for the panel above a 200 px (120 kg) pig, and for the player to
+    /// resize the panel bigger; everything transparent in it is click-through.
     static var size: NSSize {
         let visible = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.height ?? 800
-        return NSSize(width: 340, height: min(800, visible - 16))
+        return NSSize(width: 760, height: min(1200, visible - 16))
     }
-    private static let originKey = "petWindowOrigin"
+
+    /// The panel's ⤢ button: the host opens the big window.
+    var onOpenPanel: (() -> Void)?
+    /// Where the pig is: the window's bottom-right corner (the window's size
+    /// may change between versions). The old key held the 340-wide window's origin.
+    private static let anchorKey = "petWindowAnchor"
+    private static let legacyOriginKey = "petWindowOrigin"
+    private var lastMouse = NSPoint(x: -1, y: -1)
 
     let window: NSPanel
     private let webView: WKWebView
@@ -96,6 +103,9 @@ final class PetWindow: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         // Mid-press (a drag or a click in progress): keep the events coming.
         if dragging || NSEvent.pressedMouseButtons != 0 && !window.ignoresMouseEvents { return }
         let mouse = NSEvent.mouseLocation
+        // Nothing moved since the last verdict: keep it, skip the round trip.
+        if mouse == lastMouse { return }
+        lastMouse = mouse
         let frame = window.frame
         guard frame.contains(mouse) else {
             window.ignoresMouseEvents = true
@@ -176,6 +186,8 @@ final class PetWindow: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         case "dragEnd":
             dragging = false
             saveOrigin()
+        case "openPanel":
+            onOpenPanel?()
         default:
             break
         }
@@ -184,16 +196,20 @@ final class PetWindow: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     // MARK: placement
 
     private func restoreOrigin() {
-        if let saved = UserDefaults.standard.string(forKey: Self.originKey) {
-            let point = NSPointFromString(saved)
-            window.setFrameOrigin(point)
+        let defaults = UserDefaults.standard
+        if let saved = defaults.string(forKey: Self.anchorKey) {
+            let anchor = NSPointFromString(saved)
+            window.setFrameOrigin(NSPoint(x: anchor.x - Self.size.width, y: anchor.y))
+        } else if let legacy = defaults.string(forKey: Self.legacyOriginKey) {
+            let origin = NSPointFromString(legacy)
+            window.setFrameOrigin(NSPoint(x: origin.x + 340 - Self.size.width, y: origin.y))
         } else {
             placeBottomRight()
         }
     }
 
     private func saveOrigin() {
-        UserDefaults.standard.set(NSStringFromPoint(window.frame.origin), forKey: Self.originKey)
+        UserDefaults.standard.set(NSStringFromPoint(NSPoint(x: window.frame.maxX, y: window.frame.minY)), forKey: Self.anchorKey)
     }
 
     private func placeBottomRight() {

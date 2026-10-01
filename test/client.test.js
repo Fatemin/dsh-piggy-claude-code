@@ -1743,3 +1743,87 @@ test('the travel world reads in Japanese without stray Chinese from the client',
   }
   for (const zh of ['每跨', '集齐', '小时', '以前的']) assert.ok(!text.includes(zh), `"${zh}" leaked: ${text}`)
 })
+
+// ===========================================================================
+// [dsh-piggy-claude-code mod] Resizable panel, the big panel and its skins
+// ===========================================================================
+
+async function loadWithCtx(ctx, options) {
+  const loaded = await loadClient(options)
+  globalThis.window.setInterval = () => 1
+  loaded.registration.factory(() => {}).apply(ctx)
+  await settle()
+  return loaded
+}
+
+test('the open panel can be resized from its grips, remembers the size, and a double-click resets it', async () => {
+  const { dom, net, store } = await loadWithCtx({})
+  openPanel(dom)
+  const host = hostOf(dom)
+  assert.equal(host.attributes['data-open'], 'true')
+  const corner = findByAttr(cardOf(dom), 'data-resize', 'corner')
+  assert.ok(corner, 'a corner grip')
+  assert.ok(findByAttr(cardOf(dom), 'data-resize', 'top') && findByAttr(cardOf(dom), 'data-resize', 'left'), 'edge grips')
+
+  corner.fire('pointerdown', { button: 0, clientX: 600, clientY: 300 })
+  corner.fire('pointermove', { clientX: 450, clientY: 200 })
+  corner.fire('pointerup', {})
+  const saved = JSON.parse(store.get('dsh-pig:cardSize'))
+  assert.ok(saved.w > 292, `wider: ${saved.w}`)
+  assert.ok(saved.h > 0)
+  assert.equal(host.attributes['data-open'], 'true', 'resizing does not close the menu')
+  assert.deepEqual(postsOf(net), [], 'resizing pats nothing and sends nothing')
+
+  corner.fire('dblclick', {})
+  assert.equal(store.get('dsh-pig:cardSize'), '', 'double-click forgets the size')
+})
+
+test('the ⤢ button only appears when the host can open the big panel', async () => {
+  const plain = await loadWithCtx({})
+  openPanel(plain.dom)
+  assert.equal(findByAttr(hostOf(plain.dom), 'data-open-panel', 'true'), undefined, 'no ⤢ without a host that can open it')
+
+  let opened = 0
+  const hosted = await loadWithCtx({ openPanel: () => { opened += 1 } })
+  openPanel(hosted.dom)
+  const button = findByAttr(hostOf(hosted.dom), 'data-open-panel', 'true')
+  assert.ok(button, 'the ⤢ button')
+  button.fire('click', {})
+  assert.equal(opened, 1)
+})
+
+test('the big panel lays the pig and its bars on the left and the tabs on the right', async () => {
+  const { dom } = await loadWithCtx({ layout: 'split' })
+  const host = hostOf(dom)
+  assert.equal(host.attributes['data-layout'], 'split')
+  assert.equal(host.attributes['data-skin'], 'game')
+  const left = findByClass(host, 'dp-left')
+  assert.ok(left, 'a left column')
+  assert.ok(left.allText().includes('饱食') && left.allText().includes('健康'), 'the bars are on the left')
+  assert.ok(findByAttr(host, 'data-tab', 'travel'), 'the six tabs are there')
+})
+
+test('the spreadsheet skin is remembered, dresses up as Excel, and its sheet tabs switch the content', async () => {
+  const { dom, store } = await loadWithCtx({ layout: 'split' })
+  const host = hostOf(dom)
+  findByAttr(host, 'data-skin-toggle', 'excel').fire('click', {})
+  assert.equal(host.attributes['data-skin'], 'excel')
+  assert.equal(store.get('dsh-pig:skin'), 'excel')
+  for (const part of ['dp-xl-title', 'dp-xl-ribbon', 'dp-xl-fx']) assert.ok(findByClass(host, part), `${part} is drawn`)
+  assert.match(globalThis.document.title ?? '', /xlsx/, 'the window title is a workbook')
+
+  findByAttr(host, 'data-tab', 'shop').fire('click', {})
+  assert.equal(findByAttr(host, 'data-tab', 'shop').attributes['aria-selected'] ?? findByAttr(host, 'data-tab', 'shop').attributes['data-active'] ?? 'true', 'true')
+
+  findByAttr(host, 'data-skin-toggle', 'game').fire('click', {})
+  assert.equal(host.attributes['data-skin'], 'game')
+  assert.equal(store.get('dsh-pig:skin'), 'game')
+})
+
+test('the boss key turns the big panel into a spreadsheet at once', async () => {
+  const { dom, windowListeners } = await loadWithCtx({ layout: 'split' })
+  const host = hostOf(dom)
+  assert.equal(host.attributes['data-skin'], 'game')
+  for (const fn of windowListeners.keydown ?? []) fn({ key: 'E', ctrlKey: true, shiftKey: true, preventDefault() {} })
+  assert.equal(host.attributes['data-skin'], 'excel')
+})
