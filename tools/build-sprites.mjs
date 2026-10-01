@@ -686,6 +686,7 @@ for (const [name, s] of Object.entries(SPRITES)) {
   ${s.over ?? ''}
 </svg>
 `
-  writeFileSync(new URL(name + '.svg', OUT), svg)
+  // Empty slots (no props, no face) would leave blank, space-only lines.
+  writeFileSync(new URL(name + '.svg', OUT), svg.replace(/[ \t]+$/gm, '').replace(/\n{2,}/g, '\n'))
 }
 console.log(`wrote ${Object.keys(SPRITES).length} sprites to assets/`)
