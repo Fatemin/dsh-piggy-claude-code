@@ -47,6 +47,7 @@ import {
   STAGE_HEALTH,
   SUBJECTS,
   THRESHOLDS,
+  MOOD_LEVELS,
   TRAITS,
   TRAIT_ORDER,
   TRIPS,
@@ -1618,21 +1619,28 @@ const AWAY_MOODS = Object.freeze({
 
 export function mood(state, nowMs) {
   decay(state, nowMs)
-  if (state.dead) return { key: 'dead', emoji: '💀', label: word(state, '已经走了') }
+  if (state.dead) return { key: 'dead', emoji: '💀', label: word(state, '已经走了'), level: 0 }
   if (state.illness !== null) {
     const ill = currentIllness(state)
-    return { key: 'sick', emoji: '🤒', label: ill === null ? word(state, '生病了') : say(state, '得了{ill}', { ill: word(state, ill.name) }) }
+    const level = Math.min(3, Math.max(1, state.illness.stage ?? 1))
+    return { key: 'sick', emoji: '🤒', label: ill === null ? word(state, '生病了') : say(state, '得了{ill}', { ill: word(state, ill.name) }), level }
   }
   if (state.activity !== null) {
     const base = AWAY_MOODS[state.activity.kind] ?? AWAY_MOODS.work
-    return { ...base, label: word(state, base.label), emoji: state.activity.emoji || base.emoji }
+    return { ...base, label: word(state, base.label), emoji: state.activity.emoji || base.emoji, level: 0 }
   }
-  if (state.satiety < THRESHOLDS.hungry) return { key: 'hungry', emoji: '🍎', label: word(state, '饿了') }
-  if (state.cleanliness < THRESHOLDS.dirty) return { key: 'dirty', emoji: '🫧', label: word(state, '该洗澡了') }
-  if (nowMs - state.lastActiveAt > SLEEPY_AFTER_MINUTES * 60000) return { key: 'sleepy', emoji: '💤', label: word(state, '睡着了') }
-  if (state.happiness >= 75) return { key: 'happy', emoji: '❤️', label: word(state, '很开心') }
-  if (state.happiness < THRESHOLDS.lonely) return { key: 'lonely', emoji: '🥺', label: word(state, '有点孤单') }
-  return { key: 'fine', emoji: '😊', label: word(state, '还不错') }
+  if (state.satiety < THRESHOLDS.hungry) return { key: 'hungry', emoji: '🍎', label: word(state, '饿了'), level: moodLevel('hungry', state.satiety) }
+  if (state.cleanliness < THRESHOLDS.dirty) return { key: 'dirty', emoji: '🫧', label: word(state, '该洗澡了'), level: moodLevel('dirty', state.cleanliness) }
+  if (nowMs - state.lastActiveAt > SLEEPY_AFTER_MINUTES * 60000) return { key: 'sleepy', emoji: '💤', label: word(state, '睡着了'), level: 0 }
+  if (state.happiness >= 75) return { key: 'happy', emoji: '❤️', label: word(state, '很开心'), level: 0 }
+  if (state.happiness < THRESHOLDS.lonely) return { key: 'lonely', emoji: '🥺', label: word(state, '有点孤单'), level: moodLevel('lonely', state.happiness) }
+  return { key: 'fine', emoji: '😊', label: word(state, '还不错'), level: 0 }
+}
+
+/** 1–3: how far below the mood's threshold the bar has fallen. */
+function moodLevel(key, value) {
+  const [worse, worst] = MOOD_LEVELS[key]
+  return value < worst ? 3 : value < worse ? 2 : 1
 }
 
 export const healthPercent = state => Math.round((clamp(state.health, 0, MAX.health) / MAX.health) * 100)

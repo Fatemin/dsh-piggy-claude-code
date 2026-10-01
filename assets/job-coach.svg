@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="睡着了">
-  <title>睡着了</title>
-  <!-- 站着打盹：闭眼，鼻涕泡一鼓一缩，头顶飘 Z。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="健身教练">
+  <title>健身教练</title>
+  <!-- 绑着头带、挂着哨子，一下一下举哑铃带大家练，汗珠往外甩。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
     .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
@@ -8,17 +8,16 @@
     @keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.1)}}
     @keyframes wag{50%{transform:rotate(14deg)}}
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
-    .breathe{animation:breathe 3.6s ease-in-out infinite;transform-origin:190px 298px}
-    .tail{animation:none}.ear2{animation:none}
-    .bubble{animation:bubble 3.6s ease-in-out infinite;transform-box:fill-box;transform-origin:100% 50%}
-    .z1{animation:z 3.6s ease-out infinite}.z2{animation:z 3.6s ease-out -1.2s infinite}.z3{animation:z 3.6s ease-out -2.4s infinite}
-    @keyframes breathe{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.025,.97) rotate(1deg)}}
-    @keyframes bubble{0%,100%{transform:scale(.3)}50%{transform:scale(1)}}
-    @keyframes z{0%{opacity:0;transform:translate(0,14px)}30%{opacity:1}100%{opacity:0;transform:translate(24px,-36px)}}
+    .squat{animation:squat 1.2s ease-in-out infinite;transform-origin:190px 298px}
+    .bell{animation:lift 1.2s ease-in-out infinite}
+    .s1{animation:fling 1.2s ease-out infinite}.s2{animation:fling 1.2s ease-out -.6s infinite}
+    @keyframes squat{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.94)}}
+    @keyframes lift{0%,100%{transform:translateY(0)}50%{transform:translateY(-70px)}}
+    @keyframes fling{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(26px,-30px)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
   
-  <g class="breathe">
+  <g class="squat">
   <g class="pig" stroke-linecap="round" stroke-linejoin="round">
     <path fill="#FF9FA5" d="M214 210C213 221 210 232 211 246C212 256 224 257 233 254C244 251 246 240 247 225L248 211Z"/>
     <path class="tail" d="M294 62C298 47 305 40 315 45C327 50 341 64 329 72C319 80 309 67 316 51C322 39 330 31 339 35" fill="none" stroke="#FFD1AF" stroke-width="11"/>
@@ -27,17 +26,17 @@
     <path fill="#FFD1AF" d="M63 107C64 97 75 81 84 68C90 58 102 58 108 66L115 87L90 113Z"/>
     <path class="ear1" d="M97 65C88 63 83 75 78 82C71 91 65 101 64 106C68 116 86 109 93 98" fill="none" stroke="#E95892" stroke-width="10"/>
     <path class="ear2" d="M187 104C174 110 184 129 193 139C201 147 213 150 220 139C225 131 224 119 222 112" fill="none" stroke="#E95892" stroke-width="11"/>
-    <path d="M80 141Q91 152 102 141M154 156Q165 167 176 156" fill="none" stroke="#373A32" stroke-width="7"/>
+    <path class="eye" fill="#373A32" d="M91 130C84 129 79 136 80 144C80 151 85 155 92 154C99 153 103 147 102 140C102 134 98 130 91 130Z"/><path class="eye" fill="#373A32" d="M166 145C159 144 154 150 154 157C153 164 158 170 165 170C171 170 176 164 176 157C176 151 173 146 166 145Z"/>
     <g class="snout"><path fill="#FF8195" d="M108 165C91 161 78 166 74 175C68 186 74 200 90 207C106 214 125 214 135 204C143 196 140 183 129 174C123 170 116 167 108 165Z"/>
     <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
     <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/></g>
     <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/>
     
-    <circle class="bubble" cx="62" cy="190" r="18" fill="#CFEAF7" opacity=".85"/>
+    <path d="M64 112L196 128L194 146L60 130Z" fill="#E5534B"/><path d="M64 120L195 136" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+    <path d="M120 214Q150 240 190 226" fill="none" stroke="#5B5F73" stroke-width="4"/><rect x="138" y="228" width="22" height="14" rx="6" fill="#F5C24C"/>
+    <g class="s1"><path transform="translate(220 70) scale(1.3)" d="M0 0C-4 7-6 11-6 14a6 6 0 0 0 12 0c0-3-2-7-6-14Z" fill="#9FD8F0"/></g><g class="s2"><path transform="translate(60 100) scale(1.1)" d="M0 0C-4 7-6 11-6 14a6 6 0 0 0 12 0c0-3-2-7-6-14Z" fill="#9FD8F0"/></g>
   </g>
   </g>
-  <g fill="none" stroke="#8C9BC4" stroke-linecap="round" stroke-linejoin="round">
-    <path class="z1" d="M150 50h18l-18 20h18" stroke-width="6"/>
-    <path class="z2" d="M188 24h22l-22 24h22" stroke-width="7"/>
-    <path class="z3" d="M230 0h26l-26 28h26" stroke-width="8"/></g>
+  <g class="bell"><path d="M28 236H118" fill="none" stroke="#5B5F73" stroke-width="8" stroke-linecap="round"/>
+    <rect x="22" y="216" width="20" height="40" rx="6" fill="#3A3E52"/><rect x="104" y="216" width="20" height="40" rx="6" fill="#3A3E52"/></g>
 </svg>

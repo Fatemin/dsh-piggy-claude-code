@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="摸摸">
-  <title>摸摸</title>
-  <!-- 一只手在头上轻轻拍，眯眼往上蹭，小心心冒出来。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="一等奖">
+  <title>一等奖</title>
+  <!-- 一等奖！高兴得原地转圈，金币哗啦啦往下掉。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
     .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
@@ -8,18 +8,18 @@
     @keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.1)}}
     @keyframes wag{50%{transform:rotate(14deg)}}
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
-    .nuzzle{animation:nuzzle .6s ease-in-out infinite;transform-origin:190px 298px}
-    .hand{animation:pat .6s ease-in-out infinite}
-    .tail{animation-duration:.3s}
-    .h1{animation:rise 1.2s ease-out infinite;transform-box:fill-box;transform-origin:50% 100%}
-    .h2{animation:rise 1.2s ease-out -.6s infinite;transform-box:fill-box;transform-origin:50% 100%}
-    @keyframes nuzzle{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.96) rotate(-1.5deg)}}
-    @keyframes pat{0%,100%{transform:translateY(-10px)}50%{transform:translateY(6px)}}
-    @keyframes rise{0%{opacity:0;transform:translateY(12px) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translateY(-30px) scale(1)}}
+    .spin{animation:spin 1s ease-in-out infinite;transform-origin:190px 170px}
+    .tail{animation-duration:.25s}
+    .c{animation:fall 1.2s linear infinite}
+    .c2{animation-delay:-.4s}.c3{animation-delay:-.8s}
+    .sp{animation:pop 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes spin{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-24px) rotate(-180deg)}100%{transform:translateY(0) rotate(-360deg)}}
+    @keyframes fall{0%{opacity:0;transform:translateY(-40px) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translateY(300px) rotate(180deg)}}
+    @keyframes pop{0%{opacity:0;transform:scale(.4)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.3)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
-  
-  <g class="nuzzle">
+  <g class="c "><circle cx="50" cy="-20" r="12" fill="#FFD35A"/><circle cx="50" cy="-20" r="7" fill="none" stroke="#E5B33A" stroke-width="3"/></g><g class="c c2"><circle cx="110" cy="-20" r="12" fill="#FFD35A"/><circle cx="110" cy="-20" r="7" fill="none" stroke="#E5B33A" stroke-width="3"/></g><g class="c c3"><circle cx="180" cy="-20" r="12" fill="#FFD35A"/><circle cx="180" cy="-20" r="7" fill="none" stroke="#E5B33A" stroke-width="3"/></g><g class="c "><circle cx="250" cy="-20" r="12" fill="#FFD35A"/><circle cx="250" cy="-20" r="7" fill="none" stroke="#E5B33A" stroke-width="3"/></g><g class="c c2"><circle cx="320" cy="-20" r="12" fill="#FFD35A"/><circle cx="320" cy="-20" r="7" fill="none" stroke="#E5B33A" stroke-width="3"/></g><g class="c c3"><circle cx="80" cy="-20" r="12" fill="#FFD35A"/><circle cx="80" cy="-20" r="7" fill="none" stroke="#E5B33A" stroke-width="3"/></g><g class="c c3"><circle cx="290" cy="-20" r="12" fill="#FFD35A"/><circle cx="290" cy="-20" r="7" fill="none" stroke="#E5B33A" stroke-width="3"/></g><path class="sp" d="M40 18l6.6 15.399999999999999 15.399999999999999 6.6-15.399999999999999 6.6-6.6 15.399999999999999-6.6-15.399999999999999-15.399999999999999-6.6 15.399999999999999-6.6Z" fill="#FFE27A"/><path class="sp" d="M340 42l5.3999999999999995 12.6 12.6 5.3999999999999995-12.6 5.3999999999999995-5.3999999999999995 12.6-5.3999999999999995-12.6-12.6-5.3999999999999995 12.6-5.3999999999999995Z" fill="#FFE27A"/>
+  <g class="spin">
   <g class="pig" stroke-linecap="round" stroke-linejoin="round">
     <path fill="#FF9FA5" d="M214 210C213 221 210 232 211 246C212 256 224 257 233 254C244 251 246 240 247 225L248 211Z"/>
     <path class="tail" d="M294 62C298 47 305 40 315 45C327 50 341 64 329 72C319 80 309 67 316 51C322 39 330 31 339 35" fill="none" stroke="#FFD1AF" stroke-width="11"/>
@@ -37,8 +37,5 @@
     
   </g>
   </g>
-  <g class="hand"><g transform="translate(14 28)"><path d="M88 22C92 2 132-2 152 8 166 15 166 32 152 36H106C96 36 86 32 88 22Z" fill="#FBE3CF"/>
-    <path d="M108 8V32M124 6V32M140 8V32" fill="none" stroke="#EBC9AE" stroke-width="4" stroke-linecap="round"/>
-    <path d="M152 20H230" fill="none" stroke="#FBE3CF" stroke-width="24" stroke-linecap="round"/></g></g>
-    <g class="h1"><path transform="translate(250 20) scale(1.2)" d="M0 0c0-10 13-15 18-5 5-10 18-5 18 5 0 13-18 23-18 23S0 13 0 0Z" fill="#FF7A93"/></g><g class="h2"><path transform="translate(300 50) scale(0.9)" d="M0 0c0-10 13-15 18-5 5-10 18-5 18 5 0 13-18 23-18 23S0 13 0 0Z" fill="#FF9FB0"/></g>
+  
 </svg>

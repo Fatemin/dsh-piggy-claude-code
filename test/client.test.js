@@ -926,16 +926,29 @@ test('a drawn stage shows a sprite, the others show the emoji', async () => {
 
 test('a drawn pig wears its mood pose; fine and grave keep the stage drawing', async () => {
   const stage = { key: 'young', label: '青年猪', emoji: '🐖', size: 48, art: 'stage-young' }
-  const hungry = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'hungry' } } })
+  const hungry = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'hungry', moodLevel: 3 } } })
   hungry.registration.factory(() => {}).apply({})
   await settle()
   const img = findByClass(hostOf(hungry.dom), 'dp-pig-img')
-  assert.equal(img.src, '/dsh-pig/art/mood-hungry.svg', 'a hungry pig looks hungry')
+  assert.equal(img.src, '/dsh-pig/art/mood-hungry-3.svg', 'a starving pig looks starving')
+
+  const oldHost = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'sick' } } })
+  oldHost.registration.factory(() => {}).apply({})
+  await settle()
+  assert.equal(findByClass(hostOf(oldHost.dom), 'dp-pig-img').src, '/dsh-pig/art/mood-sick-2.svg', 'no level from the host: the middle one')
 
   const fine = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'fine' } } })
   fine.registration.factory(() => {}).apply({})
   await settle()
   assert.equal(findByClass(hostOf(fine.dom), 'dp-pig-img').src, '/dsh-pig/art/stage-young.svg', 'fine keeps the stage drawing')
+
+  const career = await loadClient({ status: { ...SNAPSHOT,
+    jobs: [{ key: 'vtuber', label: 'VTuber', emoji: '🎙️', tier: 'pro', art: 'vtuber' }],
+    activity: { kind: 'work', key: 'vtuber', label: 'VTuber', emoji: '🎙️', secondsLeft: 60, progress: 10 },
+    pig: { ...PIG, stage, mood: 'working' } } })
+  career.registration.factory(() => {}).apply({})
+  await settle()
+  assert.equal(findByClass(hostOf(career.dom), 'dp-pig-img').src, '/dsh-pig/art/job-vtuber.svg', 'a career has its own pose')
 
   const grave = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage: { key: 'grave', label: '墓碑', emoji: '🪦', size: 52, art: 'stage-grave' }, mood: 'dead' } } })
   grave.registration.factory(() => {}).apply({})
@@ -1845,4 +1858,29 @@ test('the boss key turns the big panel into a spreadsheet at once', async () => 
   assert.equal(host.attributes['data-skin'], 'game')
   for (const fn of windowListeners.keydown ?? []) fn({ key: 'E', ctrlKey: true, shiftKey: true, preventDefault() {} })
   assert.equal(host.attributes['data-skin'], 'excel')
+})
+
+test('a scratch card plays scratching first, then the verdict and the line', async () => {
+  const lottery = { price: 100, cooldownMinutes: 10, waitSeconds: 0, affordable: true,
+    prizes: [{ tier: 'first', label: '一等奖', emoji: '🏆', coins: 2000 }, { tier: 'none', label: '谢谢参与', emoji: '🙏', coins: 0 }] }
+  const stage = { key: 'young', label: '青年猪', emoji: '🐖', size: 48, art: 'stage-young' }
+  const status = { ...SNAPSHOT, lottery, pig: { ...PIG, stage, mood: 'fine' } }
+  const { registration, dom } = await loadClient({
+    status,
+    actResult: { ...status, ok: true, prize: { tier: 'first', coins: 2000, mood: 'jackpot' } },
+  })
+  const later = []
+  window.setTimeout = fn => { later.push(fn); return later.length }
+  registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(dom)
+  pickTab(dom, 'shop')
+  findByAttr(contentOf(dom), 'data-lottery', 'go').fire('click')
+  await settle()
+  await settle()
+  const img = () => findByClass(hostOf(dom), 'dp-pig-img')
+  assert.equal(img().src, '/dsh-pig/art/lottery-scratch.svg', 'scratching first')
+  for (const fn of later.splice(0)) fn()
+  assert.equal(img().src, '/dsh-pig/art/lottery-jackpot.svg', 'then the jackpot')
+  assert.ok(findByClass(hostOf(dom), 'dp-bubble').allText().includes('2000'))
 })

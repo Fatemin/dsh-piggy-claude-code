@@ -380,6 +380,7 @@ export function snapshot(store, options = {}) {
       worldTraveler: state.worldDone === true,
       soul: hasSoul(state, nowMs),
       mood: current.key,
+      moodLevel: current.level ?? 0,
       moodEmoji: current.emoji,
       moodLabel: current.label,
       satiety: Math.round(state.satiety),

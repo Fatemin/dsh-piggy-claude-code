@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="拒绝">
-  <title>拒绝</title>
-  <!-- 一扭身背过去（参考 sample 转身的帧），头顶冒火、鼻子喷气，过一会儿再转回来。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="AI 训练师">
+  <title>AI 训练师</title>
+  <!-- 戴着眼镜对着笔记本调模型，头顶的神经网络一层层亮起来。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
     .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
@@ -8,17 +8,21 @@
     @keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.1)}}
     @keyframes wag{50%{transform:rotate(14deg)}}
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
-    .turn{animation:turn 1.6s ease-in-out infinite;transform-origin:190px 298px}
-    .tail{animation-duration:.25s}
-    .vein{animation:throb .4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
-    .puff{animation:puff 1.6s ease-out infinite}
-    @keyframes turn{0%,100%{transform:scaleX(1)}15%,80%{transform:scaleX(-1)}35%,55%{transform:scaleX(-1) rotate(2deg)}45%{transform:scaleX(-1) rotate(-2deg)}}
-    @keyframes throb{50%{transform:scale(1.25)}}
-    @keyframes puff{0%,15%{opacity:0;transform:translate(0,0) scale(.6)}35%{opacity:1}70%,100%{opacity:0;transform:translate(26px,-10px) scale(1.3)}}
+    .type{animation:type .4s ease-in-out infinite;transform-origin:190px 298px}
+    .n{animation:fire 1.8s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .n2{animation-delay:.3s}.n3{animation-delay:.6s}
+    .keys{animation:keys .4s steps(2) infinite}
+    @keyframes type{50%{transform:translateY(3px) rotate(.6deg)}}
+    @keyframes fire{0%,100%{fill:#D9DDF2;transform:scale(1)}30%{fill:#7C8CF0;transform:scale(1.25)}}
+    @keyframes keys{50%{opacity:0}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
-  
-  <g class="turn">
+  <g stroke="#C9CEE8" stroke-width="3">
+    <path d="M190 -14L240 -24M190 -14L240 6M190 -14L240 36M190 22L240 -24M190 22L240 6M190 22L240 36M240 -24L290 -6M240 6L290 -6M240 36L290 -6M240 -24L290 24M240 6L290 24M240 36L290 24"/></g>
+    <circle class="n" cx="190" cy="-14" r="10" fill="#D9DDF2"/><circle class="n" cx="190" cy="22" r="10" fill="#D9DDF2"/>
+    <circle class="n n2" cx="240" cy="-24" r="10" fill="#D9DDF2"/><circle class="n n2" cx="240" cy="6" r="10" fill="#D9DDF2"/><circle class="n n2" cx="240" cy="36" r="10" fill="#D9DDF2"/>
+    <circle class="n n3" cx="290" cy="-6" r="10" fill="#D9DDF2"/><circle class="n n3" cx="290" cy="24" r="10" fill="#D9DDF2"/>
+  <g class="type">
   <g class="pig" stroke-linecap="round" stroke-linejoin="round">
     <path fill="#FF9FA5" d="M214 210C213 221 210 232 211 246C212 256 224 257 233 254C244 251 246 240 247 225L248 211Z"/>
     <path class="tail" d="M294 62C298 47 305 40 315 45C327 50 341 64 329 72C319 80 309 67 316 51C322 39 330 31 339 35" fill="none" stroke="#FFD1AF" stroke-width="11"/>
@@ -33,9 +37,13 @@
     <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/></g>
     <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/>
     
-    
+    <g fill="none" stroke="#5B5F73" stroke-width="5"><circle cx="91" cy="142" r="20"/><circle cx="165" cy="157" r="20"/><path d="M111 145L145 152M71 138L58 132"/></g>
   </g>
   </g>
-  <path class="vein" d="M250 0l10 10M270 0l-10 10M250 30l10-10M270 30l-10-10" fill="none" stroke="#E5534B" stroke-width="7" stroke-linecap="round"/>
-    <g class="puff"><circle cx="320" cy="200" r="11" fill="#ECE6DC"/><circle cx="340" cy="190" r="8" fill="#ECE6DC"/></g>
+  <rect x="28" y="252" width="170" height="12" rx="6" fill="#C69C6D"/>
+    <rect x="38" y="264" width="12" height="36" rx="6" fill="#B0875A"/><rect x="176" y="264" width="12" height="36" rx="6" fill="#B0875A"/>
+    <path d="M36 250L46 210H118L110 250Z" fill="#4B5068"/>
+    <circle cx="80" cy="230" r="8" fill="#7C8CF0"/>
+    <rect x="34" y="246" width="100" height="8" rx="4" fill="#3A3E52"/>
+    <path class="keys" d="M124 236l8-6M130 244l10-2" fill="none" stroke="#9FA9B4" stroke-width="4" stroke-linecap="round"/>
 </svg>

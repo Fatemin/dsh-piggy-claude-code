@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="该洗澡了">
-  <title>该洗澡了</title>
-  <!-- 身上沾了泥点，一只苍蝇绕着飞，屁股后面一坨便便。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="生病 · 二级">
+  <title>生病 · 二级</title>
+  <!-- 额头搭湿毛巾，嘴里叼体温计，脸烧得通红，时不时打哆嗦。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
     .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
@@ -8,19 +8,15 @@
     @keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.1)}}
     @keyframes wag{50%{transform:rotate(14deg)}}
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
-    .itch{animation:itch 3s ease-in-out infinite;transform-origin:190px 298px}
-    .fly{animation:orbit 2.2s linear infinite;transform-origin:250px 70px}
-    .wing{animation:buzz .12s linear infinite;transform-box:fill-box;transform-origin:50% 100%}
-    .stink{animation:stink 2s ease-in-out infinite}
-    @keyframes itch{0%,70%,100%{transform:rotate(0)}76%{transform:rotate(-1.5deg)}82%{transform:rotate(1.5deg)}88%{transform:rotate(-.8deg)}}
-    @keyframes orbit{to{transform:rotate(360deg)}}
-    @keyframes buzz{50%{transform:scaleY(.4)}}
-    @keyframes stink{0%,100%{opacity:0;transform:translateY(8px)}50%{opacity:.9;transform:translateY(-6px)}}
+    .shiver{animation:shiver 2.2s ease-in-out infinite;transform-origin:190px 298px}
+    .tail{animation:none}
+    .heat{animation:heat 2.2s ease-in-out infinite}
+    @keyframes shiver{0%,60%,100%{transform:translateX(0)}64%{transform:translateX(-4px) rotate(-1deg)}68%{transform:translateX(4px) rotate(.8deg)}72%{transform:translateX(-2px)}}
+    @keyframes heat{0%,100%{opacity:.2;transform:translateY(6px)}50%{opacity:1;transform:translateY(-6px)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
-  <path d="M330 298c-13 0-18-8-13-13-5-6 0-13 8-13-3-8 5-13 11-11 8 0 13 5 11 11 8 0 13 8 8 13 5 5 0 13-13 13Z" fill="#8A5A3B"/>
-    <path class="stink" d="M326 256q-7-10 0-20t0-20M344 256q-7-10 0-20" fill="none" stroke="#A9C98A" stroke-width="5" stroke-linecap="round"/>
-  <g class="itch">
+  
+  <g class="shiver">
   <g class="pig" stroke-linecap="round" stroke-linejoin="round">
     <path fill="#FF9FA5" d="M214 210C213 221 210 232 211 246C212 256 224 257 233 254C244 251 246 240 247 225L248 211Z"/>
     <path class="tail" d="M294 62C298 47 305 40 315 45C327 50 341 64 329 72C319 80 309 67 316 51C322 39 330 31 339 35" fill="none" stroke="#FFD1AF" stroke-width="11"/>
@@ -30,16 +26,16 @@
     <path class="ear1" d="M97 65C88 63 83 75 78 82C71 91 65 101 64 106C68 116 86 109 93 98" fill="none" stroke="#E95892" stroke-width="10"/>
     <path class="ear2" d="M187 104C174 110 184 129 193 139C201 147 213 150 220 139C225 131 224 119 222 112" fill="none" stroke="#E95892" stroke-width="11"/>
     <path class="eye" fill="#373A32" d="M91 130C84 129 79 136 80 144C80 151 85 155 92 154C99 153 103 147 102 140C102 134 98 130 91 130Z"/><path class="eye" fill="#373A32" d="M166 145C159 144 154 150 154 157C153 164 158 170 165 170C171 170 176 164 176 157C176 151 173 146 166 145Z"/>
-    <path fill="#FF8195" d="M108 165C91 161 78 166 74 175C68 186 74 200 90 207C106 214 125 214 135 204C143 196 140 183 129 174C123 170 116 167 108 165Z"/>
+    <g class="snout"><path fill="#FF8195" d="M108 165C91 161 78 166 74 175C68 186 74 200 90 207C106 214 125 214 135 204C143 196 140 183 129 174C123 170 116 167 108 165Z"/>
     <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
-    <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/>
+    <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/></g>
     <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/>
-    
-    <path d="M226 76c16-6 32 2 30 15s-22 12-32 6-12-19 2-21Z" fill="#B88A63"/>
-    <path d="M276 160c11-3 22 4 20 13s-14 11-22 6-9-17 2-19Z" fill="#B88A63"/>
-    <ellipse cx="200" cy="210" rx="11" ry="7" fill="#B88A63"/><circle cx="250" cy="122" r="5" fill="#B88A63"/>
-    <path d="M158 278h30v6a15 15 0 0 1-30 0Z" fill="#B88A63"/>
+    <ellipse cx="155" cy="187" rx="22" ry="12" fill="#FF6F6F" opacity=".4"/><ellipse cx="60" cy="160" rx="10" ry="8" fill="#FF6F6F" opacity=".3"/>
+    <path d="M70 104L178 116L174 136L66 124Z" fill="#9FD3E6"/>
+    <path d="M90 110v10M112 112v10M134 115v10M156 117v10" fill="none" stroke="#7FBFD6" stroke-width="4" stroke-linecap="round"/>
+    <path d="M78 214L36 238" fill="none" stroke="#F4F6F8" stroke-width="11" stroke-linecap="round"/>
+    <path d="M58 226L36 238" fill="none" stroke="#E5534B" stroke-width="5" stroke-linecap="round"/>
   </g>
   </g>
-  <g class="fly"><g transform="translate(250 0)"><ellipse class="wing" cx="-6" cy="-8" rx="6" ry="9" fill="#DDEFF7"/><ellipse class="wing" cx="6" cy="-8" rx="6" ry="9" fill="#DDEFF7"/><circle r="7" fill="#3E3A35"/></g></g>
+  <path class="heat" d="M110 60q-8-10 0-20t0-20M140 54q-8-10 0-20t0-20" fill="none" stroke="#FFB0A0" stroke-width="6" stroke-linecap="round"/>
 </svg>

@@ -48,6 +48,18 @@ export const THRESHOLDS = Object.freeze({
   sickCleanliness: 30,
 })
 
+/**
+ * How bad a bad mood is, 1–3, for the sprite (mood-<key>-<level>.svg).
+ * Below the first number it is level 2, below the second level 3; anything
+ * that tripped the mood at all is at least level 1. Illness goes by its stage:
+ * stage 1 → 1, stage 2 → 2, stages 3 and 4 → 3.
+ */
+export const MOOD_LEVELS = Object.freeze({
+  hungry: Object.freeze([15, 5]),
+  dirty: Object.freeze([20, 8]),
+  lonely: Object.freeze([20, 8]),
+})
+
 export const SICK_RISK_MINUTES = 12
 
 // ---------------------------------------------------------------------------

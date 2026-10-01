@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="睡着了">
-  <title>睡着了</title>
-  <!-- 站着打盹：闭眼，鼻涕泡一鼓一缩，头顶飘 Z。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="生病 · 三级">
+  <title>生病 · 三级</title>
+  <!-- 病重：闭着眼蔫蔫地晃，头上压着冰袋，旁边吊着点滴，冒冷汗、眼前打转。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
     .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
@@ -8,17 +8,22 @@
     @keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.1)}}
     @keyframes wag{50%{transform:rotate(14deg)}}
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
-    .breathe{animation:breathe 3.6s ease-in-out infinite;transform-origin:190px 298px}
+    .droop{animation:droop 3.6s ease-in-out infinite;transform-origin:190px 298px}
     .tail{animation:none}.ear2{animation:none}
-    .bubble{animation:bubble 3.6s ease-in-out infinite;transform-box:fill-box;transform-origin:100% 50%}
-    .z1{animation:z 3.6s ease-out infinite}.z2{animation:z 3.6s ease-out -1.2s infinite}.z3{animation:z 3.6s ease-out -2.4s infinite}
-    @keyframes breathe{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.025,.97) rotate(1deg)}}
-    @keyframes bubble{0%,100%{transform:scale(.3)}50%{transform:scale(1)}}
-    @keyframes z{0%{opacity:0;transform:translate(0,14px)}30%{opacity:1}100%{opacity:0;transform:translate(24px,-36px)}}
+    .swirl{animation:spin 2.4s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .drip{animation:drip 1.6s ease-in infinite}
+    .sweat{animation:slide 2.4s ease-in infinite}.sweat2{animation:slide 2.4s ease-in -1.2s infinite}
+    @keyframes droop{0%,100%{transform:rotate(1.5deg) translateY(2px)}50%{transform:rotate(3.5deg) translateY(5px)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes drip{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(30px)}}
+    @keyframes slide{0%,20%{opacity:0;transform:translateY(0)}40%{opacity:1}100%{opacity:0;transform:translateY(28px)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
-  
-  <g class="breathe">
+  <path d="M352 300V10M332 10H356" fill="none" stroke="#B5BCC6" stroke-width="7" stroke-linecap="round"/>
+    <rect x="322" y="14" width="30" height="44" rx="10" fill="#E3F2FA"/><rect x="326" y="34" width="22" height="20" rx="6" fill="#BFE0F0"/>
+    <path d="M336 58C336 110 330 160 320 200" fill="none" stroke="#D4E6F0" stroke-width="4"/>
+    <g class="drip"><circle cx="337" cy="66" r="4" fill="#9FD3E6"/></g>
+  <g class="droop">
   <g class="pig" stroke-linecap="round" stroke-linejoin="round">
     <path fill="#FF9FA5" d="M214 210C213 221 210 232 211 246C212 256 224 257 233 254C244 251 246 240 247 225L248 211Z"/>
     <path class="tail" d="M294 62C298 47 305 40 315 45C327 50 341 64 329 72C319 80 309 67 316 51C322 39 330 31 339 35" fill="none" stroke="#FFD1AF" stroke-width="11"/>
@@ -32,12 +37,12 @@
     <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
     <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/></g>
     <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/>
-    
-    <circle class="bubble" cx="62" cy="190" r="18" fill="#CFEAF7" opacity=".85"/>
+    <ellipse cx="155" cy="187" rx="20" ry="11" fill="#B9C6E8" opacity=".45"/>
+    <path d="M86 92C96 70 150 66 168 88C158 108 98 112 86 92Z" fill="#CDEBF7"/>
+    <path d="M110 78l8 8M134 76l6 8" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+    <path d="M128 66V54" fill="none" stroke="#7FBFD6" stroke-width="6" stroke-linecap="round"/>
+    <g class="sweat"><path transform="translate(66 120) scale(1.4)" d="M0 0C-4 7-6 11-6 14a6 6 0 0 0 12 0c0-3-2-7-6-14Z" fill="#9FD8F0"/></g><g class="sweat2"><path transform="translate(186 128) scale(1.2)" d="M0 0C-4 7-6 11-6 14a6 6 0 0 0 12 0c0-3-2-7-6-14Z" fill="#9FD8F0"/></g>
   </g>
   </g>
-  <g fill="none" stroke="#8C9BC4" stroke-linecap="round" stroke-linejoin="round">
-    <path class="z1" d="M150 50h18l-18 20h18" stroke-width="6"/>
-    <path class="z2" d="M188 24h22l-22 24h22" stroke-width="7"/>
-    <path class="z3" d="M230 0h26l-26 28h26" stroke-width="8"/></g>
+  <path class="swirl" d="M130 18a10 10 0 1 1 10 10 16 16 0 1 1-16-16 22 22 0 1 1 22 22" fill="none" stroke="#B49CD8" stroke-width="5" stroke-linecap="round"/>
 </svg>

@@ -22,8 +22,14 @@
 <script>
 var groups = [
   ['生命阶段', [['stage-box','纸盒'],['stage-piglet','小猪'],['stage-young','青年猪'],['stage-middle','中年猪'],['stage-elder','老年猪'],['stage-grave','墓碑'],['soul','灵魂']]],
-  ['心情', [['mood-happy','开心'],['mood-hungry','饿了'],['mood-dirty','脏了'],['mood-sleepy','睡着'],['mood-lonely','孤单'],['mood-sick','生病']]],
+  ['心情', [['mood-happy','开心'],['mood-sleepy','睡着']]],
+  ['生病 · 三级', [['mood-sick-1','不舒服'],['mood-sick-2','生病'],['mood-sick-3','病重']]],
+  ['饥饿 · 三级', [['mood-hungry-1','有点饿'],['mood-hungry-2','饿了'],['mood-hungry-3','饿坏了']]],
+  ['卫生 · 三级', [['mood-dirty-1','有点脏'],['mood-dirty-2','该洗澡'],['mood-dirty-3','脏透了']]],
+  ['心情低落 · 三级', [['mood-lonely-1','有点闷'],['mood-lonely-2','孤单'],['mood-lonely-3','伤心大哭']]],
   ['外出', [['away-work','打工'],['away-study','上课'],['away-trip','旅行']]],
+  ['高阶工作', [['job-aitrainer','AI 训练师'],['job-influencer','网红'],['job-vtuber','VTuber'],['job-coach','健身教练']]],
+  ['刮彩票', [['lottery-scratch','刮'],['lottery-jackpot','一等奖'],['lottery-win','中奖'],['lottery-lose','谢谢参与']]],
   ['互动反应', [['react-eat','喂食'],['react-bathe','洗澡'],['react-play','玩耍'],['react-pet','摸摸'],['react-refuse','拒绝'],['react-cure','病愈']]],
 ]
 var root = document.getElementById('root')

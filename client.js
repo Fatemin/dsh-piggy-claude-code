@@ -29,10 +29,13 @@ window.__ModuleLoader__.load({
       happy: 'mood-happy', lonely: 'mood-lonely',
       working: 'away-work', studying: 'away-study', traveling: 'away-trip',
     }
+    var LEVELED_MOODS = { sick: true, hungry: true, dirty: true, lonely: true }
     // One-shot poses for the care buttons and verdicts.
     var REACT_ART = {
       feed: 'react-eat', bathe: 'react-bathe', play: 'react-play', pet: 'react-pet',
       refuse: 'react-refuse', cure: 'react-cure',
+      // The scratch card: scratching, then one of three verdicts.
+      scratch: 'lottery-scratch', jackpot: 'lottery-jackpot', win: 'lottery-win', lose: 'lottery-lose',
     }
     var ACT_URL = '/dsh-pig/act'
     var POLL_MS = 4000
@@ -515,6 +518,7 @@ window.__ModuleLoader__.load({
           look: pig.look === 'original' ? 'original' : 'elder',
           soul: pig.soul === true,
           mood: str(pig.mood, 'fine'),
+          moodLevel: num(pig.moodLevel, 0),
           moodEmoji: str(pig.moodEmoji, '😊'),
           moodLabel: str(pig.moodLabel, L('还不错')),
           satiety: Math.round(num(pig.satiety, 0)),
@@ -571,6 +575,8 @@ window.__ModuleLoader__.load({
           // roll, and careers gated behind trait points.
           trait: str(obj(job).trait, ''),
           tier: obj(job).tier === 'pro' ? 'pro' : 'basic',
+          // A career has its own at-work sprite, job-<art>.svg.
+          art: typeof obj(job).art === 'string' && obj(job).art !== '' ? obj(job).art : null,
           fixed: obj(job).fixed === true,
           random: Array.isArray(obj(job).random) && obj(job).random.length === 2
             ? [num(obj(job).random[0], 0), num(obj(job).random[1], 0)] : null,
@@ -959,6 +965,10 @@ window.__ModuleLoader__.load({
       '.dp-pig[data-react="cure"]{animation-name:dp-spin;animation-duration:.9s}',
       '.dp-pig[data-react="levelup"]{animation-name:dp-jump;animation-duration:.95s}',
       '.dp-pig[data-react="refuse"]{animation-name:dp-shake;animation-duration:.5s}',
+      '.dp-pig[data-react="scratch"]{animation-name:dp-wobble;animation-duration:.5s;animation-iteration-count:3}',
+      '.dp-pig[data-react="jackpot"]{animation-name:dp-spin;animation-iteration-count:2}',
+      '.dp-pig[data-react="win"]{animation-name:dp-jump;animation-iteration-count:2}',
+      '.dp-pig[data-react="lose"]{animation-name:dp-shake;animation-duration:1.2s}',
 
       /* ---------- what the pig is off doing ---------- */
       '[data-dsh-pig] .dp-work{display:flex;flex-direction:column;align-items:center;gap:4px;',
@@ -987,8 +997,12 @@ window.__ModuleLoader__.load({
       // A drawn sprite is sized by the same variable as the emoji, so growing up
       // works identically either way.
       '.dp-pig-img{width:var(--pig-size);height:var(--pig-size);display:block;',
-      '-webkit-user-drag:none;user-select:none}',
-      '.dp-pig-emoji{font-size:var(--pig-size);line-height:1}',
+      '-webkit-user-drag:none;user-select:none;',
+      // Putting on weight is gradual, so is the sprite: --pig-size steps, the
+      // pig eases into it.
+      'transition:width .8s var(--ac-ease),height .8s var(--ac-ease)}',
+      '@media (prefers-reduced-motion:reduce){.dp-pig-img,.dp-pig-emoji{transition:none}}',
+      '.dp-pig-emoji{font-size:var(--pig-size);line-height:1;transition:font-size .8s var(--ac-ease)}',
       // A drawn sprite animates itself (CSS inside the SVG), so the mood bob,
       // the sepia/hue filters and the reaction spin would only fight it.
       '[data-dsh-pig]:not([data-poke]) .dp-pig[data-art]:not([data-react]),',
@@ -3616,6 +3630,15 @@ window.__ModuleLoader__.load({
           // A drawn stage shows its sprite — or, for a living pig, the pose of
           // its current mood; everything else is the emoji.
           var pose = stage.art !== null && stage.key !== 'grave' ? MOOD_ART[view.pig.mood] : undefined
+          // Sick, hungry, dirty and lonely come in three strengths.
+          if (pose !== undefined && LEVELED_MOODS[view.pig.mood] === true) {
+            pose += '-' + Math.min(3, Math.max(1, view.pig.moodLevel || 2))
+          }
+          // A career shows the pig at that job rather than at a generic desk.
+          if (pose !== undefined && view.pig.mood === 'working' && view.activity !== null && view.activity.kind === 'work') {
+            var job = view.jobs.filter(j => j.key === view.activity.key)[0]
+            if (job !== undefined && job.art !== null) pose = 'job-' + job.art
+          }
           showArt(pose !== undefined ? pose : stage.art, stage.emoji)
           // Literally grows up: the stage carries its own size.
           host.style.setProperty('--pig-size', stage.size + 'px')
@@ -3724,9 +3747,18 @@ window.__ModuleLoader__.load({
           if (action === 'lottery' && !refused && isObj(next.prize)) {
             var won = num(next.prize.coins, 0)
             var prizeEntry = (view.lottery === null ? [] : view.lottery.prizes).filter(p => p.tier === next.prize.tier)[0]
-            showBubble(won > 0
+            var verdict = next.prize.mood === 'jackpot' ? 'jackpot' : next.prize.mood === 'happy' ? 'win' : 'lose'
+            var line = won > 0
               ? T('中了{prize}！+{coins} 🪙', { prize: prizeEntry === undefined ? '' : prizeEntry.label, coins: won })
-              : T('谢谢参与…下次一定'), 3600)
+              : T('谢谢参与…下次一定')
+            // Scratch first; the result (and what the pig says) only after.
+            react('scratch', 1500)
+            window.setTimeout(function () {
+              react(verdict, 2400)
+              if (verdict === 'jackpot') burst(['🪙', '✨', '🎉'], 5)
+              else if (verdict === 'win') burst(['🎉', '🎊'], 3)
+              showBubble(line, 3600)
+            }, 1400)
           }
           if (next && next.ok === false) {
             react('refuse', 520)

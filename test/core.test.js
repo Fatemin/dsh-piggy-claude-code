@@ -1378,3 +1378,14 @@ test('a VTuber stream pays a roll but still runs its full, trainable length', ()
   // 30 charm is the 3x pay cap
   assert.ok(pig.coins >= 200 * 3 && pig.coins <= 2400 * 3, `paid ${pig.coins}`)
 })
+
+test('bad moods come in three strengths, illness by its stage', () => {
+  const pig = hatchEgg(T0)
+  pig.lastActiveAt = T0
+  const at = patch => mood(Object.assign(pig, { satiety: 80, cleanliness: 80, happiness: 50, illness: null }, patch), T0)
+  assert.deepEqual([24, 14, 4].map(v => at({ satiety: v }).level), [1, 2, 3], 'hungry')
+  assert.deepEqual([34, 19, 7].map(v => at({ cleanliness: v }).level), [1, 2, 3], 'dirty')
+  assert.deepEqual([34, 19, 7].map(v => at({ happiness: v }).level), [1, 2, 3], 'lonely')
+  assert.deepEqual([1, 2, 3, 4].map(stage => at({ illness: { chain: 0, stage, since: T0, progressMs: 0 } }).level), [1, 2, 3, 3], 'sick')
+  assert.equal(at({}).level, 0, 'fine has no strength')
+})
