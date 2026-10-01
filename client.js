@@ -1970,6 +1970,14 @@ window.__ModuleLoader__.load({
         label(pic, '图片')
         label(pic, '显示/隐藏小猪', 'title')
         tools.appendChild(pic)
+        // A visible way back to the game skin, next to the picture tool.
+        var exit = button(null, { 'data-skin-toggle': 'game' }, function () { setSkin('game') })
+        exit.textContent = '↩ '
+        var exitText = el('span')
+        label(exitText, '返回游戏')
+        exit.appendChild(exitText)
+        label(exit, '返回游戏', 'title')
+        tools.appendChild(exit)
         top.appendChild(tools)
 
         var fx = el('div', 'dp-xl-fx')
