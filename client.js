@@ -235,7 +235,7 @@ window.__ModuleLoader__.load({
         '粘贴': '貼り付け', '条件格式': '条件付き書式', '图片': '画像', '显示/隐藏小猪': 'ブタの表示/非表示',
         '名称框': '名前ボックス', '新工作表': '新しいシート', '就绪': '準備完了',
         '平均值：{n}': '平均: {n}', '计数：{n}': 'データの個数: {n}', '求和：{n}': '合計: {n}',
-        '普通': '標準', '返回游戏': 'ゲームにもどる',
+        '普通': '標準', '返回游戏': 'ゲームにもどる', '返回': 'もどる',
         // [dsh-piggy-claude-code mod] job ladder, shop effects, sorted bag, scratch cards
         '饱食 {n}': 'おなか {n}', '心情 {n}': 'きげん {n}', '清洁 {n}': 'きれいさ {n}',
         '治：{list}': '治る：{list}', '死后用来复活': 'いってしまった子を呼びもどす',
@@ -384,7 +384,7 @@ window.__ModuleLoader__.load({
         '粘贴': 'Paste', '条件格式': 'Conditional Formatting', '图片': 'Picture', '显示/隐藏小猪': 'Show/hide the pig',
         '名称框': 'Name Box', '新工作表': 'New sheet', '就绪': 'Ready',
         '平均值：{n}': 'Average: {n}', '计数：{n}': 'Count: {n}', '求和：{n}': 'Sum: {n}',
-        '普通': 'Normal', '返回游戏': 'Back to the game',
+        '普通': 'Normal', '返回游戏': 'Back to the game', '返回': 'Back',
         // [dsh-piggy-claude-code mod] job ladder, shop effects, sorted bag, scratch cards
         '饱食 {n}': 'Fullness {n}', '心情 {n}': 'Mood {n}', '清洁 {n}': 'Clean {n}',
         '治：{list}': 'Cures: {list}', '死后用来复活': 'Brings a lost pig back',
@@ -1972,11 +1972,7 @@ window.__ModuleLoader__.load({
         tools.appendChild(pic)
         // A visible way back to the game skin, next to the picture tool.
         var exit = button(null, { 'data-skin-toggle': 'game' }, function () { setSkin('game') })
-        exit.textContent = '↩ '
-        var exitText = el('span')
-        label(exitText, '返回游戏')
-        exit.appendChild(exitText)
-        label(exit, '返回游戏', 'title')
+        label(exit, '返回')
         tools.appendChild(exit)
         top.appendChild(tools)
 
