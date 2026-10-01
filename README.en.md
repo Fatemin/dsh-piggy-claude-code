@@ -57,8 +57,21 @@ Four ways to see your pig:
 | Travel | Four tiers: outing / mountains / seaside / abroad | **21 destinations in 7 regions**, priced and timed by your computer's time zone; brings back souvenirs and local specialities; **completing a region** grants stat bonuses and a passive perk |
 | School | Primary → university → graduate, one course at a time | Adds a **doctorate** (12 h, 2400 tuition, +7 stats); **2 parallel courses at university, 3 at graduate and doctorate** |
 | Language | Chinese only | **中文 / 日本語 / English** |
+| Work | Odd jobs / bricks / office | **Grouped by smarts / charm / strength**, each with jobs of different lengths and one **fixed 15-minute gig with random pay**; the top of each group is a **career** that needs trait points: AI trainer, influencer, VTuber (random pay), fitness coach |
+| Shop | Prices only | Every item states its **effect** (fullness / mood / cleanliness; medicines say what they cure); the bag is **sorted into shelves**; **scratch cards** at the top: 100 🪙 each, one every 10 minutes, 1st 10000 / 2nd 1000 / 3rd 200 / consolation 100 / no luck |
 
 Changes are concentrated in `data.js`, `core.js`, `index.js`, `store.js`, `client.js` and `world.js`, all tagged `[dsh-piggy-claude-code mod]`.
+
+<details>
+<summary><b>Big panel and interface</b></summary>
+
+- Drag the floating menu's top-left corner, top edge or left edge to **make it bigger** (the size is remembered; double-click the corner to reset); a wider menu lays the shop, bag and so on out in more columns
+- Click anywhere outside the menu and the pig and the menu **closes itself** (the desktop pet closes it when its window loses focus)
+- **⤢** at the menu's top right opens the **big panel**: the pig, name, four bars, traits, care buttons and language on the left, the six tabs on the right. It is also what the app's tray item "Open the big panel" and `pig serve` open
+- Two skins for the big panel: **game** (default) and **Excel** — a green "Quarterly Budget.xlsx - Excel" title bar, a ribbon, an `fx =PIG("name")` formula bar, row and column headers with gridlines, the bars as conditional-format data bars, the six tabs as worksheet tabs at the bottom, and the window title follows. **Boss key**: Esc twice or Ctrl+Shift+E turns it into a spreadsheet at once; the button in the sheet's status bar switches back
+- Narrower than 760 px, the two columns stack
+
+</details>
 
 <details>
 <summary><b>Travel regions and rewards</b></summary>
