@@ -19,7 +19,7 @@
 </head>
 <body>
 <div class="hint">
-  <b>🐖 dsh-piggy · Claude Code</b><br>
+  <b>🐖 dsh-piggy<span data-cc> · Claude Code</span></b><br>
   <span data-hint="how">猪在右下角：<b>右键</b>开关菜单，<b>左键</b>摸摸，可拖动。</span><br>
   <small data-hint="why">它吃你在 Claude Code 里的真实工作长大（提问、回合、工具调用）。</small>
 </div>
@@ -45,6 +45,10 @@
     for (const node of document.querySelectorAll('[data-hint]')) node.innerHTML = text[node.dataset.hint]
   }
   const refreshHints = () => fetch('/pig/peek').then(r => r.json()).then(p => showHints(p.lang)).catch(() => {})
+  // Opened from the standalone desktop app: no Claude Code there to feed it.
+  if (new URLSearchParams(location.search).has('standalone')) {
+    for (const node of document.querySelectorAll('[data-cc], [data-hint="why"]')) node.remove()
+  }
   refreshHints()
   setInterval(refreshHints, 4000)
 </script>

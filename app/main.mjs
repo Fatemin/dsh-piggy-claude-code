@@ -7,7 +7,7 @@
  * window shows the unmodified upstream panel from it.
  */
 
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, Tray } from 'electron'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -30,6 +30,7 @@ let win = null
 let tray = null
 let quitting = false
 let trayLang = null
+let panelWin = null
 
 /** The pig's language, read from the save (the panel may have just changed it). */
 function currentLang() {
@@ -120,10 +121,8 @@ function createWindow(url) {
       win.hide()
     }
   })
-  win.webContents.setWindowOpenHandler(({ url: target }) => {
-    shell.openExternal(target)
-    return { action: 'deny' }
-  })
+  // Never hand a URL to the system browser (it may be the retired IE 11).
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   win.loadURL(url)
   if (process.env.PIGGY_DEBUG_SNAPSHOT) win.webContents.once('did-finish-load', () => selfCheck(process.env.PIGGY_DEBUG_SNAPSHOT))
 }
@@ -147,6 +146,33 @@ ipcMain.on('pig', (event, message) => {
   }
 })
 
+/**
+ * The big panel in a window of our own. It used to open in the system browser,
+ * which on some Windows machines is still the retired Internet Explorer 11 and
+ * only shows "IE 11 is no longer supported"; our own Chromium always works.
+ */
+function openPanelWindow() {
+  if (panelWin !== null && !panelWin.isDestroyed()) {
+    panelWin.show()
+    panelWin.focus()
+    return
+  }
+  panelWin = new BrowserWindow({
+    width: 960,
+    height: 720,
+    minWidth: 420,
+    minHeight: 560,
+    title: 'DSH Piggy',
+    autoHideMenuBar: true,
+    backgroundColor: '#f7f3df',
+    icon: join(HERE, 'build', 'tray@2x.png'),
+    webPreferences: { contextIsolation: true },
+  })
+  panelWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  panelWin.on('closed', () => { panelWin = null })
+  panelWin.loadURL(server.url + '?standalone=1')
+}
+
 // ---- tray / menu-bar icon -------------------------------------------------------
 
 function trayMenu() {
@@ -156,7 +182,7 @@ function trayMenu() {
   return Menu.buildFromTemplate([
     { label: visible ? t('隐藏猪猪') : t('显示猪猪'), click: () => { visible ? win.hide() : win.showInactive(); refreshTray(true) } },
     { label: t('猪猪回到右下角'), click: () => { win.setPosition(...Object.values(defaultPosition())); savePosition(); win.showInactive() } },
-    { label: t('在浏览器里打开面板'), click: () => shell.openExternal(server.url) },
+    { label: t('打开大面板'), click: openPanelWindow },
     { type: 'separator' },
     {
       label: '🌐 ' + t('语言'),
@@ -215,6 +241,13 @@ async function selfCheck(dir) {
   report.push(`open=${await js(`document.querySelector('[data-dsh-pig]').getAttribute('data-open')`)}`)
   report.push(`art=${await js(`(()=>{const i=document.querySelector('[data-dsh-pig] img');return i?i.src+' '+i.naturalWidth+'x'+i.naturalHeight+' hidden='+i.hidden:'none'})()`)}`)
   report.push(`statePath=${userFile('state.json')}`)
+  // The big panel opens in our own window, never the system browser.
+  openPanelWindow()
+  await new Promise(resolve => panelWin.webContents.once('did-finish-load', resolve))
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  writeFileSync(join(dir, 'panel.png'), (await panelWin.webContents.capturePage()).toPNG())
+  const panelJs = code => panelWin.webContents.executeJavaScript(code).catch(error => `error: ${error.message}`)
+  report.push(`panel url=${panelWin.webContents.getURL()} mounted=${await panelJs("!!document.querySelector('[data-dsh-pig]')")} claudeCodeHint=${await panelJs("!!document.querySelector('[data-hint=\"why\"]')")}`)
   writeFileSync(join(dir, 'report.txt'), report.join('\n') + '\n')
 }
 
