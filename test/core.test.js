@@ -141,9 +141,11 @@ test('the pig grows by weight, not by age or XP', () => {
   assert.equal(at(50).key, 'middle')
   assert.equal(at(79.9).key, 'middle')
   assert.equal(at(80).key, 'elder')
-  // Hand-drawn piglet all the way up to the elder drawing.
-  assert.equal(at(60).art, 'piglet')
-  assert.equal(at(80).art, 'elder')
+  // Every stage has its own drawing.
+  assert.equal(at(1).art, 'stage-piglet')
+  assert.equal(at(20).art, 'stage-young')
+  assert.equal(at(60).art, 'stage-middle')
+  assert.equal(at(80).art, 'stage-elder')
 })
 
 test('the sprite widens with weight: 40 px at hatching, 200 px at 120 kg', () => {
@@ -191,14 +193,14 @@ test('an elder pig can switch between the elder and the original drawing', () =>
 
   pig.weightG = 80_000
   assert.equal(canChooseLook(pig), true)
-  assert.equal(lifeStageFor(pig, T0).art, 'elder', 'elder by default')
+  assert.equal(lifeStageFor(pig, T0).art, 'stage-elder', 'elder by default')
   assert.equal(setLook(pig, 'original', T0).ok, true)
   assert.equal(lifeStageFor(pig, T0).key, 'elder', 'still an elder pig')
-  assert.equal(lifeStageFor(pig, T0).art, 'piglet', 'wearing the original drawing')
+  assert.equal(lifeStageFor(pig, T0).art, 'stage-middle', 'wearing the original drawing')
   assert.equal(setLook(pig, 'nonsense', T0).ok, false)
   assert.equal(migrate(JSON.parse(JSON.stringify(pig))).look, 'original', 'the choice is saved')
   assert.equal(setLook(pig, 'elder', T0).ok, true)
-  assert.equal(lifeStageFor(pig, T0).art, 'elder')
+  assert.equal(lifeStageFor(pig, T0).art, 'stage-elder')
 })
 
 test('nothing dies of old age, and a grave can still be left for a new pig', () => {

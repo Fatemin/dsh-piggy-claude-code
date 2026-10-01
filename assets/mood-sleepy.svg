@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="睡着了">
+  <title>睡着了</title>
+  <!-- 趴着睡：腿收起来，闭眼，鼻尖一个鼻涕泡一鼓一缩，头顶飘 Z。 -->
+  <style>
+    .body{animation:breathe 3.6s ease-in-out infinite;transform-origin:64px 114px}
+    .bubble{animation:bubble 3.6s ease-in-out infinite;transform-origin:12px 96px}
+    .z1{animation:z 3.6s ease-out infinite}
+    .z2{animation:z 3.6s ease-out -1.2s infinite}
+    .z3{animation:z 3.6s ease-out -2.4s infinite}
+    @keyframes breathe{50%{transform:scale(1.03,.95)}}
+    @keyframes bubble{0%,100%{transform:scale(.35)}50%{transform:scale(1)}}
+    @keyframes z{0%{opacity:0;transform:translate(0,6px)}30%{opacity:1}100%{opacity:0;transform:translate(10px,-16px)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="z1" d="M66 40h7l-7 8h7" fill="none" stroke="#8C9BC4" stroke-width="2.6"/>
+    <path class="z2" d="M80 28h9l-9 10h9" fill="none" stroke="#8C9BC4" stroke-width="3"/>
+    <path class="z3" d="M96 16h11l-11 12h11" fill="none" stroke="#8C9BC4" stroke-width="3.4"/>
+    <g class="body">
+      <path d="M110 76c5 0 8-3 6-6" fill="none" stroke="#FFD1AF" stroke-width="4.5"/>
+      <path d="M14 90C12 70 34 58 62 58S114 64 116 86 102 114 66 114 16 110 14 90Z" fill="#FFD1AF"/>
+      <!-- 收起来的小蹄子 -->
+      <ellipse cx="38" cy="114" rx="10" ry="4" fill="#FF9FA5"/>
+      <ellipse cx="88" cy="114" rx="10" ry="4" fill="#FF9FA5"/>
+      <path d="M30 62C21 62 16 70 19 77" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M50 64C50 74 55 78 59 77C63 76 64 71 62 66" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M22 83Q26 86 30 83M40 85Q44 88 48 85" fill="none" stroke="#373A32" stroke-width="2.8"/>
+      <ellipse cx="46" cy="95" rx="5" ry="3" fill="#FFAFAC"/>
+      <path d="M20 90c-7.5 0-12 4-12 8.8S12.5 108 21 108s12-3.7 12-8.8S28 90 20 90Z" fill="#FF8195"/>
+      <ellipse cx="16" cy="98.8" rx="2" ry="2.9" fill="#373A32"/>
+      <ellipse cx="24" cy="99.3" rx="2" ry="2.9" fill="#373A32"/>
+    </g>
+    <circle class="bubble" cx="8" cy="94" r="6" fill="#CFEAF7" opacity=".85"/>
+  </g>
+</svg>

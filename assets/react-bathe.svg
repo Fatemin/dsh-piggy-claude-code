@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="洗澡">
+  <title>洗澡</title>
+  <!-- 泡在小木盆里，闭眼享受，头顶一堆泡沫，耳朵往后；泡泡一个个往上冒。 -->
+  <style>
+    .soak{animation:soak 1.6s ease-in-out infinite}
+    .foam{animation:foam 1.6s ease-in-out infinite;transform-origin:52px 40px}
+    .b1{animation:rise 2s ease-out infinite}
+    .b2{animation:rise 2s ease-out -.7s infinite}
+    .b3{animation:rise 2s ease-out -1.4s infinite}
+    .ripple{animation:ripple 1.6s ease-in-out infinite}
+    @keyframes soak{50%{transform:translateY(2px) rotate(-1.5deg)}}
+    @keyframes foam{50%{transform:scale(1.06,.94)}}
+    @keyframes rise{0%{opacity:0;transform:translateY(6px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
+    @keyframes ripple{50%{transform:translateX(3px)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <g class="soak">
+      <path d="M22 72C20 50 38 38 62 38S108 44 110 68 98 104 70 104 24 98 22 72Z" fill="#FFD1AF"/>
+      <!-- 耳朵往后贴 -->
+      <path d="M40 42C32 36 24 38 22 46" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M62 44C68 52 76 52 80 46" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <!-- 头顶泡沫 -->
+      <g class="foam">
+        <circle cx="40" cy="38" r="9" fill="#FFFFFF"/>
+        <circle cx="52" cy="32" r="11" fill="#FFFFFF"/>
+        <circle cx="64" cy="38" r="8" fill="#FFFFFF"/>
+        <circle cx="50" cy="42" r="8" fill="#FFFFFF"/>
+        <circle cx="48" cy="28" r="2.4" fill="#DDF1FB"/>
+      </g>
+      <path d="M26 64Q30 68 34 64M45 67Q49 71 53 67" fill="none" stroke="#373A32" stroke-width="2.8"/>
+      <ellipse cx="54" cy="77" rx="6" ry="3.4" fill="#FF9AA0"/>
+      <path d="M26 69c-8 0-13 4.5-13 9.5S18 88 27 88s13-4 13-9.5S34 69 26 69Z" fill="#FF8195"/>
+      <ellipse cx="22" cy="78.5" rx="2.1" ry="3.1" fill="#373A32"/>
+      <ellipse cx="30.5" cy="79" rx="2.1" ry="3.1" fill="#373A32"/>
+    </g>
+    <!-- 木盆和水 -->
+    <path d="M8 86H120L112 116C111 119 108 121 105 121H23C20 121 17 119 16 116Z" fill="#C69C6D"/>
+    <path d="M10 92H118M13 102H115M15 112H113" fill="none" stroke="#B0875A" stroke-width="2"/>
+    <path class="ripple" d="M6 86C14 82 22 90 30 86S46 82 54 86 70 90 78 86 94 82 102 86 118 90 122 86V90H6Z" fill="#AEDCF2"/>
+    <circle class="b1" cx="96" cy="78" r="5" fill="none" stroke="#9FD3E6" stroke-width="2"/>
+    <circle class="b2" cx="108" cy="74" r="3.6" fill="none" stroke="#9FD3E6" stroke-width="2"/>
+    <circle class="b3" cx="86" cy="80" r="2.8" fill="none" stroke="#9FD3E6" stroke-width="2"/>
+  </g>
+</svg>

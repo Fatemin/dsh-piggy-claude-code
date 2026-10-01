@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="被摸摸">
+  <title>被摸摸</title>
+  <!-- 被摸头：眯眼笑，头往上蹭，一只手在头顶轻轻拍，小心心冒出来。 -->
+  <style>
+    .head{animation:nuzzle .6s ease-in-out infinite;transform-origin:44px 76px}
+    .hand{animation:pat .6s ease-in-out infinite}
+    .h1{animation:rise 1.2s ease-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+    .h2{animation:rise 1.2s ease-out -.6s infinite;transform-box:fill-box;transform-origin:50% 100%}
+    .tail{animation:wag .3s ease-in-out infinite;transform-origin:106px 52px}
+    @keyframes nuzzle{50%{transform:rotate(-6deg) translateY(-2px)}}
+    @keyframes pat{0%,100%{transform:translateY(-4px)}50%{transform:translateY(2px)}}
+    @keyframes rise{0%{opacity:0;transform:translateY(6px) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translateY(-16px) scale(1)}}
+    @keyframes wag{50%{transform:rotate(26deg)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="h1" d="M84 30c0-4 5-6 7-2 2-4 7-2 7 2 0 5-7 9-7 9s-7-4-7-9Z" fill="#FF7A93"/>
+    <path class="h2" d="M100 40c0-3 3.6-4.4 5-1.4 1.4-3 5-1.6 5 1.4 0 3.6-5 6.4-5 6.4s-5-2.8-5-6.4Z" fill="#FF9FB0"/>
+    <rect x="45" y="84" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
+    <rect x="92" y="82" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
+    <path class="tail" d="M106 52c6-1 10-6 7-10s-9 1-5 5 9 1 11-3" fill="none" stroke="#FFD1AF" stroke-width="4.5"/>
+    <path d="M22 66C20 44 38 32 62 32S108 38 110 62 98 98 70 99 24 92 22 66Z" fill="#FFD1AF"/>
+    <ellipse cx="68" cy="98" rx="7" ry="4.5" fill="#FF9FA5"/>
+    <g class="head">
+      <path d="M38 33C28 30 21 39 25 47" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M57 37C55 49 59 54 63 54C68 54 70 47 69 39" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M26.5 60Q31 55 35.5 60M45.5 63Q50 58 54.5 63" fill="none" stroke="#373A32" stroke-width="3"/>
+      <ellipse cx="52" cy="73" rx="7.5" ry="4.2" fill="#FF9AA0"/>
+      <path d="M26 65c-8 0-13 4.5-13 9.5S18 84 27 84s13-4 13-9.5S34 65 26 65Z" fill="#FF8195"/>
+      <ellipse cx="22" cy="74.5" rx="2.1" ry="3.1" fill="#373A32"/>
+      <ellipse cx="30.5" cy="75" rx="2.1" ry="3.1" fill="#373A32"/>
+      <path d="M39 80Q43 85 47 79" fill="none" stroke="#C2566B" stroke-width="2.4"/>
+    </g>
+    <!-- 摸头的手 -->
+    <g class="hand">
+      <path d="M28 22C30 14 44 12 52 16 58 19 58 26 52 28H34C30 28 27 26 28 22Z" fill="#FBE3CF"/>
+      <path d="M36 16V26M42 15V26M48 16V26" fill="none" stroke="#EBC9AE" stroke-width="1.6"/>
+      <path d="M52 20H70" fill="none" stroke="#FBE3CF" stroke-width="9"/>
+    </g>
+    <rect x="29" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+    <rect x="77" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+  </g>
+</svg>

@@ -1,10 +1,10 @@
-// Render the upstream hand-drawn piglet into the PNGs the app needs
+// Render the hand-drawn young pig into the PNGs the app needs
 // (app icon, tray icon). macOS only; the outputs are committed, so building
 // the app on another platform does not need this.
 import Cocoa
 
 let here = URL(fileURLWithPath: CommandLine.arguments[1])
-let svg = here.appendingPathComponent("../../assets/piglet.svg").standardized
+let svg = here.appendingPathComponent("../../assets/stage-young.svg").standardized
 guard let image = NSImage(contentsOf: svg) else { fatalError("cannot load \(svg.path)") }
 
 func render(_ size: Int, padding: CGFloat, to name: String) {

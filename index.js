@@ -274,7 +274,7 @@ export function apply(ctx, config = {}) {
 /** The stage the panel shows before there is a pig: the cardboard box. */
 function boxStageView(lang) {
   const box = LIFE_STAGES.find(stage => stage.key === 'box') ?? LIFE_STAGES[0]
-  return { key: box.key, label: tr(lang, box.label), emoji: box.emoji, size: box.size, line: tr(lang, box.line) }
+  return { key: box.key, label: tr(lang, box.label), emoji: box.emoji, size: box.size, line: tr(lang, box.line), art: box.art ?? null }
 }
 
 /** "今天刚出生" / "3 天大" / "刚拆开纸盒" — the pig's age in words. */

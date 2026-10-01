@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="饿了">
+  <title>饿了</title>
+  <!-- 眼巴巴往斜上方瞟，嘴角耷拉，口水往下滴；脑袋里飘着一根胡萝卜，肚子咕咕叫。 -->
+  <style>
+    .look{animation:look 2.4s ease-in-out infinite;transform-origin:40px 60px}
+    .drool{animation:drip 2.4s ease-in infinite;transform-box:fill-box;transform-origin:50% 0}
+    .think{animation:dream 2.4s ease-in-out infinite}
+    .growl{animation:growl 1.2s ease-in-out infinite}
+    @keyframes look{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
+    @keyframes drip{0%,30%{transform:scaleY(.3);opacity:1}80%{transform:scaleY(1.4);opacity:1}100%{transform:scaleY(1.4) translateY(6px);opacity:0}}
+    @keyframes dream{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+    @keyframes growl{0%,100%{opacity:0}30%,60%{opacity:1}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- 想吃的胡萝卜 -->
+    <g class="think">
+      <circle cx="54" cy="24" r="2.2" fill="#E9E1D6"/>
+      <circle cx="62" cy="17" r="3.2" fill="#E9E1D6"/>
+      <ellipse cx="82" cy="14" rx="15" ry="11" fill="#F3EDE4"/>
+      <path d="M76 20L88 9" fill="none" stroke="#F49A4A" stroke-width="5.5"/>
+      <path d="M88 9L92 4M88 9L94 9M88 9L90 3" fill="none" stroke="#7DBF6A" stroke-width="2.2"/>
+    </g>
+    <rect x="45" y="84" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
+    <rect x="92" y="82" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
+    <path d="M106 54c5 0 8-4 6-7" fill="none" stroke="#FFD1AF" stroke-width="4.5"/>
+    <path d="M22 66C20 44 38 32 62 32S108 38 110 62 98 98 70 99 24 92 22 66Z" fill="#FFD1AF"/>
+    <ellipse cx="68" cy="98" rx="7" ry="4.5" fill="#FF9FA5"/>
+    <path class="growl" d="M82 78q3-3 6 0t6 0M84 86q3-3 6 0t6 0" fill="none" stroke="#F0B48E" stroke-width="2"/>
+    <g class="look">
+      <path d="M38 34C28 31 21 40 25 48" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M57 38C55 50 59 55 63 55C68 55 70 48 69 40" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <!-- 大眼睛，眼珠挤在右上角 -->
+      <ellipse cx="31" cy="58" rx="5" ry="5.6" fill="#fff"/>
+      <ellipse cx="50" cy="61" rx="5" ry="5.6" fill="#fff"/>
+      <ellipse cx="33" cy="55.6" rx="3" ry="3.4" fill="#373A32"/>
+      <ellipse cx="52" cy="58.6" rx="3" ry="3.4" fill="#373A32"/>
+      <path d="M26 50L35 48.5M45 52.5L54 52" fill="none" stroke="#D99A7A" stroke-width="2"/>
+      <path d="M26 65c-8 0-13 4.5-13 9.5S18 84 27 84s13-4 13-9.5S34 65 26 65Z" fill="#FF8195"/>
+      <ellipse cx="22" cy="74.5" rx="2.1" ry="3.1" fill="#373A32"/>
+      <ellipse cx="30.5" cy="75" rx="2.1" ry="3.1" fill="#373A32"/>
+      <path d="M39 84Q43 81 47 84" fill="none" stroke="#C2566B" stroke-width="2.4"/>
+      <path class="drool" d="M41 84c-1.6 3-2.4 5-2.4 6.4a2.4 2.4 0 0 0 4.8 0c0-1.4-.8-3.4-2.4-6.4Z" fill="#9FD8F0"/>
+    </g>
+    <rect x="29" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+    <rect x="77" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+  </g>
+</svg>

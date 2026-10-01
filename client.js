@@ -22,6 +22,18 @@ window.__ModuleLoader__.load({
     var STATE_URL = '/dsh-pig/state'
     // Hand-drawn stages are served from the plugin's own /art route.
     var ART_URL = '/dsh-pig/art/'
+    // Poses drawn on top of the stage's body. A mood without one (fine) keeps
+    // the stage drawing; each file animates itself.
+    var MOOD_ART = {
+      sick: 'mood-sick', hungry: 'mood-hungry', dirty: 'mood-dirty', sleepy: 'mood-sleepy',
+      happy: 'mood-happy', lonely: 'mood-lonely',
+      working: 'away-work', studying: 'away-study', traveling: 'away-trip',
+    }
+    // One-shot poses for the care buttons and verdicts.
+    var REACT_ART = {
+      feed: 'react-eat', bathe: 'react-bathe', play: 'react-play', pet: 'react-pet',
+      refuse: 'react-refuse', cure: 'react-cure',
+    }
     var ACT_URL = '/dsh-pig/act'
     var POLL_MS = 4000
     var MOUNTED = 'data-dsh-pig'
@@ -675,8 +687,9 @@ window.__ModuleLoader__.load({
           key: str(d.boxStage.key, 'box'),
           label: str(d.boxStage.label, L('纸盒')),
           emoji: str(d.boxStage.emoji, '📦'),
+          art: typeof d.boxStage.art === 'string' && d.boxStage.art !== '' ? d.boxStage.art : null,
           size: num(d.boxStage.size, 58),
-        } : { key: 'box', label: L('纸盒'), emoji: '📦', size: 58 },
+        } : { key: 'box', label: L('纸盒'), emoji: '📦', size: 58, art: null },
         awayBlocked: typeof d.awayBlocked === 'string' ? d.awayBlocked : null,
         pending: arr(d.pending).filter(e => isObj(e) && typeof e.at === 'number'),
         maxHealth: num(d.maxHealth, 5),
@@ -976,6 +989,11 @@ window.__ModuleLoader__.load({
       '.dp-pig-img{width:var(--pig-size);height:var(--pig-size);display:block;',
       '-webkit-user-drag:none;user-select:none}',
       '.dp-pig-emoji{font-size:var(--pig-size);line-height:1}',
+      // A drawn sprite animates itself (CSS inside the SVG), so the mood bob,
+      // the sepia/hue filters and the reaction spin would only fight it.
+      '[data-dsh-pig]:not([data-poke]) .dp-pig[data-art]:not([data-react]),',
+      '.dp-pig[data-art][data-react-art]{animation:none}',
+      '.dp-pig[data-art][data-mood]{filter:drop-shadow(0 4px 6px rgba(61,52,40,.28))}',
 
       // No drawings yet — every stage is the same 🐖, so age reads as size plus
       // a faded coat on the last one.
@@ -1009,7 +1027,7 @@ window.__ModuleLoader__.load({
       '[data-dsh-pig][data-dev="true"] .dp-ico[data-tab="dev"]{color:var(--ac-primary)}',
 
       /* ---------- the soul that settles on an unclaimed grave ---------- */
-      '.dp-soul{position:absolute;left:50%;transform:translateX(-50%);top:-4px;font-size:22px;',
+      '.dp-soul{position:absolute;left:50%;transform:translateX(-50%);top:-14px;width:34px;height:34px;',
       'line-height:1;opacity:.9;pointer-events:none;z-index:1;',
       'animation:dp-haunt 3.4s ease-in-out infinite}',
       '@keyframes dp-haunt{0%,100%{transform:translate(-50%,0) scale(1);opacity:.75}',
@@ -1814,7 +1832,10 @@ window.__ModuleLoader__.load({
       pokeHint.hidden = true
       scene.appendChild(pokeHint)
 
-      var soul = el('span', 'dp-soul', '👻')
+      var soul = document.createElement('img')
+      soul.className = 'dp-soul'
+      soul.alt = ''
+      soul.src = ART_URL + 'soul.svg'
       soul.hidden = true
       scene.appendChild(soul)
 
@@ -2117,12 +2138,50 @@ window.__ModuleLoader__.load({
       var busy = false
 
       // ---- animation ----
+      /** The sprite the pig settles back to after a reaction; null = emoji. */
+      var baseArt = null
+
+      /** Show a drawn sprite by name, or fall back to the emoji. */
+      function showArt(art, emoji) {
+        baseArt = art === null || art === undefined ? null : art
+        if (baseArt !== null) {
+          // Mid-reaction the reaction pose stays up; the timer restores baseArt.
+          if (!pig.getAttribute('data-react-art') !== null) {
+            var src = ART_URL + baseArt + '.svg'
+            if (pigArt.getAttribute('src') !== src) pigArt.src = src
+          }
+          pigArt.hidden = false
+          pigEmoji.hidden = true
+          pig.setAttribute('data-art', baseArt)
+        } else {
+          pigArt.hidden = true
+          pigArt.removeAttribute('src')
+          pigEmoji.hidden = false
+          pigEmoji.textContent = emoji
+          pig.removeAttribute('data-art')
+        }
+      }
+
       function react(kind, ms) {
         if (reactTimer !== null) window.clearTimeout(reactTimer)
         pig.setAttribute('data-react', kind)
+        // A drawn pig swaps to its reaction pose, which animates itself, and
+        // holds it long enough for one loop to read.
+        var pose = pigArt.hidden ? undefined : REACT_ART[kind]
+        if (pose !== undefined) {
+          pigArt.src = ART_URL + pose + '.svg'
+          pig.setAttribute('data-react-art', pose)
+          ms = Math.max(ms || 900, 1600)
+        } else {
+          pig.removeAttribute('data-react-art')
+        }
         // The flat (collapsed) form needs the non-translating keyframes.
         reactTimer = window.setTimeout(function () {
           pig.removeAttribute('data-react')
+          if (pig.getAttribute('data-react-art') !== null) {
+            pig.removeAttribute('data-react-art')
+            if (baseArt !== null) pigArt.src = ART_URL + baseArt + '.svg'
+          }
           reactTimer = null
         }, ms || 900)
       }
@@ -3539,11 +3598,7 @@ window.__ModuleLoader__.load({
         }
 
         if (view.hatched !== true) {
-          pigArt.hidden = true
-          pigArt.removeAttribute('src')
-          pigEmoji.hidden = false
-          pigEmoji.textContent = view.boxStage.emoji
-          pig.removeAttribute('data-art')
+          showArt(view.boxStage.art, view.boxStage.emoji)
           pig.setAttribute('data-mood', 'box')
           // Size comes from the host so the box and the pig can never drift.
           host.style.setProperty('--pig-size', view.boxStage.size + 'px')
@@ -3558,19 +3613,10 @@ window.__ModuleLoader__.load({
           lastStage = null
         } else {
           const stage = view.pig.stage
-          // A drawn stage shows its sprite; everything else is the emoji.
-          if (stage.art !== null) {
-            pigArt.src = ART_URL + stage.art + '.svg'
-            pigArt.hidden = false
-            pigEmoji.hidden = true
-            pig.setAttribute('data-art', stage.art)
-          } else {
-            pigArt.hidden = true
-            pigArt.removeAttribute('src')
-            pigEmoji.hidden = false
-            pigEmoji.textContent = stage.emoji
-            pig.removeAttribute('data-art')
-          }
+          // A drawn stage shows its sprite — or, for a living pig, the pose of
+          // its current mood; everything else is the emoji.
+          var pose = stage.art !== null && stage.key !== 'grave' ? MOOD_ART[view.pig.mood] : undefined
+          showArt(pose !== undefined ? pose : stage.art, stage.emoji)
           // Literally grows up: the stage carries its own size.
           host.style.setProperty('--pig-size', stage.size + 'px')
           pig.setAttribute('data-mood', view.pig.mood)

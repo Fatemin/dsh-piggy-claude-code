@@ -289,10 +289,9 @@ host [data-dsh-pig]   ← 固定在右下角
 
 ![一生](/home/clicgger/Documents/deepseek-harness/default-workspace/dsh-pig/docs/screenshots/15-life-stages.png)
 
-所有阶段都是同一只 🐖，靠**体型**区分；小猪和老年猪另外有两张手绘形象
-（[`assets/piglet.svg`](assets/piglet.svg) / [`assets/elder.svg`](assets/elder.svg)，
-由插件自己的 `/dsh-pig/art/` 路由伺服）。看形象对照：
-`xdg-open tools/art.html`。
+每个阶段都有自己的手绘形象（`assets/stage-*.svg`），心情、外出和照顾反应
+也各有一张（`assets/mood-*.svg` / `away-*.svg` / `react-*.svg`），全部自带动画，
+由插件自己的 `/dsh-pig/art/` 路由伺服。看全套：`xdg-open tools/sprites.html`。
 
 **XP 不再是等级，改喂体重** —— 「吃你的真实工作长大」还在，长的是分量。
 

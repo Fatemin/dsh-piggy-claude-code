@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="纸盒">
+  <title>纸盒</title>
+  <!-- 侧面戳了透气孔的纸箱，盖子半开，里面一对眼睛和一只耳朵尖。箱子自己会颠、盖子会扑腾。 -->
+  <style>
+    .box{animation:jolt 3.2s ease-in-out infinite;transform-origin:64px 114px}
+    .lid{animation:flap 3.2s ease-in-out infinite;transform-origin:30px 52px}
+    .lid2{animation:flap2 3.2s ease-in-out infinite;transform-origin:96px 46px}
+    .peek{animation:peek 3.2s ease-in-out infinite}
+    .eye{animation:blink 3.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes jolt{0%,55%,100%{transform:rotate(0)}62%{transform:rotate(-4deg) translateY(-3px)}70%{transform:rotate(3deg)}78%{transform:rotate(-1.5deg)}86%{transform:rotate(0)}}
+    @keyframes flap{0%,55%,100%{transform:rotate(0)}64%{transform:rotate(-16deg)}76%{transform:rotate(4deg)}}
+    @keyframes flap2{0%,58%,100%{transform:rotate(0)}68%{transform:rotate(12deg)}80%{transform:rotate(-3deg)}}
+    @keyframes peek{0%,50%,100%{transform:translateY(3px)}60%,85%{transform:translateY(-2px)}}
+    @keyframes blink{0%,40%,100%{transform:scaleY(1)}44%{transform:scaleY(.1)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g class="box" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 后面那片盖子 -->
+    <path class="lid2" d="M42 46L96 46L104 26L52 28Z" fill="#E7BA82"/>
+    <!-- 箱口里的黑暗 + 偷看的猪 -->
+    <path d="M18 58L42 46H108L84 58Z" fill="#6E4A2E"/>
+    <g class="peek">
+      <path d="M58 52C57 46 61 42 66 44" fill="none" stroke="#E95892" stroke-width="4"/>
+      <ellipse class="eye" cx="62" cy="54.5" rx="1.8" ry="2" fill="#FFF6E6"/>
+      <ellipse class="eye" cx="71" cy="54" rx="1.8" ry="2" fill="#FFF6E6"/>
+    </g>
+    <!-- 侧面 -->
+    <path d="M84 58L108 46V100L84 114Z" fill="#C48A55"/>
+    <circle cx="94" cy="70" r="2.4" fill="#7A5232"/>
+    <circle cx="101" cy="66" r="2.4" fill="#7A5232"/>
+    <circle cx="94" cy="80" r="2.4" fill="#7A5232"/>
+    <!-- 正面 -->
+    <path d="M18 58H84V110C84 112 82 114 80 114H22C20 114 18 112 18 110Z" fill="#DDA56A"/>
+    <rect x="44" y="58" width="14" height="56" fill="#E9BE87"/>
+    <circle cx="28" cy="70" r="2.4" fill="#7A5232"/>
+    <circle cx="36" cy="70" r="2.4" fill="#7A5232"/>
+    <circle cx="68" cy="70" r="2.4" fill="#7A5232"/>
+    <circle cx="76" cy="70" r="2.4" fill="#7A5232"/>
+    <!-- 盖在纸上的猪鼻子印章 -->
+    <ellipse cx="51" cy="92" rx="11" ry="8" fill="#FF8195" opacity=".85"/>
+    <ellipse cx="47" cy="92" rx="1.8" ry="2.8" fill="#9C4A3E"/>
+    <ellipse cx="55" cy="92" rx="1.8" ry="2.8" fill="#9C4A3E"/>
+    <!-- 左边那片盖子，翻开着 -->
+    <path class="lid" d="M18 58L42 46L26 28L2 40Z" fill="#EDC48F"/>
+  </g>
+</svg>

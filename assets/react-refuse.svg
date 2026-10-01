@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="不要">
+  <title>不要</title>
+  <!-- 不干：扭过身拿屁股对着你（参考 sample 转身的那几帧），回头瞪一眼（参考 sample 的凶眼），鼻子喷一口气，屁股一扭一扭。 -->
+  <style>
+    .butt{animation:twist .5s ease-in-out infinite;transform-origin:72px 112px}
+    .puff{animation:puff 1s ease-out infinite}
+    .vein{animation:throb .5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .tail{animation:wag .25s ease-in-out infinite;transform-origin:78px 66px}
+    @keyframes twist{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+    @keyframes puff{0%{opacity:0;transform:translate(0,0) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translate(-12px,-4px) scale(1.2)}}
+    @keyframes throb{50%{transform:scale(1.25)}}
+    @keyframes wag{50%{transform:rotate(30deg)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <g class="butt">
+      <!-- 背影：远处两条粉腿，近处两条 -->
+      <rect x="48" y="88" width="12" height="24" rx="6" fill="#FF9FA5"/>
+      <rect x="84" y="88" width="12" height="24" rx="6" fill="#FF9FA5"/>
+      <path d="M30 70C28 46 48 34 72 34S114 46 114 70 98 104 72 104 32 94 30 70Z" fill="#FFD1AF"/>
+      <path class="tail" d="M78 66c4-4 2-10-3-10s-6 6-2 8 7-2 6-7" fill="none" stroke="#F4BC97" stroke-width="3.6"/>
+      <rect x="40" y="88" width="14" height="26" rx="7" fill="#FFD1AF"/>
+      <rect x="90" y="88" width="14" height="26" rx="7" fill="#FFD1AF"/>
+    </g>
+    <!-- 回头的脸，凶巴巴 -->
+    <path d="M10 56C8 40 20 30 34 30S56 40 56 54 46 76 32 76 12 70 10 56Z" fill="#FFD1AF"/>
+    <path d="M26 30C18 26 12 32 14 40" fill="none" stroke="#E95892" stroke-width="5"/>
+    <path d="M42 30C46 22 54 22 56 30" fill="none" stroke="#E95892" stroke-width="5"/>
+    <path d="M18 46L28 50M36 51L46 48" fill="none" stroke="#373A32" stroke-width="2.4"/>
+    <path d="M19 50C19 55 27 56 28 52Z" fill="#8B1E2B"/>
+    <path d="M37 54C38 58 45 57 45 52Z" fill="#8B1E2B"/>
+    <path d="M18 60c-6.5 0-10.5 3.6-10.5 8S11 76 18.5 76 29 72.6 29 68s-4.5-8-11-8Z" fill="#FF8195"/>
+    <ellipse cx="15" cy="68" rx="1.8" ry="2.7" fill="#373A32"/>
+    <ellipse cx="22" cy="68.4" rx="1.8" ry="2.7" fill="#373A32"/>
+    <!-- 鼻孔喷气 + 生气的青筋 -->
+    <g class="puff">
+      <circle cx="6" cy="80" r="3.4" fill="#ECE6DC"/>
+      <circle cx="1" cy="84" r="2.6" fill="#ECE6DC"/>
+    </g>
+    <path class="vein" d="M44 20l4 4M52 20l-4 4M44 32l4-4M52 32l-4-4" fill="none" stroke="#E5534B" stroke-width="2.6"/>
+  </g>
+</svg>

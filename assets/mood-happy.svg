@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="开心">
+  <title>开心</title>
+  <!-- 眼睛弯成月牙，耳朵支棱起来，大腮红；原地蹦跶，头顶冒小心心。 -->
+  <style>
+    .hop{animation:hop .9s ease-in-out infinite;transform-origin:64px 114px}
+    .ear{animation:perk .9s ease-in-out infinite;transform-origin:62px 40px}
+    .tail{animation:wag .45s ease-in-out infinite;transform-origin:106px 52px}
+    .heart{animation:rise 1.8s ease-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+    .heart2{animation:rise 1.8s ease-out -.9s infinite;transform-box:fill-box;transform-origin:50% 100%}
+    @keyframes hop{0%,100%{transform:translateY(0) scale(1.03,.97)}40%{transform:translateY(-9px) scale(.98,1.03)}60%{transform:translateY(-9px)}}
+    @keyframes perk{50%{transform:rotate(-12deg)}}
+    @keyframes wag{50%{transform:rotate(24deg)}}
+    @keyframes rise{0%{opacity:0;transform:translateY(8px) scale(.5)}25%{opacity:1}100%{opacity:0;transform:translateY(-14px) scale(1)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="heart" d="M84 22c0-4 5-6 7-2 2-4 7-2 7 2 0 5-7 9-7 9s-7-4-7-9Z" fill="#FF7A93"/>
+    <path class="heart2" d="M100 12c0-3 3.6-4.4 5-1.4 1.4-3 5-1.6 5 1.4 0 3.6-5 6.4-5 6.4s-5-2.8-5-6.4Z" fill="#FF9FB0"/>
+    <g class="hop">
+      <rect x="45" y="84" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
+      <rect x="92" y="82" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
+      <path class="tail" d="M106 52c6-1 10-6 7-10s-9 1-5 5 9 1 11-3" fill="none" stroke="#FFD1AF" stroke-width="4.5"/>
+      <path d="M22 66C20 44 38 32 62 32S108 38 110 62 98 98 70 99 24 92 22 66Z" fill="#FFD1AF"/>
+      <ellipse cx="68" cy="98" rx="7" ry="4.5" fill="#FF9FA5"/>
+      <path d="M36 34C28 28 20 33 22 42" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path class="ear" d="M58 36C56 46 60 50 64 50C69 50 71 44 70 34" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <!-- 月牙眼 -->
+      <path d="M26.5 60Q31 53 35.5 60M45.5 63Q50 56 54.5 63" fill="none" stroke="#373A32" stroke-width="3"/>
+      <ellipse cx="52" cy="73" rx="7.5" ry="4.2" fill="#FF9AA0"/>
+      <path d="M26 65c-8 0-13 4.5-13 9.5S18 84 27 84s13-4 13-9.5S34 65 26 65Z" fill="#FF8195"/>
+      <ellipse cx="22" cy="74.5" rx="2.1" ry="3.1" fill="#373A32"/>
+      <ellipse cx="30.5" cy="75" rx="2.1" ry="3.1" fill="#373A32"/>
+      <path d="M39 80Q43 85 47 79" fill="none" stroke="#C2566B" stroke-width="2.4"/>
+      <rect x="29" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+      <rect x="77" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+    </g>
+  </g>
+</svg>

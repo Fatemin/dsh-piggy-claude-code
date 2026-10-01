@@ -902,7 +902,7 @@ test('a drawn stage shows a sprite, the others show the emoji', async () => {
   const drawn = await loadClient({
     status: {
       ...SNAPSHOT,
-      pig: { ...PIG, stage: { key: 'piglet', label: '小猪', emoji: '🐖', size: 40, art: 'piglet' } },
+      pig: { ...PIG, mood: 'fine', stage: { key: 'piglet', label: '小猪', emoji: '🐖', size: 40, art: 'stage-piglet' } },
     },
   })
   drawn.registration.factory(() => {}).apply({})
@@ -911,7 +911,7 @@ test('a drawn stage shows a sprite, the others show the emoji', async () => {
   const emoji = findByClass(hostOf(drawn.dom), 'dp-pig-emoji')
   assert.notEqual(img, undefined, 'the sprite element must exist')
   assert.equal(img.hidden, false, 'the sprite is shown')
-  assert.equal(img.src, '/dsh-pig/art/piglet.svg', 'the sprite points at the plugin art route')
+  assert.equal(img.src, '/dsh-pig/art/stage-piglet.svg', 'the sprite points at the plugin art route')
   assert.equal(emoji.hidden, true, 'and the emoji is hidden')
 
   const plain = await loadClient()
@@ -922,6 +922,25 @@ test('a drawn stage shows a sprite, the others show the emoji', async () => {
   assert.equal(img2.hidden, true, 'a stage with no art keeps the emoji')
   assert.ok(!img2.src, 'and no sprite is requested at all')
   assert.equal(emoji2.hidden, false)
+})
+
+test('a drawn pig wears its mood pose; fine and grave keep the stage drawing', async () => {
+  const stage = { key: 'young', label: '青年猪', emoji: '🐖', size: 48, art: 'stage-young' }
+  const hungry = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'hungry' } } })
+  hungry.registration.factory(() => {}).apply({})
+  await settle()
+  const img = findByClass(hostOf(hungry.dom), 'dp-pig-img')
+  assert.equal(img.src, '/dsh-pig/art/mood-hungry.svg', 'a hungry pig looks hungry')
+
+  const fine = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'fine' } } })
+  fine.registration.factory(() => {}).apply({})
+  await settle()
+  assert.equal(findByClass(hostOf(fine.dom), 'dp-pig-img').src, '/dsh-pig/art/stage-young.svg', 'fine keeps the stage drawing')
+
+  const grave = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage: { key: 'grave', label: '墓碑', emoji: '🪦', size: 52, art: 'stage-grave' }, mood: 'dead' } } })
+  grave.registration.factory(() => {}).apply({})
+  await settle()
+  assert.equal(findByClass(hostOf(grave.dom), 'dp-pig-img').src, '/dsh-pig/art/stage-grave.svg', 'a grave stays a grave')
 })
 
 test('being away shows what the pig is doing and how far along it is', async () => {

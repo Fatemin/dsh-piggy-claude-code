@@ -46,7 +46,7 @@ final class PigServer {
     var baseURL: URL { URL(string: "http://127.0.0.1:\(port)/")! }
     var deskURL: URL { baseURL.appendingPathComponent("desk") }
     var panelURL: URL { baseURL }
-    var artURL: URL { root.appendingPathComponent("assets/piglet.svg") }
+    var artURL: URL { root.appendingPathComponent("assets/stage-young.svg") }
 
     /// Make sure a server answers; true once it does.
     func ensureRunning() async -> Bool {

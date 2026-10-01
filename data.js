@@ -169,23 +169,23 @@ export const LOOKS = Object.freeze(['elder', 'original'])
  */
 export const LIFE_STAGES = Object.freeze([
   Object.freeze({
-    key: 'box', label: '纸盒', emoji: '📦', size: 58, from: 0, fromKg: 0, box: true,
+    key: 'box', label: '纸盒', emoji: '📦', art: 'stage-box', size: 58, from: 0, fromKg: 0, box: true,
     line: '一个纸盒，侧面戳了几个透气孔',
   }),
   Object.freeze({
-    key: 'piglet', label: '小猪', emoji: '🐖', art: 'piglet', size: 40, from: 0, fromKg: 0,
+    key: 'piglet', label: '小猪', emoji: '🐖', art: 'stage-piglet', size: 40, from: 0, fromKg: 0,
     line: '刚从纸盒里蹦出来，圆头圆脑',
   }),
   Object.freeze({
-    key: 'young', label: '青年猪', emoji: '🐖', art: 'piglet', size: 48, from: 1, fromKg: 20,
+    key: 'young', label: '青年猪', emoji: '🐖', art: 'stage-young', size: 48, from: 1, fromKg: 20,
     line: '长开了，走路带风',
   }),
   Object.freeze({
-    key: 'middle', label: '中年猪', emoji: '🐖', art: 'piglet', size: 62, from: 3, fromKg: 50,
+    key: 'middle', label: '中年猪', emoji: '🐖', art: 'stage-middle', size: 62, from: 3, fromKg: 50,
     line: '很有分量，会一屁股坐住你的椅子',
   }),
   Object.freeze({
-    key: 'elder', label: '老年猪', emoji: '🐖', art: 'elder', size: 56, from: 7, fromKg: 80,
+    key: 'elder', label: '老年猪', emoji: '🐖', art: 'stage-elder', size: 56, from: 7, fromKg: 80,
     line: '鬃毛白了，獠牙还在',
   }),
 ])
@@ -194,8 +194,8 @@ export const LIFE_STAGES = Object.freeze([
 export const LIFESPAN_DAYS = 14
 
 /** The tombstone and the soul that settles on an unclaimed one. */
-export const GRAVE = Object.freeze({ key: 'grave', label: '墓碑', emoji: '🪦', size: 52, line: '这里躺着一只猪' })
-export const SOUL = Object.freeze({ emoji: '👻', label: '灵魂' })
+export const GRAVE = Object.freeze({ key: 'grave', label: '墓碑', emoji: '🪦', art: 'stage-grave', size: 52, line: '这里躺着一只猪' })
+export const SOUL = Object.freeze({ emoji: '👻', art: 'soul', label: '灵魂' })
 /** How long a grave is left alone before the soul turns up. */
 export const SOUL_AFTER_DAYS = 1
 

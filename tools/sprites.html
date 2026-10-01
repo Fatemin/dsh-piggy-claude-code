@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>dsh-pig · 形象与动画</title>
+<style>
+  :root{--ink:#794f27;--dim:#9f927d;--cream:#f8f8f0}
+  body{margin:0;background:var(--cream);color:var(--ink);
+       font-family:Nunito,'Noto Sans SC',system-ui,sans-serif;padding:30px}
+  h1{font-size:19px;margin:0 0 4px}
+  .sub{color:var(--dim);font-size:12px;margin-bottom:22px}
+  h2{font-size:12px;letter-spacing:.08em;color:var(--dim);margin:22px 0 10px}
+  .row{display:flex;flex-wrap:wrap;gap:18px}
+  .cell{text-align:center;width:150px}
+  .cell img{display:block;width:140px;height:140px;margin:0 auto;background:#fff;border-radius:14px}
+  .cap{font-size:12px;font-weight:700;margin-top:6px}
+  .meta{font-size:10px;color:var(--dim)}
+  .big .cell{width:270px}
+  .big .cell img{width:260px;height:260px}
+</style></head>
+<body>
+<h1>🐖 dsh-pig · 形象与动画</h1>
+<div class="sub">每张 SVG 自带动画（内嵌 CSS），放进 &lt;img&gt; 就会动。风格取自 <code>sample/</code>。</div>
+<div id="root"></div>
+<script>
+var groups = [
+  ['生命阶段', [['stage-box','纸盒'],['stage-piglet','小猪'],['stage-young','青年猪'],['stage-middle','中年猪'],['stage-elder','老年猪'],['stage-grave','墓碑'],['soul','灵魂']]],
+  ['心情', [['mood-happy','开心'],['mood-hungry','饿了'],['mood-dirty','脏了'],['mood-sleepy','睡着'],['mood-lonely','孤单'],['mood-sick','生病']]],
+  ['外出', [['away-work','打工'],['away-study','上课'],['away-trip','旅行']]],
+  ['互动反应', [['react-eat','喂食'],['react-bathe','洗澡'],['react-play','玩耍'],['react-pet','摸摸'],['react-refuse','拒绝'],['react-cure','病愈']]],
+]
+var root = document.getElementById('root')
+if (location.hash === '#big') document.body.classList.add('big')
+var bust = '?v=' + Date.now()
+groups.forEach(function (g) {
+  var h = document.createElement('h2'); h.textContent = g[0]; root.appendChild(h)
+  var row = document.createElement('div'); row.className = 'row'
+  g[1].forEach(function (it) {
+    var c = document.createElement('div'); c.className = 'cell'
+    c.innerHTML = '<img src="../assets/' + it[0] + '.svg' + bust + '"><div class="cap">' + it[1] + '</div><div class="meta">' + it[0] + '.svg</div>'
+    row.appendChild(c)
+  })
+  root.appendChild(row)
+})
+var h = document.createElement('h2'); h.textContent = '面板里的真实大小（40 / 62 / 120 px）'; root.appendChild(h)
+var row = document.createElement('div'); row.className = 'row'
+;['stage-piglet', 'stage-young', 'stage-middle', 'stage-elder'].forEach(function (n, i) {
+  var s = [40, 62, 90, 120][i]
+  row.insertAdjacentHTML('beforeend', '<img src="../assets/' + n + '.svg' + bust + '" width="' + s + '" height="' + s + '" style="align-self:flex-end">')
+})
+root.appendChild(row)
+</script>
+</body></html>

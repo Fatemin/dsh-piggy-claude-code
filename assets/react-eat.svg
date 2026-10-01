@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="吃东西">
+  <title>吃东西</title>
+  <!-- 低头对着食盆啃胡萝卜（参考 sample 的「猪进食」），腮帮子一鼓一鼓，渣渣往外蹦。 -->
+  <style>
+    .head{animation:chomp .42s ease-in-out infinite;transform-origin:48px 64px}
+    .cheek{animation:puff .42s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .crumb{animation:crumb .84s ease-out infinite}
+    .crumb2{animation:crumb .84s ease-out -.42s infinite}
+    .tail{animation:wag .42s ease-in-out infinite;transform-origin:106px 52px}
+    @keyframes chomp{50%{transform:rotate(5deg) translateY(2px)}}
+    @keyframes puff{50%{transform:scale(1.25)}}
+    @keyframes crumb{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(-8px,-10px)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+    @keyframes wag{50%{transform:rotate(24deg)}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="45" y="84" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
+    <rect x="92" y="82" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
+    <path class="tail" d="M106 52c6-1 10-6 7-10s-9 1-5 5 9 1 11-3" fill="none" stroke="#FFD1AF" stroke-width="4.5"/>
+    <path d="M30 70C28 46 44 32 66 32S108 38 110 62 98 98 70 99 32 94 30 70Z" fill="#FFD1AF"/>
+    <ellipse cx="70" cy="98" rx="7" ry="4.5" fill="#FF9FA5"/>
+    <g class="head">
+      <path d="M22 66C20 52 30 44 44 46S62 58 60 72 48 92 36 90 24 80 22 66Z" fill="#FFD1AF"/>
+      <path d="M40 44C30 42 24 50 27 57" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M58 44C57 55 61 59 65 59C69 59 71 53 70 46" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <!-- 吃得眯起眼 -->
+      <path d="M28 66Q32 62 36 66M44 68Q48 64 52 68" fill="none" stroke="#373A32" stroke-width="2.8"/>
+      <ellipse class="cheek" cx="52" cy="80" rx="7" ry="5.5" fill="#FFC2B0"/>
+      <path d="M24 74c-7 0-11 4-11 8.5S17 92 25 92s11-3.6 11-8.5S31 74 24 74Z" fill="#FF8195"/>
+      <ellipse cx="20.6" cy="83" rx="1.9" ry="2.8" fill="#373A32"/>
+      <ellipse cx="28" cy="83.4" rx="1.9" ry="2.8" fill="#373A32"/>
+      <!-- 叼着的胡萝卜 -->
+      <path d="M30 94L8 104" fill="none" stroke="#F49A4A" stroke-width="7"/>
+      <path d="M12 101L14 103M18 98L20 100" fill="none" stroke="#D97B2E" stroke-width="1.6"/>
+    </g>
+    <path class="crumb" d="M14 92h.1M20 88h.1" fill="none" stroke="#F49A4A" stroke-width="3"/>
+    <path class="crumb2" d="M10 96h.1M24 90h.1" fill="none" stroke="#F49A4A" stroke-width="2.4"/>
+    <!-- 食盆 -->
+    <path d="M2 104H44L40 116C39 118 37 119 35 119H11C9 119 7 118 6 116Z" fill="#7FB3D5"/>
+    <rect x="2" y="102" width="42" height="5" rx="2.5" fill="#9CC7E0"/>
+    <path d="M14 102C14 96 22 94 24 102M30 102l4-6 4 6" fill="#7DBF6A"/>
+    <rect x="31" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+    <rect x="77" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+  </g>
+</svg>

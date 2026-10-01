@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="灵魂">
+  <title>灵魂</title>
+  <!-- 半透明的小猪灵魂，头顶光环（参考 sample 里的天使猪），飘着，尾巴像小幽灵一样摆。 -->
+  <style>
+    .float{animation:float 3.4s ease-in-out infinite}
+    .tail{animation:wave 1.6s ease-in-out infinite;transform-origin:64px 92px}
+    .halo{animation:glow 1.7s ease-in-out infinite}
+    .spark{animation:twinkle 1.7s ease-in-out infinite}
+    .spark2{animation:twinkle 1.7s ease-in-out -.85s infinite}
+    @keyframes float{0%,100%{transform:translateY(4px)}50%{transform:translateY(-6px)}}
+    @keyframes wave{50%{transform:skewX(-10deg)}}
+    @keyframes glow{50%{opacity:.55}}
+    @keyframes twinkle{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="spark" d="M20 40l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" fill="#FFE9A6" style="transform-box:fill-box;transform-origin:50% 50%"/>
+    <path class="spark2" d="M106 66l1.6 4.4 4.4 1.6-4.4 1.6-1.6 4.4-1.6-4.4-4.4-1.6 4.4-1.6Z" fill="#FFE9A6" style="transform-box:fill-box;transform-origin:50% 50%"/>
+    <g class="float">
+      <ellipse class="halo" cx="64" cy="20" rx="20" ry="5.5" fill="none" stroke="#F5D76E" stroke-width="4"/>
+      <path class="tail" d="M30 70C30 48 46 34 64 34S98 48 98 70V96C94 104 88 96 84 104 80 96 74 104 70 96 66 104 60 96 56 104 52 96 46 104 42 96 38 104 34 96 30 100Z" fill="#FFFFFF" opacity=".9"/>
+      <path d="M44 40C36 38 31 46 35 52M84 40C92 38 97 46 93 52" fill="none" stroke="#F7B6CF" stroke-width="5"/>
+      <path d="M46 62Q50 58 54 62M74 62Q78 58 82 62" fill="none" stroke="#7D8495" stroke-width="2.8"/>
+      <ellipse cx="64" cy="74" rx="11" ry="7.5" fill="#FFC9D3"/>
+      <ellipse cx="60" cy="74" rx="1.8" ry="2.6" fill="#B0889A"/>
+      <ellipse cx="68" cy="74" rx="1.8" ry="2.6" fill="#B0889A"/>
+      <ellipse cx="44" cy="70" rx="4.5" ry="2.6" fill="#FFD6DC"/>
+      <ellipse cx="84" cy="70" rx="4.5" ry="2.6" fill="#FFD6DC"/>
+    </g>
+  </g>
+</svg>

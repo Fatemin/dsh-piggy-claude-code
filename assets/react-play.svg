@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="玩耍">
+  <title>玩耍</title>
+  <!-- 四脚朝天打滚（参考 sample 里打滚的猪）：躺在地上左右翻，四只蹄子在空中乱蹬，笑得眼睛都没了。 -->
+  <style>
+    .roll{animation:roll .9s ease-in-out infinite;transform-origin:64px 104px}
+    .k1{animation:kick .3s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+    .k2{animation:kick .3s ease-in-out -.15s infinite;transform-box:fill-box;transform-origin:50% 100%}
+    .star{animation:pop .9s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes roll{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+    @keyframes kick{50%{transform:rotate(16deg) translateY(2px)}}
+    @keyframes pop{0%{opacity:0;transform:scale(.4)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.2)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="star" d="M18 26l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#FFD35A"/>
+    <path class="star" d="M110 30l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6Z" fill="#FF9FB0" style="animation-delay:-.45s"/>
+    <g class="roll">
+      <!-- 朝天的四条腿 -->
+      <rect class="k1" x="40" y="40" width="12" height="28" rx="6" fill="#FF9FA5"/>
+      <rect class="k2" x="86" y="38" width="12" height="28" rx="6" fill="#FF9FA5"/>
+      <rect class="k2" x="54" y="44" width="13" height="28" rx="6.5" fill="#FFD1AF"/>
+      <rect class="k1" x="72" y="42" width="13" height="28" rx="6.5" fill="#FFD1AF"/>
+      <!-- 翻过来的身子，肚皮朝上 -->
+      <path d="M14 86C14 66 38 58 66 58S116 66 116 86 96 112 66 112 14 106 14 86Z" fill="#FFD1AF"/>
+      <ellipse cx="70" cy="64" rx="8" ry="4.5" fill="#FF9FA5"/>
+      <path d="M114 84c6 1 9 6 6 9s-8-1-4-4" fill="none" stroke="#FFD1AF" stroke-width="4.5"/>
+      <!-- 倒过来的脸：耳朵在下面 -->
+      <path d="M26 106C24 114 30 118 38 116" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M48 108C52 116 60 116 62 110" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M22 92Q26 96 30 92M40 94Q44 98 48 94" fill="none" stroke="#373A32" stroke-width="2.8"/>
+      <ellipse cx="50" cy="84" rx="5.5" ry="3.2" fill="#FF9AA0"/>
+      <path d="M26 70c-8 0-13 4.5-13 9.5S18 89 27 89s13-4 13-9.5S34 70 26 70Z" fill="#FF8195"/>
+      <ellipse cx="22" cy="79.5" rx="2.1" ry="3.1" fill="#373A32"/>
+      <ellipse cx="30.5" cy="80" rx="2.1" ry="3.1" fill="#373A32"/>
+      <path d="M30 66Q36 60 42 66Z" fill="#C2566B"/>
+    </g>
+  </g>
+</svg>

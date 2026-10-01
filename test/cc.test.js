@@ -118,7 +118,7 @@ test('server serves the shell, the client and upstream routes', async () => {
     })
     assert.equal((await pet.json()).ok, true)
 
-    const art = await fetch(new URL('dsh-pig/art/piglet.svg', server.url))
+    const art = await fetch(new URL('dsh-pig/art/stage-piglet.svg', server.url))
     assert.equal(art.status, 200)
 
     const desk = await (await fetch(new URL('desk', server.url))).text()

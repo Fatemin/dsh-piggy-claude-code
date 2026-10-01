@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="老年猪">
+  <title>老年猪</title>
+  <!-- 同一头猪，毛色淡了：眯眼、灰眉、白胡子，拄一根小拐杖。动作慢半拍，偶尔点头打盹。 -->
+  <style>
+    .body{animation:breathe 4s ease-in-out infinite;transform-origin:66px 116px}
+    .head{animation:nod 6s ease-in-out infinite;transform-origin:44px 66px}
+    .tail{animation:wag 3s ease-in-out infinite;transform-origin:112px 54px}
+    .cane{animation:tap 4s ease-in-out infinite;transform-origin:8px 116px}
+    @keyframes breathe{50%{transform:scale(1.02,.975)}}
+    @keyframes nod{0%,60%,100%{transform:rotate(0)}72%{transform:rotate(-5deg) translateY(2px)}84%{transform:rotate(0)}}
+    @keyframes wag{50%{transform:rotate(8deg)}}
+    @keyframes tap{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="46" y="90" width="12" height="22" rx="6" fill="#EA959C"/>
+    <rect x="96" y="88" width="12" height="22" rx="6" fill="#EA959C"/>
+    <g class="body">
+      <path class="tail" d="M110 54c5-1 8-5 6-8" fill="none" stroke="#F1C09D" stroke-width="4.5"/>
+      <path d="M16 68C14 42 34 28 62 28S116 38 117 64 106 104 72 104 18 96 16 68Z" fill="#F1C09D"/>
+      <ellipse cx="72" cy="102" rx="7.5" ry="4.5" fill="#EA959C"/>
+      <g class="head">
+        <path d="M34 32C25 30 18 38 22 46" fill="none" stroke="#CF6C89" stroke-width="5"/>
+        <path d="M52 34C51 45 55 49 59 49C63 49 65 43 64 37" fill="none" stroke="#CF6C89" stroke-width="5"/>
+        <!-- 眯着的眼睛 + 灰眉毛 -->
+        <path d="M24 55Q28.5 51 33 55.5M41 58Q45.5 54 50 58.5" fill="none" stroke="#373A32" stroke-width="2.6"/>
+        <path d="M22 47Q28 43 34 46.5M40 50Q46 46 52 49.5" fill="none" stroke="#ADADA5" stroke-width="3.2"/>
+        <path d="M58 52Q63 54 67 53M58 57Q62 59 66 58" fill="none" stroke="#CA997E" stroke-width="1.6"/>
+        <ellipse cx="48" cy="68" rx="5" ry="3" fill="#F5A9A3" opacity=".8"/>
+        <path d="M24 62c-7.5 0-12 4-12 8.8S16.5 80 25 80s12-3.7 12-8.8S32 62 24 62Z" fill="#ED8B98"/>
+        <ellipse cx="20" cy="70.8" rx="2" ry="2.9" fill="#373A32"/>
+        <ellipse cx="28" cy="71.3" rx="2" ry="2.9" fill="#373A32"/>
+        <!-- 白胡子和一撮白下巴 -->
+        <path d="M24 79c-5-2-6 3-12 3 3 4 8 5 12 1 4 4 10 4 13 0-6 0-7-5-13-4Z" fill="#F8F4E8"/>
+        <path d="M20 85Q26 88 32 86Q31 93 26 97L24 92L21 95Q20 90 20 85Z" fill="#F8F4E8"/>
+      </g>
+    </g>
+    <rect x="29" y="90" width="14" height="24" rx="7" fill="#F1C09D"/>
+    <rect x="80" y="90" width="14" height="24" rx="7" fill="#F1C09D"/>
+    <!-- 小拐杖 -->
+    <g class="cane">
+      <path d="M8 116V82C8 74 18 74 18 82" fill="none" stroke="#A8764C" stroke-width="4"/>
+    </g>
+  </g>
+</svg>

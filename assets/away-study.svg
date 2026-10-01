@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="在上课">
+  <title>在上课</title>
+  <!-- 趴在摊开的书上，戴着圆眼镜，头抬起来看前方，慢慢歪头想问题；书页偶尔翻一下，旁边一支铅笔。 -->
+  <style>
+    .head{animation:tilt 2.4s ease-in-out infinite;transform-origin:44px 92px}
+    .page{animation:flip 4.8s ease-in-out infinite;transform-origin:30px 104px}
+    .idea{animation:idea 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .tail{animation:wag 1.2s ease-in-out infinite;transform-origin:110px 78px}
+    @keyframes tilt{0%,100%{transform:rotate(0)}35%{transform:rotate(-6deg)}70%{transform:rotate(-2deg)}}
+    @keyframes flip{0%,70%,100%{transform:scaleX(1)}80%{transform:scaleX(-1)}90%{transform:scaleX(1)}}
+    @keyframes idea{0%,40%,100%{opacity:0;transform:scale(.6)}55%,85%{opacity:1;transform:scale(1)}}
+    @keyframes wag{50%{transform:rotate(18deg)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- 想通了的小灯泡 -->
+    <g class="idea">
+      <circle cx="80" cy="30" r="9" fill="#FFE27A"/>
+      <rect x="76" y="38" width="8" height="5" rx="2" fill="#C9C3B8"/>
+      <path d="M80 14V10M94 22l3-3M66 22l-3-3" fill="none" stroke="#FFD35A" stroke-width="2.4"/>
+    </g>
+    <path class="tail" d="M110 78c5 0 8-4 6-7" fill="none" stroke="#FFD1AF" stroke-width="4.5"/>
+    <path d="M20 92C18 72 40 60 66 60S114 66 116 88 102 114 70 114 22 110 20 92Z" fill="#FFD1AF"/>
+    <ellipse cx="92" cy="114" rx="10" ry="4" fill="#FF9FA5"/>
+    <g class="head">
+      <path d="M36 60C27 58 21 66 24 74" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <path d="M54 62C53 73 57 77 61 77C65 77 67 71 66 64" fill="none" stroke="#E95892" stroke-width="5.5"/>
+      <ellipse cx="32" cy="80" rx="2.6" ry="3" fill="#373A32"/>
+      <ellipse cx="49" cy="82" rx="2.6" ry="3" fill="#373A32"/>
+      <!-- 圆眼镜 -->
+      <circle cx="32" cy="80" r="6.5" fill="none" stroke="#7A5A3A" stroke-width="2"/>
+      <circle cx="49" cy="82" r="6.5" fill="none" stroke="#7A5A3A" stroke-width="2"/>
+      <path d="M38.5 81L42.5 81.5" fill="none" stroke="#7A5A3A" stroke-width="2"/>
+      <ellipse cx="54" cy="94" rx="5" ry="3" fill="#FFAFAC"/>
+      <path d="M26 87c-7.5 0-12 4-12 8.8S18.5 105 27 105s12-3.7 12-8.8S33 87 26 87Z" fill="#FF8195"/>
+      <ellipse cx="22" cy="95.8" rx="2" ry="2.9" fill="#373A32"/>
+      <ellipse cx="30" cy="96.3" rx="2" ry="2.9" fill="#373A32"/>
+    </g>
+    <!-- 摊开的书 -->
+    <path d="M4 106L30 102V118L4 120Z" fill="#FFFDF6"/>
+    <path class="page" d="M30 102L58 104V120L30 118Z" fill="#F3EEDF"/>
+    <path d="M9 108L25 106M9 112L25 110M9 116L22 114" fill="none" stroke="#D9D2C0" stroke-width="1.6"/>
+    <rect x="27" y="117" width="8" height="10" rx="4" fill="#FFD1AF"/>
+    <!-- 铅笔 -->
+    <path d="M66 120L100 116" fill="none" stroke="#F5C24C" stroke-width="4"/>
+    <path d="M100 116L106 115.4" fill="none" stroke="#E7A9A2" stroke-width="4"/>
+    <path d="M66 120L61 120.6" fill="none" stroke="#5B4A3A" stroke-width="2.6"/>
+  </g>
+</svg>
