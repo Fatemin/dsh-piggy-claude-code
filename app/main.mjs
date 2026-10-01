@@ -155,6 +155,11 @@ ipcMain.on('pig', (event, message) => {
     case 'openPanel':
       openPanelWindow()
       break
+    // The panel just opened: take focus so clicking anywhere else blurs the
+    // window and the panel closes itself.
+    case 'panel':
+      if (message.open === true && !win.isFocused()) win.focus()
+      break
     default:
       break
   }

@@ -34,3 +34,19 @@ window.addEventListener('mousemove', event => {
 window.addEventListener('mousedown', () => { pressed = true }, true)
 window.addEventListener('mouseup', () => { pressed = false }, true)
 document.addEventListener('mouseleave', () => { if (!pressed) report(false) })
+
+// The panel closes when the window loses focus (client.js listens for `blur`),
+// so the window has to hold focus while the panel is open; a right-click on
+// a window shown inactive does not always give it that.
+window.addEventListener('DOMContentLoaded', () => {
+  const isOpen = () => document.querySelector('[data-dsh-pig]')?.getAttribute('data-open') === 'true'
+  // Start from the state the page loaded in, so a panel remembered as open
+  // does not steal focus from whatever the user is doing at launch.
+  let open = isOpen()
+  new MutationObserver(() => {
+    const now = isOpen()
+    if (now === open) return
+    open = now
+    if (now) ipcRenderer.send('pig', { type: 'panel', open: true })
+  }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['data-open'] })
+})

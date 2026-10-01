@@ -39,6 +39,7 @@ import {
   startStudy as coreStartStudy,
   startTrip as coreStartTrip,
   startWork as coreStartWork,
+  scratchLottery as coreScratchLottery,
   useItem as coreUseItem,
 } from './core.js'
 
@@ -166,6 +167,9 @@ export function createStore(filePath = defaultStatePath(), options = {}) {
 
     /** Back-compat alias. */
     callOffWork: () => mutate(live => coreCallOff(live, now())),
+
+    /** [mod] Buy a scratch card and scratch it. */
+    scratchLottery: () => mutate(live => coreScratchLottery(live, now())),
 
     /** Buy one item into the backpack. */
     buy: itemKey => mutate(live => coreBuy(live, itemKey)),

@@ -54,6 +54,9 @@ import {
   DOCTOR_GRADUATION,
   PARALLEL_COURSES,
   RENAME_CARD,
+  LOTTERY,
+  jobMissing,
+  lotteryPrize,
   illnessAt,
   itemByKey,
   jobByKey,
@@ -179,6 +182,13 @@ export function sizeForWeight(weightG) {
   const t = (weightG - startG) / (GROWTH.fullKg * 1000 - startG)
   const clamped = Math.min(1, Math.max(0, Number.isFinite(t) ? t : 0))
   return Math.round(GROWTH.minSize + clamped * (GROWTH.maxSize - GROWTH.minSize))
+}
+
+/** [mod] How far from hatching weight to full size (120 kg), 0-100. */
+export function growthPercent(weightG) {
+  const startG = BIRTH_WEIGHT_G + HATCH_WEIGHT_G
+  const t = (weightG - startG) / (GROWTH.fullKg * 1000 - startG)
+  return Math.round(100 * Math.min(1, Math.max(0, Number.isFinite(t) ? t : 0)))
 }
 
 /** Heaviest stage this weight has reached. */
@@ -476,6 +486,8 @@ export function layEgg(nowMs) {
     activity: null,
     riskMinutes: 0,
     lastFedAt: 0,
+    // [dsh-piggy-claude-code mod] when the last scratch card was bought.
+    lastLotteryAt: 0,
     lastActiveAt: nowMs,
     lastSeenAt: nowMs,
     cooldowns: {},
@@ -485,7 +497,7 @@ export function layEgg(nowMs) {
       turns: 0, messages: 0, tools: 0, toolErrors: 0, agentErrors: 0,
       levelUps: 0, feeds: 0, baths: 0, plays: 0, pets: 0,
       jobs: 0, coinsEarned: 0, purchases: 0, illnesses: 0, cures: 0, deaths: 0, revives: 0,
-      courses: 0, lessons: 0, trips: 0,
+      courses: 0, lessons: 0, trips: 0, lotteries: 0, lotteryWon: 0,
     },
   }
 }
@@ -544,7 +556,7 @@ export function migrate(raw) {
     ? raw.memories.filter(m => typeof m === 'string').slice(-MEMORY_LIMIT)
     : []
 
-  for (const key of ['xp', 'weightG', 'satiety', 'happiness', 'cleanliness', 'health', 'coins', 'riskMinutes', 'bornAt', 'lastFedAt', 'lastActiveAt', 'lastSeenAt']) {
+  for (const key of ['xp', 'weightG', 'satiety', 'happiness', 'cleanliness', 'health', 'coins', 'riskMinutes', 'bornAt', 'lastFedAt', 'lastLotteryAt', 'lastActiveAt', 'lastSeenAt']) {
     if (typeof state[key] !== 'number' || !Number.isFinite(state[key])) state[key] = egg[key]
   }
   if (typeof raw.cleanliness !== 'number') state.cleanliness = egg.cleanliness
@@ -911,8 +923,10 @@ function finishWork(state, activity, nowMs) {
   // Trait bonus first, then the sick penalty: going to school should still be
   // worth it while the pig is under the weather.
   const points = state.traits?.[job.trait] ?? 0
+  // [mod] a gig's pay is a roll; the trait bonus still multiplies it.
+  const base = job.random === null ? job.coins : rollPay(job.random)
   // [mod] 土豪 (Middle East & Africa complete): +15% pay.
-  const withTrait = job.coins * traitBonus(job.trait, points).pay * (hasPerk(state, 'tycoon') ? 1.15 : 1)
+  const withTrait = base * traitBonus(job.trait, points).pay * (hasPerk(state, 'tycoon') ? 1.15 : 1)
   const coins = sick ? Math.max(1, Math.round(withTrait * SICK_PAY_MULTIPLIER)) : Math.round(withTrait)
   state.coins += coins
   state.satiety = clamp100(state.satiety + job.satiety)
@@ -929,6 +943,11 @@ function finishWork(state, activity, nowMs) {
   announce(state, 'work', sick
     ? say(state, '{name} 带病打工回来了，只赚到 {coins} 金币 🤒', { name: state.name, coins })
     : say(state, '{name} 打工回来了！赚到 {coins} 金币 💰', { name: state.name, coins }))
+}
+
+/** [mod] A whole number of coins in [min, max]. */
+function rollPay([min, max], random = Math.random) {
+  return min + Math.floor(random() * (max - min + 1))
 }
 
 function finishStudy(state, activity, nowMs) {
@@ -1314,11 +1333,15 @@ export function startWork(state, jobKey, nowMs) {
   if (state.dead) return { ok: false, reason: 'dead' }
   if (state.activity !== null) return { ok: false, reason: 'away' }
   if (state.health <= TOO_WEAK_HEALTH) return { ok: false, reason: 'weak' }
+  // [mod] a career needs trait points first.
+  const missing = jobMissing(job, state.traits)
+  if (missing.length > 0) return { ok: false, reason: 'job-locked', missing }
   if (state.satiety < 15) return { ok: false, reason: 'hungry' }
   // The pig's trait shortens the shift; the pay bonus is applied on the way out.
+  // A fixed-length gig keeps its fifteen minutes.
   const points = state.traits?.[job.trait] ?? 0
   const bonus = traitBonus(job.trait, points)
-  const minutes = Math.max(1, Math.round(job.minutes * bonus.minutes))
+  const minutes = job.fixed ? job.minutes : Math.max(1, Math.round(job.minutes * bonus.minutes))
   const result = begin(state, {
     kind: 'work', key: job.key, label: job.label, emoji: job.emoji, minutes, cost: 0,
     trait: job.trait ?? null,
@@ -1456,6 +1479,42 @@ export function buy(state, itemKey) {
   state.stats.purchases += 1
   remember(state, say(state, '买了 {emoji} {item}（-{price} 金币）', { emoji: item.emoji, item: word(state, item.label), price: item.price }), Date.now())
   return { ok: true, item }
+}
+
+/** [dsh-piggy-claude-code mod] Seconds until the next scratch card may be bought. */
+export function lotteryWaitSeconds(state, nowMs) {
+  const last = state?.lastLotteryAt ?? 0
+  if (!(last > 0)) return 0
+  const remaining = LOTTERY.cooldownMinutes * 60000 - (nowMs - last)
+  return remaining <= 0 ? 0 : Math.ceil(remaining / 1000)
+}
+
+/**
+ * [mod] Buy a scratch card and scratch it on the spot. The pig does it itself,
+ * so it has to be home; one card every ten minutes.
+ * @returns {{ok:boolean, reason?:string, wait?:number, price?:number, prize?:{tier:string, coins:number, mood:string}}}
+ */
+export function scratchLottery(state, nowMs, random = Math.random) {
+  if (state === null) return { ok: false, reason: 'absent' }
+  decay(state, nowMs)
+  if (state.dead) return { ok: false, reason: 'dead' }
+  if (state.activity !== null) return { ok: false, reason: 'away' }
+  const wait = lotteryWaitSeconds(state, nowMs)
+  if (wait > 0) return { ok: false, reason: 'cooldown', wait }
+  if (state.coins < LOTTERY.price) return { ok: false, reason: 'poor', price: LOTTERY.price }
+
+  state.coins -= LOTTERY.price
+  state.lastLotteryAt = nowMs
+  const prize = lotteryPrize(random())
+  state.coins += prize.coins
+  state.happiness = clamp100(state.happiness + prize.happiness)
+  state.stats.lotteries = (state.stats.lotteries ?? 0) + 1
+  state.stats.lotteryWon = (state.stats.lotteryWon ?? 0) + prize.coins
+  state.lastActiveAt = nowMs
+  remember(state, prize.coins > 0
+    ? say(state, '🎟️ 刮彩票中了{prize}，+{coins} 金币', { prize: word(state, prize.label), coins: prize.coins })
+    : say(state, '🎟️ 刮彩票：谢谢参与'), nowMs)
+  return { ok: true, prize: { tier: prize.tier, coins: prize.coins, mood: prize.mood } }
 }
 
 export const canAfford = (state, itemKey) => {

@@ -90,6 +90,9 @@ export default {
     '很开心': 'ごきげん',
     '有点孤单': 'ちょっとさみしい',
     '还不错': 'まあまあ',
+    // --- [dsh-piggy-claude-code mod] scratch cards --------------------------
+    '🎟️ 刮彩票中了{prize}，+{coins} 金币': '🎟️ スクラッチで{prize}！ +{coins} コイン',
+    '🎟️ 刮彩票：谢谢参与': '🎟️ スクラッチ：はずれ',
   },
   en: {
     // --- the default name (only at egg time; a name is never translated after)
@@ -173,5 +176,8 @@ export default {
     '很开心': 'Happy',
     '有点孤单': 'A bit lonely',
     '还不错': 'Doing fine',
+    // --- [dsh-piggy-claude-code mod] scratch cards --------------------------
+    '🎟️ 刮彩票中了{prize}，+{coins} 金币': '🎟️ Scratch card: {prize}, +{coins} coins',
+    '🎟️ 刮彩票：谢谢参与': '🎟️ Scratch card: no luck',
   },
 }

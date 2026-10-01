@@ -52,8 +52,10 @@ import {
   mood,
   studyView,
   traitView,
+  growthPercent,
+  lotteryWaitSeconds,
 } from './core.js'
-import { ALL_ITEMS, KIND_LABEL, KIND_ORDER, PARALLEL_COURSES, RENAME_CARD, jobByKey, traitBonus } from './data.js'
+import { ALL_ITEMS, ILLNESS_CHAINS, KIND_LABEL, KIND_ORDER, LOTTERY, PARALLEL_COURSES, RENAME_CARD, jobByKey, jobMissing, traitBonus } from './data.js'
 import { FARE, PLACES, REGIONS, WORLD_BONUS, souvenirByKey, placeByKey, systemTimeZone, systemUtcOffset } from './world.js'
 import {
   renderAbout,
@@ -138,6 +140,8 @@ const OPERATIONS = {
   lang: (store, body) => store.setLang(str(body.lang)),
   buy: (store, body) => store.buy(str(body.item)),
   use: (store, body) => store.useItem(str(body.item)),
+  // [dsh-piggy-claude-code mod] buy a scratch card and scratch it.
+  lottery: store => store.scratchLottery(),
 }
 
 const str = value => (typeof value === 'string' ? value : '')
@@ -231,6 +235,9 @@ export function apply(ctx, config = {}) {
             // [mod] the limit behind a too-many, the shelf behind a no-item
             max: result.max,
             kind: result.kind,
+            // [mod] what a scratch card paid out; which trait points a career lacks
+            prize: result.prize,
+            missing: result.missing,
           }, { 'cache-control': 'no-store' })
         },
       }))
@@ -327,6 +334,7 @@ export function snapshot(store, options = {}) {
       shop: shopFor(null),
       inventory: inventoryView({ inventory: {} }),
       bag: [],
+      lottery: lotteryFor(null, nowMs),
       activity: null, canGoOut: false, awayBlocked: 'absent',
       // The box has a size of its own; the client must not hard-code it.
       boxStage: boxStageView(lang),
@@ -380,6 +388,8 @@ export function snapshot(store, options = {}) {
       health: state.health,
       healthPercent: healthPercent(state),
       weight: formatWeight(state.weightG),
+      // [mod] the sprite grows with this, from 0 at hatching to 100 at full size
+      growthPercent: growthPercent(state.weightG),
       xp: state.xp,
       coins: state.coins,
       traits: traitView(state),
@@ -403,6 +413,7 @@ export function snapshot(store, options = {}) {
     shop: shopFor(state),
     inventory: inventoryView(state),
     bag: bagFor(state),
+    lottery: lotteryFor(state, nowMs),
     care: Object.fromEntries(Object.entries(careView(state))
       .map(([action, items]) => [action, items.map(item => ({ ...item, label: tr(lang, item.label) }))])),
     activity: activity === null ? null : {
@@ -449,18 +460,30 @@ function jobsFor(state) {
     // the pig's schooling is actually buying it.
     const points = state === null ? 0 : (state.traits?.[job.trait] ?? 0)
     const bonus = traitBonus(job.trait, points)
+    const pay = coins => Math.round(coins * bonus.pay)
+    // [mod] careers name what they still need; gigs show their pay range.
+    const missing = state === null ? jobMissing(job, {}) : jobMissing(job, state.traits)
     return {
       key: job.key, label: tr(lang, job.label), emoji: job.emoji,
+      tier: job.tier,
+      art: job.art,
+      fixed: job.fixed,
+      random: job.random === null ? null : job.random.map(pay),
+      requires: job.requires === null ? [] : Object.entries(job.requires).map(([trait, need]) => ({
+        trait, need, label: tr(lang, TRAITS[trait].label), emoji: TRAITS[trait].emoji,
+        have: state === null ? 0 : (state.traits?.[trait] ?? 0),
+      })),
+      locked: missing.length > 0,
       trait: job.trait,
       traitLabel: tr(lang, TRAITS[job.trait].label),
       traitEmoji: TRAITS[job.trait].emoji,
       traitPoints: points,
-      minutes: Math.max(1, Math.round(job.minutes * bonus.minutes)),
+      minutes: job.fixed ? job.minutes : Math.max(1, Math.round(job.minutes * bonus.minutes)),
       baseMinutes: job.minutes,
-      coins: Math.round(job.coins * bonus.pay),
+      coins: pay(job.coins),
       baseCoins: job.coins,
       payPercent: Math.round((bonus.pay - 1) * 100),
-      speedPercent: Math.round((1 - bonus.minutes) * 100),
+      speedPercent: job.fixed ? 0 : Math.round((1 - bonus.minutes) * 100),
       satiety: job.satiety,
       available: open,
     }
@@ -554,7 +577,8 @@ function bagFor(state) {
     .map(item => ({
       key: item.key, label: tr(lang, item.label), emoji: item.emoji, kind: item.kind,
       count: state.inventory[item.key], exclusive: item.exclusive === true,
-      satiety: item.satiety ?? 0, happiness: item.happiness ?? 0, cleanliness: item.cleanliness ?? 0,
+      tier: item.tier ?? null,
+      ...itemEffects(item, lang),
     }))
 }
 
@@ -565,7 +589,35 @@ function shopFor(state) {
     price: item.price, kind: item.kind, tier: item.tier ?? null,
     affordable: state === null ? false : state.coins >= item.price,
     needed: state?.illness != null && item.kind === 'medicine' && item.tier === state.illness.stage,
+    ...itemEffects(item, lang),
   }))
+}
+
+/**
+ * [dsh-piggy-claude-code mod] What an item does, so the shop and the bag can
+ * say it: the bars it moves, and for a medicine the illnesses it cures.
+ */
+function itemEffects(item, lang) {
+  return {
+    satiety: item.satiety ?? 0,
+    happiness: item.happiness ?? 0,
+    cleanliness: item.cleanliness ?? 0,
+    cures: item.kind === 'medicine'
+      ? ILLNESS_CHAINS.map(chain => chain.stages[(item.tier ?? 1) - 1]?.name).filter(Boolean).map(name => tr(lang, name))
+      : [],
+  }
+}
+
+/** [mod] The scratch-card counter: price, cooldown and the prize table. */
+function lotteryFor(state, nowMs) {
+  const lang = langOf(state)
+  return {
+    price: LOTTERY.price,
+    cooldownMinutes: LOTTERY.cooldownMinutes,
+    waitSeconds: state === null ? 0 : lotteryWaitSeconds(state, nowMs),
+    affordable: state !== null && state.coins >= LOTTERY.price,
+    prizes: LOTTERY.prizes.map(prize => ({ tier: prize.tier, label: tr(lang, prize.label), emoji: prize.emoji, coins: prize.coins })),
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -841,6 +893,9 @@ function refusalText(result, state, context = {}) {
         stage: tr(lang, context.stage?.label ?? ''), label: tr(lang, need.label), done: need.done, need: need.need,
       })
     }
+    case 'job-locked': return tr(lang, '这份工作要求：{list}。', {
+      list: (result.missing ?? []).map(m => tr(lang, '{trait} {need}（现在 {have}）', { trait: tr(lang, TRAITS[m.trait].label), need: m.need, have: m.have })).join(tr(lang, '，')),
+    })
     case 'unknown': return tr(lang, '没有这个选项。')
     default: return tr(lang, '现在没法出门。')
   }

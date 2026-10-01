@@ -162,7 +162,11 @@ export const GROWTH = Object.freeze({
 /** The looks an elder pig can wear. */
 export const LOOKS = Object.freeze(['elder', 'original'])
 
-/** Where the stages change over, in kilograms. The sprite size comes from GROWTH. */
+/**
+ * Where the stages change over, in kilograms. The `size` here is only the
+ * upstream age-based value and the box's own size: a hatched pig's sprite
+ * always comes from `sizeForWeight`, smoothly, not from these steps.
+ */
 export const LIFE_STAGES = Object.freeze([
   Object.freeze({
     key: 'box', label: '纸盒', emoji: '📦', size: 58, from: 0, fromKg: 0, box: true,
@@ -253,11 +257,74 @@ export const RENAME_CARD = Object.freeze({ key: 'renamecard', label: '更名卡'
 // Work — the pig leaves the desk and earns coins. A shift is a real shift.
 // ---------------------------------------------------------------------------
 
+/**
+ * [dsh-piggy-claude-code mod] Jobs, grouped by the trait they lean on.
+ *
+ * Every trait has a ladder of shift lengths, plus one 15-minute gig whose pay
+ * is a roll (`random: [min, max]`, before the trait bonus) and whose length is
+ * `fixed` — schooling raises its pay but never shortens it. The top rung of
+ * each trait is a "career" that needs trait points first (`requires`) and has
+ * its own outfit and working animation (`art`, drawn in assets/job-*.svg).
+ */
+const JOB = (fields) => Object.freeze({ tier: 'basic', requires: null, random: null, fixed: false, art: null, ...fields })
+
 export const JOBS = Object.freeze([
-  Object.freeze({ key: 'odd', label: '打零工', emoji: '🧹', trait: 'charm', minutes: MINUTES.quarter, coins: 30, xp: 40, satiety: -6, cleanliness: -4 }),
-  Object.freeze({ key: 'site', label: '搬砖', emoji: '🧱', trait: 'strong', minutes: MINUTES.hour, coins: 160, xp: 200, satiety: -16, cleanliness: -14 }),
-  Object.freeze({ key: 'office', label: '上班', emoji: '💼', trait: 'intel', minutes: MINUTES.fourHours, coins: 900, xp: 900, satiety: -34, cleanliness: -26 }),
+  // --- 🧠 smarts ------------------------------------------------------------
+  JOB({ key: 'label', label: 'AI 数据标注', emoji: '🏷️', trait: 'intel', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([10, 80]), fixed: true, xp: 45, satiety: -5, cleanliness: -2 }),
+  JOB({ key: 'tutor', label: '家教', emoji: '📝', trait: 'intel', minutes: MINUTES.hour, coins: 200, xp: 220, satiety: -12, cleanliness: -6 }),
+  JOB({ key: 'office', label: '上班', emoji: '💼', trait: 'intel', minutes: MINUTES.fourHours, coins: 900, xp: 900, satiety: -34, cleanliness: -26 }),
+  JOB({ key: 'aitrainer', label: 'AI 训练师', emoji: '🤖', trait: 'intel', minutes: MINUTES.threeHours, coins: 1100, xp: 1100, satiety: -28, cleanliness: -12, tier: 'pro', requires: Object.freeze({ intel: 20 }), art: 'aitrainer' }),
+  // --- ✨ charm -------------------------------------------------------------
+  JOB({ key: 'stall', label: '摆地摊', emoji: '🛍️', trait: 'charm', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([5, 90]), fixed: true, xp: 45, satiety: -6, cleanliness: -4 }),
+  JOB({ key: 'odd', label: '打零工', emoji: '🧹', trait: 'charm', minutes: MINUTES.quarter, coins: 30, xp: 40, satiety: -6, cleanliness: -4 }),
+  JOB({ key: 'tea', label: '奶茶店员', emoji: '🧋', trait: 'charm', minutes: 90, coins: 280, xp: 300, satiety: -14, cleanliness: -8 }),
+  JOB({ key: 'influencer', label: '网红', emoji: '🤳', trait: 'charm', minutes: MINUTES.twoHours, coins: 750, xp: 760, satiety: -18, cleanliness: -6, tier: 'pro', requires: Object.freeze({ charm: 15 }), art: 'influencer' }),
+  JOB({ key: 'vtuber', label: 'VTuber', emoji: '🎙️', trait: 'charm', minutes: MINUTES.threeHours, coins: 1300, xp: 1300, satiety: -26, cleanliness: -8, tier: 'pro', requires: Object.freeze({ charm: 30, intel: 10 }), art: 'vtuber' }),
+  // --- 💪 strength ----------------------------------------------------------
+  JOB({ key: 'rider', label: '外卖骑手', emoji: '🛵', trait: 'strong', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([10, 80]), fixed: true, xp: 45, satiety: -8, cleanliness: -6 }),
+  JOB({ key: 'site', label: '搬砖', emoji: '🧱', trait: 'strong', minutes: MINUTES.hour, coins: 160, xp: 200, satiety: -16, cleanliness: -14 }),
+  JOB({ key: 'sorting', label: '快递分拣', emoji: '📦', trait: 'strong', minutes: MINUTES.threeHours, coins: 600, xp: 620, satiety: -30, cleanliness: -22 }),
+  JOB({ key: 'coach', label: '健身教练', emoji: '🏋️', trait: 'strong', minutes: MINUTES.twoHours, coins: 760, xp: 760, satiety: -26, cleanliness: -20, tier: 'pro', requires: Object.freeze({ strong: 15 }), art: 'coach' }),
 ])
+
+/** [mod] Which trait points a job still lacks: [] when the pig qualifies. */
+export function jobMissing(job, traits) {
+  if (job === null || job.requires === null) return []
+  return Object.entries(job.requires)
+    .filter(([trait, need]) => (traits?.[trait] ?? 0) < need)
+    .map(([trait, need]) => ({ trait, need, have: traits?.[trait] ?? 0 }))
+}
+
+// ---------------------------------------------------------------------------
+// [dsh-piggy-claude-code mod] Scratch cards, sold at the shop counter.
+//
+// One card every ten minutes. The prize table is weighted so a card is worth
+// about 81 coins on average: a small, fun loss, never a way to farm money.
+// `mood` picks the pig's reaction: jackpot (spins), happy (streamers), sad
+// (a rain cloud over its head).
+// ---------------------------------------------------------------------------
+
+export const LOTTERY = Object.freeze({
+  price: 100,
+  cooldownMinutes: 10,
+  prizes: Object.freeze([
+    Object.freeze({ tier: 'first', label: '一等奖', emoji: '🏆', coins: 10000, chance: 0.002, mood: 'jackpot', happiness: 30 }),
+    Object.freeze({ tier: 'second', label: '二等奖', emoji: '🥈', coins: 1000, chance: 0.02, mood: 'happy', happiness: 15 }),
+    Object.freeze({ tier: 'third', label: '三等奖', emoji: '🥉', coins: 200, chance: 0.08, mood: 'happy', happiness: 10 }),
+    Object.freeze({ tier: 'comfort', label: '安慰奖', emoji: '🍬', coins: 100, chance: 0.25, mood: 'happy', happiness: 5 }),
+    Object.freeze({ tier: 'none', label: '谢谢参与', emoji: '🌧️', coins: 0, chance: 1, mood: 'sad', happiness: -5 }),
+  ]),
+})
+
+/** Draw a prize for a roll in [0, 1). The last entry catches everything left. */
+export function lotteryPrize(roll) {
+  let left = roll
+  for (const prize of LOTTERY.prizes) {
+    if (left < prize.chance) return prize
+    left -= prize.chance
+  }
+  return LOTTERY.prizes[LOTTERY.prizes.length - 1]
+}
 
 // ---------------------------------------------------------------------------
 // Study — the nine QQ Pet subjects, each tied to one of the three traits.

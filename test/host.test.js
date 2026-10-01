@@ -338,7 +338,7 @@ test('a finished shift pays out on the next read and is announced once', async (
   })
   try {
     const first = await app.get()
-    assert.equal(first.pig.coins, JOBS[1].coins)
+    assert.equal(first.pig.coins, JOBS.find(j => j.key === "site").coins)
     assert.equal(first.activity, null)
     // A shift is worth enough XP to cross a level too, so there may be more
     // than one announcement — the payday is the one that must be there.

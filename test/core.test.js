@@ -510,13 +510,13 @@ test('a shift pays out when the clock passes its end', () => {
   assert.equal(result.ok, true)
   assert.equal(pig.activity.kind, 'work')
   assert.equal(pig.activity.key, 'odd')
-  assert.equal(workSecondsLeft(pig, T0), JOBS[0].minutes * 60)
+  assert.equal(workSecondsLeft(pig, T0), JOBS.find(j => j.key === "odd").minutes * 60)
 
-  advance(pig, JOBS[0].minutes + 1)
+  advance(pig, JOBS.find(j => j.key === "odd").minutes + 1)
   assert.equal(pig.activity, null, 'the shift is over')
-  assert.equal(pig.coins, before + JOBS[0].coins)
+  assert.equal(pig.coins, before + JOBS.find(j => j.key === "odd").coins)
   assert.equal(pig.stats.jobs, 1)
-  assert.equal(pig.stats.coinsEarned, JOBS[0].coins)
+  assert.equal(pig.stats.coinsEarned, JOBS.find(j => j.key === "odd").coins)
   assert.ok(pig.memories.some(m => m.includes('金币')))
   assert.ok(pig.pending.some(e => e.kind === 'work'), 'the payout is announced')
 })
@@ -628,8 +628,8 @@ test('a sick pig earns half, but still earns', () => {
   }
   const healthy = run(false)
   const ill = run(true)
-  assert.equal(healthy, JOBS[1].coins)
-  assert.equal(ill, Math.round(JOBS[1].coins / 2), 'half pay')
+  assert.equal(healthy, JOBS.find(j => j.key === "site").coins)
+  assert.equal(ill, Math.round(JOBS.find(j => j.key === "site").coins / 2), 'half pay')
   assert.ok(ill > 0, 'but never nothing — working while ill is the way out of being broke')
 })
 
@@ -1289,4 +1289,76 @@ test('the first name is free, every rename after that costs a rename card', () =
   assert.equal(useItem(pig, RENAME_CARD.key, T0).reason, 'use-to-rename')
   assert.deepEqual(renamePig(pig, '二花', T0), { ok: true, name: '二花', usedCard: true })
   assert.equal(pig.inventory[RENAME_CARD.key], 0)
+})
+
+// ---------------------------------------------------------------------------
+// [dsh-piggy-claude-code mod] the job ladder per trait, and scratch cards
+// ---------------------------------------------------------------------------
+
+import { LOTTERY, lotteryPrize } from '../data.js'
+import { lotteryWaitSeconds, scratchLottery, startWork as startWorkAgain } from '../core.js'
+
+test('every trait has a fixed 15-minute gig with random pay, and a career behind trait points', () => {
+  for (const trait of ['intel', 'charm', 'strong']) {
+    const jobs = JOBS.filter(job => job.trait === trait)
+    const gig = jobs.find(job => job.random !== null)
+    assert.ok(gig, `${trait} has a random-pay gig`)
+    assert.equal(gig.minutes, 15)
+    assert.equal(gig.fixed, true)
+    assert.ok(jobs.some(job => job.tier === 'pro' && job.requires !== null), `${trait} has a career`)
+    assert.ok(new Set(jobs.map(job => job.minutes)).size >= 3, `${trait} offers several shift lengths`)
+  }
+})
+
+test('a career refuses a pig without the trait points, and takes one that has them', () => {
+  const pig = hatchEgg(T0)
+  const refused = startWorkAgain(pig, 'coach', T0)
+  assert.equal(refused.ok, false)
+  assert.equal(refused.reason, 'job-locked')
+  assert.deepEqual(refused.missing, [{ trait: 'strong', need: 15, have: 0 }])
+  pig.traits.strong = 15
+  assert.equal(startWorkAgain(pig, 'coach', T0).ok, true)
+})
+
+test('a gig keeps its 15 minutes however trained the pig is, and pays inside its range', () => {
+  const gig = JOBS.find(job => job.key === 'rider')
+  for (let i = 0; i < 40; i += 1) {
+    const pig = hatchEgg(T0)
+    pig.coins = 0
+    pig.traits.strong = 30
+    assert.equal(startWorkAgain(pig, 'rider', T0).ok, true)
+    assert.equal(pig.activity.endsAt - T0, 15 * MIN, 'no speed bonus on a fixed gig')
+    decay(pig, pig.activity.endsAt)
+    // 30 points is the 3× pay cap
+    assert.ok(pig.coins >= gig.random[0] * 3 && pig.coins <= gig.random[1] * 3, `paid ${pig.coins}`)
+  }
+})
+
+test('scratch cards: the prize table, the price and one card every ten minutes', () => {
+  assert.equal(lotteryPrize(0).tier, 'first')
+  assert.equal(lotteryPrize(0.999).tier, 'none')
+  assert.deepEqual(LOTTERY.prizes.map(p => p.coins), [10000, 1000, 200, 100, 0])
+  const value = LOTTERY.prizes.slice(0, -1).reduce((sum, p) => sum + p.coins * p.chance, 0)
+  assert.ok(value < LOTTERY.price, 'a card loses money on average')
+
+  const pig = hatchEgg(T0)
+  pig.coins = 500
+  const win = scratchLottery(pig, T0, () => 0)
+  assert.equal(win.ok, true)
+  assert.equal(win.prize.tier, 'first')
+  assert.equal(pig.coins, 500 - LOTTERY.price + 10000)
+
+  const again = scratchLottery(pig, T0 + 5 * MIN, () => 0.99)
+  assert.equal(again.ok, false)
+  assert.equal(again.reason, 'cooldown')
+  assert.equal(lotteryWaitSeconds(pig, T0 + 5 * MIN), 5 * 60)
+
+  const later = scratchLottery(pig, T0 + 10 * MIN, () => 0.99)
+  assert.equal(later.ok, true)
+  assert.equal(later.prize.tier, 'none')
+  assert.equal(later.prize.mood, 'sad')
+
+  const poor = hatchEgg(T0)
+  poor.coins = 50
+  assert.equal(scratchLottery(poor, T0, () => 0).reason, 'poor')
 })

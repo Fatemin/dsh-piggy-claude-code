@@ -221,6 +221,17 @@ window.__ModuleLoader__.load({
         '名称框': '名前ボックス', '新工作表': '新しいシート', '就绪': '準備完了',
         '平均值：{n}': '平均: {n}', '计数：{n}': 'データの個数: {n}', '求和：{n}': '合計: {n}',
         '普通': '標準', '返回游戏': 'ゲームにもどる',
+        // [dsh-piggy-claude-code mod] job ladder, shop effects, sorted bag, scratch cards
+        '饱食 {n}': 'おなか {n}', '心情 {n}': 'きげん {n}', '清洁 {n}': 'きれいさ {n}',
+        '治：{list}': '治る：{list}', '死后用来复活': 'いってしまった子を呼びもどす',
+        '没有效果': 'こうかなし', '收入随机 {min}–{max} 🪙': '報酬ランダム {min}–{max} 🪙',
+        '固定 15 分钟': '15分固定', '高阶': '上級', '需要 {list}': '{list} が必要',
+        '这份工作要求：{list}': 'このしごとには {list} が必要だよ',
+        '刮彩票': 'スクラッチくじ', '{price} 🪙 一张 · 每 {n} 分钟一次': '1枚 {price} 🪙 · {n}分に1回',
+        '刮一张': 'けずる', '{time} 后再来': 'あと {time}',
+        '中了{prize}！+{coins} 🪙': '{prize}！ +{coins} 🪙', '谢谢参与…下次一定': 'はずれ…次こそ',
+        '一等奖': '1等', '二等奖': '2等', '三等奖': '3等', '安慰奖': '残念賞', '谢谢参与': 'はずれ',
+        '其他': 'そのほか', '成长 {pct}%': '成長 {pct}%',
       },
       en: {
         // tabs
@@ -359,6 +370,17 @@ window.__ModuleLoader__.load({
         '名称框': 'Name Box', '新工作表': 'New sheet', '就绪': 'Ready',
         '平均值：{n}': 'Average: {n}', '计数：{n}': 'Count: {n}', '求和：{n}': 'Sum: {n}',
         '普通': 'Normal', '返回游戏': 'Back to the game',
+        // [dsh-piggy-claude-code mod] job ladder, shop effects, sorted bag, scratch cards
+        '饱食 {n}': 'Fullness {n}', '心情 {n}': 'Mood {n}', '清洁 {n}': 'Clean {n}',
+        '治：{list}': 'Cures: {list}', '死后用来复活': 'Brings a lost pig back',
+        '没有效果': 'No effect', '收入随机 {min}–{max} 🪙': 'random pay {min}–{max} 🪙',
+        '固定 15 分钟': 'always 15 min', '高阶': 'Pro', '需要 {list}': 'Needs {list}',
+        '这份工作要求：{list}': 'This job needs {list}',
+        '刮彩票': 'Scratch cards', '{price} 🪙 一张 · 每 {n} 分钟一次': '{price} 🪙 each · one every {n} min',
+        '刮一张': 'Scratch', '{time} 后再来': 'again in {time}',
+        '中了{prize}！+{coins} 🪙': '{prize}! +{coins} 🪙', '谢谢参与…下次一定': 'No luck… next time',
+        '一等奖': '1st prize', '二等奖': '2nd prize', '三等奖': '3rd prize', '安慰奖': 'Consolation prize', '谢谢参与': 'No luck',
+        '其他': 'Other', '成长 {pct}%': 'Growth {pct}%',
       },
     }
     // English singulars, picked when `params.n === 1`. Japanese and Chinese
@@ -413,6 +435,9 @@ window.__ModuleLoader__.load({
     }
     var KIND_TITLE = { food: ['🍎', '食物'], bath: ['🧼', '洗浴'], toy: ['🪀', '玩具'], medicine: ['💊', '药品'], revive: ['✨', '复活'], card: ['🪪', '道具'] }
     var KIND_ORDER = ['food', 'bath', 'toy', 'medicine', 'revive', 'card']
+    // [dsh-piggy-claude-code mod] study and work are sorted by the trait they build or use.
+    var TRAIT_TITLE = { intel: ['🧠', '智力'], charm: ['✨', '魅力'], strong: ['💪', '武力'] }
+    var TRAIT_KEYS = ['intel', 'charm', 'strong']
     var STAGES = [
       { key: 'primary', label: '小学' },
       { key: 'college', label: '大学' },
@@ -487,6 +512,8 @@ window.__ModuleLoader__.load({
           healthPercent: num(pig.healthPercent, 100),
           coins: num(pig.coins, 0),
           weight: str(pig.weight, '—'),
+          // [dsh-piggy-claude-code mod] null from an older host
+          growthPercent: typeof pig.growthPercent === 'number' ? pig.growthPercent : null,
           xp: num(pig.xp, 0),
           stageLine: str(pig.stageLine, ''),
           illness: isObj(pig.illness) ? {
@@ -528,12 +555,28 @@ window.__ModuleLoader__.load({
           baseCoins: num(obj(job).baseCoins, 0),
           payPercent: num(obj(job).payPercent, 0),
           speedPercent: num(obj(job).speedPercent, 0),
+          // [dsh-piggy-claude-code mod] the per-trait ladder: gigs with a pay
+          // roll, and careers gated behind trait points.
+          trait: str(obj(job).trait, ''),
+          tier: obj(job).tier === 'pro' ? 'pro' : 'basic',
+          fixed: obj(job).fixed === true,
+          random: Array.isArray(obj(job).random) && obj(job).random.length === 2
+            ? [num(obj(job).random[0], 0), num(obj(job).random[1], 0)] : null,
+          locked: obj(job).locked === true,
+          requires: arr(obj(job).requires).map(need => ({
+            trait: str(obj(need).trait, ''),
+            label: str(obj(need).label, ''),
+            emoji: str(obj(need).emoji, ''),
+            need: num(obj(need).need, 0),
+            have: num(obj(need).have, 0),
+          })).filter(need => need.trait !== ''),
         })).filter(job => job.key !== ''),
         subjects: arr(d.subjects).map(sub => ({
           key: str(obj(sub).key, ''),
           label: str(obj(sub).label, L('课')),
           emoji: str(obj(sub).emoji, '📘'),
           traitLabel: str(obj(sub).traitLabel, ''),
+          trait: str(obj(sub).trait, ''),
           level: num(obj(sub).level, 0),
           available: obj(sub).available === true,
         })).filter(sub => sub.key !== ''),
@@ -572,6 +615,7 @@ window.__ModuleLoader__.load({
           tier: typeof obj(item).tier === 'number' ? obj(item).tier : null,
           affordable: obj(item).affordable === true,
           needed: obj(item).needed === true,
+          effects: normalizeEffects(item),
         })).filter(item => item.key !== ''),
         inventory: obj(d.inventory),
         // [dsh-piggy-claude-code mod] everything the pig holds, travel-only
@@ -584,7 +628,21 @@ window.__ModuleLoader__.load({
           kind: str(obj(item).kind, 'food'),
           count: Math.max(0, Math.floor(num(obj(item).count, 0))),
           exclusive: obj(item).exclusive === true,
+          effects: normalizeEffects(item),
         })).filter(item => item.key !== '' && item.count > 0) : null,
+        // [dsh-piggy-claude-code mod] the scratch-card counter; null from an older host.
+        lottery: isObj(d.lottery) ? {
+          price: num(d.lottery.price, 100),
+          cooldownMinutes: num(d.lottery.cooldownMinutes, 10),
+          waitSeconds: Math.max(0, num(d.lottery.waitSeconds, 0)),
+          affordable: d.lottery.affordable === true,
+          prizes: arr(d.lottery.prizes).map(prize => ({
+            tier: str(obj(prize).tier, ''),
+            label: str(obj(prize).label, ''),
+            emoji: str(obj(prize).emoji, '🎟️'),
+            coins: num(obj(prize).coins, 0),
+          })).filter(prize => prize.tier !== ''),
+        } : null,
         world: normalizeWorld(d.world, L),
         // Which items each care action could spend right now.
         care: (() => {
@@ -703,6 +761,17 @@ window.__ModuleLoader__.load({
         },
         oldSouvenirs: arr(raw.oldSouvenirs).filter(t => typeof t === 'string' && t !== ''),
         fare: { costPerZone: num(obj(raw.fare).costPerZone, 200), hoursPerZone: num(obj(raw.fare).hoursPerZone, 1) },
+      }
+    }
+
+    /** [dsh-piggy-claude-code mod] What an item does; zeroes from an older host. */
+    function normalizeEffects(raw) {
+      var item = obj(raw)
+      return {
+        satiety: num(item.satiety, 0),
+        happiness: num(item.happiness, 0),
+        cleanliness: num(item.cleanliness, 0),
+        cures: arr(item.cures).filter(name => typeof name === 'string' && name !== ''),
       }
     }
 
@@ -1170,6 +1239,12 @@ window.__ModuleLoader__.load({
       '.dp-world[data-done="true"]{background:#fdf7e2;border-color:var(--ac-warning)}',
       '.dp-world .dp-grow{flex:1;min-width:0}',
 
+      /* ---------- [dsh-piggy-claude-code mod] scratch cards, locked careers ---------- */
+      '.dp-lottery{margin:0 0 10px;padding:8px 10px;border-radius:var(--ac-radius-sm);',
+      'background:#fdf7e2;border:2px solid #f0dfa8}',
+      '.dp-lottery .dp-row{align-items:baseline;gap:6px;margin:0 0 5px}',
+      '.dp-item[data-locked="true"]{background:var(--ac-bg-disabled)}',
+      '.dp-item[data-tier="pro"]{border-color:#f0dfa8}',
       '.dp-empty{color:var(--ac-text-2);font-size:10.5px;font-weight:500;line-height:1.65;',
       'margin-top:4px}',
       '.dp-memo{margin-top:9px;padding-top:8px;border-top:2px solid var(--ac-border-light);',
@@ -2226,13 +2301,16 @@ window.__ModuleLoader__.load({
           { key: 'cure', label: '💚 治好', run: function () { patch({ illness: null, health: 5 }) } },
         ])
 
-        group('年龄', [
+        // [dsh-piggy-claude-code mod] the pig grows by weight, so these set
+        // weight; the sprite follows it (40 px at hatching → 200 px at 120 kg).
+        group('体重', [
           { key: 'box', label: '📦 纸盒', run: function () { patch({ hatched: false }) } },
-          { key: 'piglet', label: '小猪', run: function () { patch({ hatched: true, ageDays: 0.2 }) } },
-          { key: 'young', label: '青年', run: function () { patch({ ageDays: 2 }) } },
-          { key: 'middle', label: '中年', run: function () { patch({ ageDays: 5 }) } },
-          { key: 'elder', label: '老年', run: function () { patch({ ageDays: 9 }) } },
-          { key: 'gone', label: '🪦 老死', run: function () { patch({ ageDays: 20 }) } },
+          { key: 'piglet', label: '小猪', run: function () { patch({ hatched: true, weightG: 2000 }) } },
+          { key: 'young', label: '青年', run: function () { patch({ weightG: 20000 }) } },
+          { key: 'middle', label: '中年', run: function () { patch({ weightG: 50000 }) } },
+          { key: 'elder', label: '老年', run: function () { patch({ weightG: 80000 }) } },
+          { key: 'full', label: '⚖️ 120 kg', run: function () { patch({ weightG: 120000 }) } },
+          { key: 'heavier', label: '⚖️ +5 kg', run: function () { patch({ weightG: Math.round(parseFloat(p.weight) * 1000) + 5000 }) } },
         ])
 
         group('资源', [
@@ -2291,7 +2369,8 @@ window.__ModuleLoader__.load({
         content.appendChild(traits)
 
         var info = el('div', 'dp-row')
-        info.appendChild(el('span', null, '⚖️ ' + T('体重') + ' ' + p.weight))
+        info.appendChild(el('span', null, '⚖️ ' + T('体重') + ' ' + p.weight
+          + (p.growthPercent === null ? '' : ' · ' + T('成长 {pct}%', { pct: p.growthPercent }))))
         info.appendChild(el('b', null, '🪙 ' + p.coins))
         content.appendChild(info)
 
@@ -2822,8 +2901,18 @@ window.__ModuleLoader__.load({
           content.appendChild(hint)
         }
 
-        var grid = el('div', 'dp-grid')
-        for (var i = 0; i < view.subjects.length; i += 1) {
+        // [dsh-piggy-claude-code mod] one block per trait, so it is plain which
+        // lessons build which trait (and so which jobs they pay for).
+        var grid = null
+        var studyGroup = null
+        var bySubject = traitGroups(view.subjects)
+        for (var i = 0; i < bySubject.length; i += 1) {
+          if (bySubject[i].group !== studyGroup) {
+            studyGroup = bySubject[i].group
+            content.appendChild(groupTitle(studyGroup))
+            grid = el('div', 'dp-grid')
+            content.appendChild(grid)
+          }
           (function (sub) {
             var picked = studyPicks.keys.indexOf(sub.key) >= 0
             var btn = button('dp-item', { 'data-subject': sub.key }, function () {
@@ -2855,9 +2944,8 @@ window.__ModuleLoader__.load({
             btn.appendChild(grow)
             if (multi) btn.appendChild(el('span', 'dp-check', picked ? '✅' : '⬜'))
             grid.appendChild(btn)
-          })(view.subjects[i])
+          })(bySubject[i].entry)
         }
-        content.appendChild(grid)
 
         if (multi) {
           var count = studyPicks.keys.length
@@ -2876,37 +2964,132 @@ window.__ModuleLoader__.load({
         }
       }
 
+      /**
+       * [dsh-piggy-claude-code mod] Entries sorted into trait blocks, in the
+       * fixed 智力 · 魅力 · 武力 order; anything without a known trait goes last.
+       */
+      function traitGroups(entries) {
+        var out = []
+        var keys = TRAIT_KEYS.concat([''])
+        for (var g = 0; g < keys.length; g += 1) {
+          for (var e = 0; e < entries.length; e += 1) {
+            var trait = TRAIT_KEYS.indexOf(entries[e].trait) >= 0 ? entries[e].trait : ''
+            if (trait === keys[g]) out.push({ group: trait, entry: entries[e] })
+          }
+        }
+        return out
+      }
+
+      function groupTitle(trait) {
+        var title = TRAIT_TITLE[trait]
+        var head = el('div', 'dp-shelf', title === undefined ? T('其他') : title[0] + ' ' + T(title[1]))
+        head.style.margin = '9px 0 5px'
+        return head
+      }
+
       function workTab() {
         if (view.jobs.length === 0) {
           content.appendChild(el('div', 'dp-empty', T('宿主还没提供工作列表。')))
           return
         }
-        var list = el('div', 'dp-list')
-        for (var i = 0; i < view.jobs.length; i += 1) {
+        var list = null
+        var workGroup = null
+        var byJob = traitGroups(view.jobs)
+        for (var i = 0; i < byJob.length; i += 1) {
+          if (byJob[i].group !== workGroup) {
+            workGroup = byJob[i].group
+            content.appendChild(groupTitle(workGroup))
+            list = el('div', 'dp-list')
+            content.appendChild(list)
+          }
           (function (job) {
             var row = el('div', 'dp-item')
+            row.setAttribute('data-tier', job.tier)
+            row.setAttribute('data-locked', job.locked ? 'true' : 'false')
             row.appendChild(el('span', null, job.emoji))
             var grow = el('div', 'dp-grow')
-            grow.appendChild(el('div', null, job.label))
-            var line = formatMinutes(job.minutes) + ' · ' + T('赚 {coins} 🪙', { coins: job.coins })
-            if (job.traitPoints > 0) {
+            var name = el('div', null, job.label)
+            if (job.tier === 'pro') name.appendChild(el('span', 'dp-tag', '⭐ ' + T('高阶')))
+            if (job.fixed) name.appendChild(el('span', 'dp-tag', T('固定 15 分钟')))
+            grow.appendChild(name)
+            var line = formatDuration(job.minutes) + ' · ' + (job.random !== null
+              ? T('收入随机 {min}–{max} 🪙', { min: job.random[0], max: job.random[1] })
+              : T('赚 {coins} 🪙', { coins: job.coins }))
+            if (job.traitPoints > 0 && job.speedPercent > 0) {
               line += ' · ' + T('省 {pct}% 时间', { pct: job.speedPercent })
             }
             grow.appendChild(el('div', 'dp-dim', line))
-            // Spell out which lessons are paying for this, or the linkage between
-            // 学习 and 打工 is invisible.
-            var byTrait = job.traitEmoji + job.traitLabel + ' ' + job.traitPoints
-              + ' · ' + (job.payPercent > 0 ? T('报酬 +{pct}%', { pct: job.payPercent }) : T('去上课就能涨'))
-            grow.appendChild(el('div', 'dp-dim', byTrait))
+            if (job.locked && job.requires.length > 0) {
+              // A career says exactly which trait points it is still waiting for.
+              grow.appendChild(el('div', 'dp-dim', '🔒 ' + T('需要 {list}', {
+                list: job.requires.map(need => need.emoji + need.label + ' ' + need.have + '/' + need.need).join(' · '),
+              })))
+            } else {
+              // Spell out which lessons are paying for this, or the linkage between
+              // 学习 and 打工 is invisible.
+              var byTrait = job.traitEmoji + job.traitLabel + ' ' + job.traitPoints
+                + ' · ' + (job.payPercent > 0 ? T('报酬 +{pct}%', { pct: job.payPercent }) : T('去上课就能涨'))
+              grow.appendChild(el('div', 'dp-dim', byTrait))
+            }
             row.appendChild(grow)
             var go = button('dp-mini', { 'data-job': job.key }, function () { send('work', { job: job.key }) })
-            go.textContent = T('出发')
-            go.disabled = !view.canGoOut
+            go.textContent = job.locked ? '🔒' : T('出发')
+            go.disabled = !view.canGoOut || job.locked
             row.appendChild(go)
             list.appendChild(row)
-          })(view.jobs[i])
+          })(byJob[i].entry)
         }
-        content.appendChild(list)
+      }
+
+      /**
+       * [dsh-piggy-claude-code mod] What an item does, in one line: the bars it
+       * moves, or what it cures, or what it is for.
+       */
+      function effectLine(item) {
+        var fx = item.effects ?? { satiety: 0, happiness: 0, cleanliness: 0, cures: [] }
+        if (item.kind === 'medicine') return fx.cures.length > 0 ? T('治：{list}', { list: fx.cures.join(' / ') }) : T('药')
+        if (item.kind === 'revive') return T('死后用来复活')
+        if (item.kind === 'card') return T('用来改名')
+        var signed = n => (n > 0 ? '+' : '') + n
+        var parts = []
+        if (fx.satiety) parts.push(T('饱食 {n}', { n: signed(fx.satiety) }))
+        if (fx.happiness) parts.push(T('心情 {n}', { n: signed(fx.happiness) }))
+        if (fx.cleanliness) parts.push(T('清洁 {n}', { n: signed(fx.cleanliness) }))
+        return parts.length > 0 ? parts.join(' · ') : T('没有效果')
+      }
+
+      /** [dsh-piggy-claude-code mod] The scratch-card counter at the top of the shop. */
+      function lotteryBlock() {
+        var lot = view.lottery
+        var box = el('div', 'dp-lottery')
+        var head = el('div', 'dp-row')
+        head.appendChild(el('b', null, '🎟️ ' + T('刮彩票')))
+        head.appendChild(el('span', 'dp-note', T('{price} 🪙 一张 · 每 {n} 分钟一次', { price: lot.price, n: lot.cooldownMinutes })))
+        box.appendChild(head)
+        var chips = el('div', 'dp-chips')
+        for (var i = 0; i < lot.prizes.length; i += 1) {
+          var prize = lot.prizes[i]
+          chips.appendChild(el('span', 'dp-chip', prize.emoji + prize.label + (prize.coins > 0 ? ' ' + prize.coins : '')))
+        }
+        box.appendChild(chips)
+        var row = el('div', 'dp-actions')
+        row.style.marginTop = '7px'
+        var go = button('dp-btn dp-btn-wide', { 'data-lottery': 'go' }, function () { send('lottery') })
+        go.appendChild(el('span', null, '🎟️'))
+        go.appendChild(el('span', null, lot.waitSeconds > 0
+          ? T('{time} 后再来', { time: formatWait(lot.waitSeconds) })
+          : T('刮一张')))
+        go.disabled = lot.waitSeconds > 0 || !lot.affordable || view.activity !== null || view.dead
+        row.appendChild(go)
+        box.appendChild(row)
+        return box
+      }
+
+      /** "9:05" for a wait in seconds. */
+      function formatWait(seconds) {
+        var m = Math.floor(seconds / 60)
+        var r = seconds % 60
+        return m + ':' + (r < 10 ? '0' : '') + r
       }
 
       function shopTab() {
@@ -2918,6 +3101,7 @@ window.__ModuleLoader__.load({
         head.appendChild(el('b', null, '🛒 ' + T('商店')))
         head.appendChild(el('span', null, '🪙 ' + view.pig.coins))
         content.appendChild(head)
+        if (view.lottery !== null) content.appendChild(lotteryBlock())
         var list = el('div', 'dp-list')
         var shelf = ''
         // The host sends the shop in shelf order, but sort defensively so a
@@ -2937,8 +3121,9 @@ window.__ModuleLoader__.load({
             row.appendChild(el('span', null, item.emoji))
             var grow = el('div', 'dp-grow')
             grow.appendChild(el('div', null, item.label))
-            grow.appendChild(el('div', 'dp-dim', item.price + ' 🪙' + (item.needed ? ' · ' + T('现在需要') : '')
-              + (item.kind === 'card' ? ' · ' + T('用来改名') : '')))
+            grow.appendChild(el('div', 'dp-dim', item.price + ' 🪙' + (item.needed ? ' · ' + T('现在需要') : '')))
+            // [dsh-piggy-claude-code mod] what it does, or the shelves all look alike.
+            grow.appendChild(el('div', 'dp-dim', effectLine(item)))
             row.appendChild(grow)
             var buy = button('dp-mini', { 'data-buy': item.key }, function () { send('buy', { item: item.key }) })
             buy.textContent = T('买')
@@ -3135,14 +3320,22 @@ window.__ModuleLoader__.load({
           owned = []
           for (var i = 0; i < view.shop.length; i += 1) {
             var count = num(view.inventory[view.shop[i].key], 0)
-            if (count > 0) owned.push({ key: view.shop[i].key, label: view.shop[i].label, emoji: view.shop[i].emoji, kind: view.shop[i].kind, count: count, exclusive: false })
+            if (count > 0) owned.push({ key: view.shop[i].key, label: view.shop[i].label, emoji: view.shop[i].emoji, kind: view.shop[i].kind, count: count, exclusive: false, effects: view.shop[i].effects })
           }
         }
         if (owned.length === 0) {
           content.appendChild(el('div', 'dp-empty', T('背包空空的 —— 去「商店」买点东西。')))
         } else {
           var list = el('div', 'dp-list')
+          // [dsh-piggy-claude-code mod] the same shelves as the shop.
+          owned = owned.slice().sort((a, b) => kindRank(a.kind) - kindRank(b.kind))
+          var bagShelf = ''
           for (var j = 0; j < owned.length; j += 1) {
+            if (owned[j].kind !== bagShelf) {
+              bagShelf = owned[j].kind
+              var bagTitle = KIND_TITLE[bagShelf]
+              list.appendChild(el('div', 'dp-shelf', bagTitle === undefined ? T('其他') : bagTitle[0] + ' ' + T(bagTitle[1])))
+            }
             (function (item) {
               var needed = view.shop.some(entry => entry.key === item.key && entry.needed)
               var row = el('div', 'dp-item' + (needed ? ' dp-wanted' : ''))
@@ -3151,7 +3344,7 @@ window.__ModuleLoader__.load({
               var name = el('div', null, item.label + ' ×' + item.count)
               if (item.exclusive) name.appendChild(el('span', 'dp-tag', T('✈️ 限定')))
               grow.appendChild(name)
-              grow.appendChild(el('div', 'dp-dim', kindLabel({ kind: item.kind, needed: needed })))
+              grow.appendChild(el('div', 'dp-dim', needed ? T('对症！') + ' · ' + effectLine(item) : effectLine(item)))
               row.appendChild(grow)
               // A rename card is spent by renaming, so it gets no Use button.
               if (item.kind !== 'card') {
@@ -3202,13 +3395,9 @@ window.__ModuleLoader__.load({
         return m >= 60 && m % 60 === 0 ? T('{n} 小时', { n: m / 60 }) : formatMinutes(m)
       }
 
-      function kindLabel(item) {
-        if (item.kind === 'medicine') return T(item.needed ? '对症！' : '药')
-        if (item.kind === 'revive') return T('复活用')
-        if (item.kind === 'card') return T('用来改名')
-        if (item.kind === 'bath') return T('洗浴')
-        if (item.kind === 'toy') return T('玩具')
-        return T('食物')
+      function kindRank(kind) {
+        var at = KIND_ORDER.indexOf(kind)
+        return at < 0 ? KIND_ORDER.length : at
       }
 
       /**
@@ -3485,6 +3674,14 @@ window.__ModuleLoader__.load({
           if (action === 'study' && !refused) studyPicks = { stage: null, keys: [] }
           render(next)
           if (action === 'rename' && renaming) focusRename(null)
+          // [dsh-piggy-claude-code mod] the scratch card's result, said by the pig.
+          if (action === 'lottery' && !refused && isObj(next.prize)) {
+            var won = num(next.prize.coins, 0)
+            var prizeEntry = (view.lottery === null ? [] : view.lottery.prizes).filter(p => p.tier === next.prize.tier)[0]
+            showBubble(won > 0
+              ? T('中了{prize}！+{coins} 🪙', { prize: prizeEntry === undefined ? '' : prizeEntry.label, coins: won })
+              : T('谢谢参与…下次一定'), 3600)
+          }
           if (next && next.ok === false) {
             react('refuse', 520)
             if (next.reason === 'no-item') {
@@ -3512,6 +3709,14 @@ window.__ModuleLoader__.load({
             if (next.reason === 'too-many') {
               var most = num(next.max, stageDetail(stage) === null ? 1 : stageDetail(stage).parallel)
               showBubble(T('这一段一次最多上 {n} 门课', { n: most }), 2400)
+              return
+            }
+            if (next.reason === 'job-locked') {
+              var lacking = arr(next.missing).map(m => {
+                var title = TRAIT_TITLE[str(obj(m).trait, '')]
+                return (title === undefined ? '' : title[0] + T(title[1])) + ' ' + num(obj(m).need, 0)
+              })
+              showBubble(T('这份工作要求：{list}', { list: lacking.join(' · ') }), 3200)
               return
             }
             if (next.reason === 'need-card') {
@@ -3672,6 +3877,27 @@ window.__ModuleLoader__.load({
         })(grips[gi])
       }
 
+      // [dsh-piggy-claude-code mod] The panel closes when it loses focus: a
+      // click anywhere on the page outside the pig and its panel, or — on the
+      // desktop pet, whose window lets clicks fall through to other apps — the
+      // window itself losing focus. Dev mode keeps it open for inspection, and
+      // the big panel has nothing to close.
+      function onOutsidePointer(event) {
+        if (!isOpen || devMode || split) return
+        var target = event.target
+        if (target !== null && typeof target === 'object' && typeof host.contains === 'function' && host.contains(target)) return
+        setOpen(false)
+      }
+      var desktopPet = (function () {
+        try { return typeof window.webkit?.messageHandlers?.pig?.postMessage === 'function' } catch (error) { return false }
+      })()
+      function onWindowBlur() {
+        if (!isOpen || devMode || split || !desktopPet) return
+        setOpen(false)
+      }
+      document.addEventListener?.('pointerdown', onOutsidePointer, true)
+      window.addEventListener?.('blur', onWindowBlur)
+
       // ---- life ----
       clampPig()
       applySkin()
@@ -3750,6 +3976,8 @@ window.__ModuleLoader__.load({
         try {
           if (split && originalTitle !== null) document.title = originalTitle
         } catch (error) { /* a read-only title */ }
+        window.removeEventListener?.('blur', onWindowBlur)
+        document.removeEventListener?.('pointerdown', onOutsidePointer, true)
         if (pollTimer !== null) window.clearInterval(pollTimer)
         if (reactTimer !== null) window.clearTimeout(reactTimer)
         if (bubbleTimer !== null) window.clearTimeout(bubbleTimer)
