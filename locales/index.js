@@ -28,7 +28,7 @@ export default {
     '这里已经住着 {name} 了 🐖': 'ここにはもう{name}が住んでいるよ 🐖',
     // --- going out ----------------------------------------------------------
     '没有「{key}」这份工作。/{cmd} work 看有哪些。': '「{key}」というバイトはないよ。/{cmd} work で確認してね。',
-    '用法：/{cmd} study <科目> <{stages}>\n科目：{subjects}': '使い方：/{cmd} study <科目> <{stages}>\n科目：{subjects}',
+    '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}': '使い方：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\nいちどに受けられる数：{limits}',
     '没有「{key}」这个目的地。/{cmd} trip 看有哪些。': '「{key}」という行き先はないよ。/{cmd} trip で確認してね。',
     '{name} 没在外面。': '{name}はおでかけしていないよ。',
     '{name} 提前回来了，退回 {coins} 金币。': '{name}が早めに帰ってきた。{coins} コインもどってきた。',
@@ -55,6 +55,20 @@ export default {
     '钱不够，需要 {price} 金币，你只有 {coins}。': 'コインが足りない。{price} コイン必要だけど、{coins} しかない。',
     '没有这个选项。': 'そのメニューはないよ。',
     '现在没法出门。': '今は出かけられない。',
+    '{name} 身体太虚了，先把病治好、养养身体。': '{name}は体が弱りすぎ。先に病気を治して、休ませてあげてね。',
+    '{stage}一次最多上 {max} 门课。': '{stage}はいちどに {max} 科目までだよ。',
+    '{stage}还没解锁。': '{stage}はまだ解放されていないよ。',
+    '{stage}还没解锁：要先「{label}」（{done}/{need}）。': '{stage}はまだ解放されていないよ：先に「{label}」（{done}/{need}）。',
+    // --- world map (snapshot) -----------------------------------------------
+    '⚖️体重 +{kg} kg': '⚖️体重 +{kg} kg',
+    // --- shop shelves -------------------------------------------------------
+    '【{shelf}】': '【{shelf}】',
+    '    改名用：/{cmd} name <名字>（第一次起名免费）': '    名前を変えるとき用：/{cmd} name <名前>（さいしょの名づけは無料）',
+    // --- naming -------------------------------------------------------------
+    '第一次起名免费；以后再改名要用一张{card}（商店 {price} 金币）。': 'さいしょの名づけは無料。次から名前を変えるには{card}が1枚いるよ（おみせで {price} コイン）。',
+    '🪪 用掉了一张{card}，还剩 {left} 张。': '🪪 {card}を1枚使った。のこり {left} 枚。',
+    '🪪 {name} 已经有名字了，再改名要用一张{card}（{price} 金币，商店「{shelf}」货架上有）。\n买：/{cmd} buy {key}，然后再 /{cmd} name <新名字>': '🪪 {name}にはもう名前があるよ。変えるには{card}が1枚いるよ（{price} コイン、おみせの「{shelf}」の棚にあるよ）。\n買う：/{cmd} buy {key}、それから /{cmd} name <新しい名前>',
+    '它本来就叫「{name}」呀，没改。': 'もともと「{name}」だよ。変わってないよ。',
   },
   en: {
     // --- age and durations --------------------------------------------------
@@ -79,7 +93,7 @@ export default {
     '这里已经住着 {name} 了 🐖': '{name} already lives here 🐖',
     // --- going out ----------------------------------------------------------
     '没有「{key}」这份工作。/{cmd} work 看有哪些。': 'No job called "{key}". See /{cmd} work.',
-    '用法：/{cmd} study <科目> <{stages}>\n科目：{subjects}': 'Usage: /{cmd} study <subject> <{stages}>\nSubjects: {subjects}',
+    '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}': 'Usage: /{cmd} study <subject>[,subject…] <{stages}>\nSubjects: {subjects}\nMost at once: {limits}',
     '没有「{key}」这个目的地。/{cmd} trip 看有哪些。': 'No place called "{key}". See /{cmd} trip.',
     '{name} 没在外面。': "{name} isn't out.",
     '{name} 提前回来了，退回 {coins} 金币。': '{name} came back early; {coins} coins refunded.',
@@ -106,5 +120,19 @@ export default {
     '钱不够，需要 {price} 金币，你只有 {coins}。': 'Not enough coins: it costs {price}, you have {coins}.',
     '没有这个选项。': 'No such option.',
     '现在没法出门。': "Can't go out right now.",
+    '{name} 身体太虚了，先把病治好、养养身体。': '{name} is too weak. Cure it and let it rest first.',
+    '{stage}一次最多上 {max} 门课。': '{stage}: at most {max} subjects at once.',
+    '{stage}还没解锁。': "{stage} isn't unlocked yet.",
+    '{stage}还没解锁：要先「{label}」（{done}/{need}）。': "{stage} isn't unlocked yet: first {label} ({done}/{need}).",
+    // --- world map (snapshot) -----------------------------------------------
+    '⚖️体重 +{kg} kg': '⚖️Weight +{kg} kg',
+    // --- shop shelves -------------------------------------------------------
+    '【{shelf}】': '[{shelf}]',
+    '    改名用：/{cmd} name <名字>（第一次起名免费）': '    For renaming: /{cmd} name <name> (the first name is free)',
+    // --- naming -------------------------------------------------------------
+    '第一次起名免费；以后再改名要用一张{card}（商店 {price} 金币）。': 'The first name is free; after that each rename takes a {card} ({price} coins in the shop).',
+    '🪪 用掉了一张{card}，还剩 {left} 张。': '🪪 Used one {card}; {left} left.',
+    '🪪 {name} 已经有名字了，再改名要用一张{card}（{price} 金币，商店「{shelf}」货架上有）。\n买：/{cmd} buy {key}，然后再 /{cmd} name <新名字>': '🪪 {name} already has a name. Renaming takes a {card} ({price} coins, on the "{shelf}" shelf in the shop).\nBuy: /{cmd} buy {key}, then /{cmd} name <new name>',
+    '它本来就叫「{name}」呀，没改。': "It's already called \"{name}\" — nothing changed.",
   },
 }

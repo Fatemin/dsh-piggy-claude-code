@@ -34,6 +34,9 @@
  * @module dsh-pig/data
  */
 
+// [dsh-piggy-claude-code mod] travel-only items live with the travel world.
+import { SPECIALTIES } from './world.js'
+
 /** Attribute ceilings. `health` keeps QQ Pet's 5-point scale. */
 export const MAX = Object.freeze({ satiety: 100, happiness: 100, cleanliness: 100, health: 5 })
 
@@ -243,6 +246,9 @@ export const STAGE_HEALTH = Object.freeze([4, 3, 2, 1])
 
 export const REVIVE_ITEM = Object.freeze({ key: 'soul', label: '还魂丹', emoji: '✨', price: 150, kind: 'revive' })
 
+/** [dsh-piggy-claude-code mod] Renaming a pig that already has a name costs one of these. */
+export const RENAME_CARD = Object.freeze({ key: 'renamecard', label: '更名卡', emoji: '🪪', price: 1000, kind: 'card' })
+
 // ---------------------------------------------------------------------------
 // Work — the pig leaves the desk and earns coins. A shift is a real shift.
 // ---------------------------------------------------------------------------
@@ -299,7 +305,23 @@ export const SCHOOL_STAGES = Object.freeze([
     tuition: 900, gain: 4, xp: 1100, satiety: -45, happiness: -11,
     requires: Object.freeze({ stage: 'college', lessons: 9, label: '大学九门课各上一次' }),
   }),
+  // [dsh-piggy-claude-code mod] a doctorate after graduate school.
+  Object.freeze({
+    key: 'doctor', label: '博士', minutes: MINUTES.day / 2,
+    tuition: 2400, gain: 7, xp: 3000, satiety: -70, happiness: -18,
+    requires: Object.freeze({ stage: 'graduate', lessons: 9, label: '研究生九门课各上一次' }),
+  }),
 ])
+
+/**
+ * [dsh-piggy-claude-code mod] How many subjects one sitting can take at each
+ * stage: one at 小学, two at 大学, three from 研究生 on. Tuition, satiety and
+ * mood costs are paid per subject; the sitting lasts as long as one lesson.
+ */
+export const PARALLEL_COURSES = Object.freeze({ primary: 1, college: 2, graduate: 3, doctor: 3 })
+
+/** Defending the thesis: every 博士 subject once pays this, a single time. */
+export const DOCTOR_GRADUATION = Object.freeze({ lessons: 9, traits: Object.freeze({ intel: 1, charm: 1, strong: 1 }) })
 
 // ---------------------------------------------------------------------------
 // Travel — QQ Pet's `trip` option. The pig goes away and comes back with a
@@ -359,10 +381,12 @@ export const SHOP = Object.freeze([
   Object.freeze({ key: 'med4', label: '秘方药', emoji: '🧪', price: 95, kind: 'medicine', tier: 4 }),
   // --- revive -------------------------------------------------------------
   REVIVE_ITEM,
+  // --- cards [dsh-piggy-claude-code mod] -----------------------------------
+  RENAME_CARD,
 ])
 
 /** Shop shelves, in the order the panel shows them. */
-export const KIND_ORDER = Object.freeze(['food', 'bath', 'toy', 'medicine', 'revive'])
+export const KIND_ORDER = Object.freeze(['food', 'bath', 'toy', 'medicine', 'revive', 'card'])
 
 export const KIND_LABEL = Object.freeze({
   food: '食物',
@@ -370,6 +394,7 @@ export const KIND_LABEL = Object.freeze({
   toy: '玩具',
   medicine: '药品',
   revive: '复活',
+  card: '道具',
 })
 
 /** Which care action spends which shelf. */
@@ -380,7 +405,9 @@ export const CARE_KIND = Object.freeze({ feed: 'food', bathe: 'bath', play: 'toy
 // ---------------------------------------------------------------------------
 
 export const jobByKey = key => JOBS.find(job => job.key === key) ?? null
-export const itemByKey = key => SHOP.find(item => item.key === key) ?? null
+/** [dsh-piggy-claude-code mod] Shop items plus travel-only specialties. */
+export const ALL_ITEMS = Object.freeze([...SHOP, ...SPECIALTIES])
+export const itemByKey = key => ALL_ITEMS.find(item => item.key === key) ?? null
 export const subjectByKey = key => SUBJECTS.find(subject => subject.key === key) ?? null
 export const schoolStageByKey = key => SCHOOL_STAGES.find(stage => stage.key === key) ?? null
 export const tripByKey = key => TRIPS.find(trip => trip.key === key) ?? null
@@ -389,7 +416,7 @@ export const itemsOfKind = kind => SHOP.filter(item => item.kind === kind)
 
 /** Every item a care action will accept: the shelf, plus the free default toy. */
 export function careItems(kind) {
-  const bought = itemsOfKind(kind)
+  const bought = [...itemsOfKind(kind), ...SPECIALTIES.filter(item => item.kind === kind)]
   return kind === 'toy' ? [DEFAULT_TOY, ...bought] : bought
 }
 

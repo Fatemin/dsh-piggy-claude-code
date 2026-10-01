@@ -15,6 +15,7 @@ import { test } from 'node:test'
 
 import * as core from '../core.js'
 import * as data from '../data.js'
+import * as world from '../world.js'
 import dict from '../locales/render.js'
 import {
   renderAbout,
@@ -25,6 +26,7 @@ import {
   renderStatus,
   renderStudyReport,
   renderTooSoon,
+  renderTripList,
   renderTripReport,
   renderUse,
   renderWeigh,
@@ -33,7 +35,8 @@ import {
 } from '../render.js'
 
 const { hatchEgg, layEgg, mood, startStudy, startTrip, startWork } = core
-const { JOBS, REVIVE_ITEM, SCHOOL_STAGES, SHOP, SUBJECTS, TRIPS } = data
+const { JOBS, RENAME_CARD, REVIVE_ITEM, SCHOOL_STAGES, SHOP, SUBJECTS, schoolStageByKey, subjectByKey } = data
+const { REGIONS, SOUVENIRS, placeByKey, specialtyByKey } = world
 
 const T0 = 1_700_000_000_000
 const HAN = /[一-鿿]/
@@ -68,6 +71,7 @@ function dataLabels() {
   }
   walk(data)
   walk(core)
+  walk(world)
   return out
 }
 const LABELS = dataLabels()
@@ -128,13 +132,48 @@ function cards(lang) {
   out.statusStudying = renderStatus(student, now)
   seen(student, now)
 
+  // [mod] several subjects at once, and the doctorate.
+  const college = schoolStageByKey('college')
+  const pair = [subjectByKey('mathematics'), subjectByKey('art')]
+  const senior = pig(lang)
+  senior.coins = 10_000
+  senior.lessonsByStage = { primary: 9, college: 0, graduate: 0, doctor: 0 }
+  assert.equal(startStudy(senior, pair.map(s => s.key), college.key, T0).ok, true)
+  senior.memories = []
+  out.studyPair = renderStudyReport(senior, T0, pair, college)
+  out.statusStudyingPair = renderStatus(senior, now)
+  seen(senior, now)
+  const doctor = schoolStageByKey('doctor')
+  const trio = ['chinese', 'music', 'wushu'].map(subjectByKey)
+  const scholar = pig(lang)
+  scholar.coins = 10_000
+  scholar.lessonsByStage = { primary: 9, college: 9, graduate: 9, doctor: 3 }
+  assert.equal(startStudy(scholar, trio.map(s => s.key), doctor.key, T0).ok, true)
+  scholar.memories = []
+  out.studyDoctor = renderStudyReport(scholar, T0, trio, doctor)
+
+  // [mod] a world trip, priced from an explicit home time zone.
+  const tokyo = placeByKey('tokyo')
   const traveller = pig(lang)
   traveller.coins = 10_000
-  assert.equal(startTrip(traveller, TRIPS[0].key, T0).ok, true)
+  assert.equal(startTrip(traveller, tokyo.key, T0, 0).ok, true)
   traveller.memories = []
-  out.trip = renderTripReport(traveller, T0, TRIPS[0])
+  out.trip = renderTripReport(traveller, T0, tokyo)
   out.statusTraveling = renderStatus(traveller, now)
   seen(traveller, now)
+  out.tripList = renderTripList(pig(lang), { utc: 9, zone: 'Asia/Tokyo' }, 'pig')
+  out.tripListNoZone = renderTripList(pig(lang), { utc: 5.5, zone: null }, 'pig')
+
+  // [mod] a well-travelled doctor: collection, perks and titles on the cards.
+  const veteran = pig(lang)
+  for (const souvenir of SOUVENIRS) veteran.collected[souvenir.key] = 1
+  veteran.regionsDone = REGIONS.map(region => region.key)
+  veteran.worldDone = true
+  veteran.doctorDone = true
+  out.statusVeteran = renderStatus(veteran, now)
+  out.weighVeteran = renderWeigh(veteran, now)
+  out.tripListVeteran = renderTripList(veteran, { utc: -5, zone: 'America/New_York' }, 'pig')
+  seen(veteran, now)
 
   const sick = pig(lang)
   sick.illness = { chain: 0, stage: 2, since: T0, progressMs: 0 }
@@ -160,6 +199,12 @@ function cards(lang) {
   for (const reason of ['empty', 'not-sick', 'not-dead', 'dead', 'wrong-medicine', 'working', 'other']) {
     out[`use.${reason}`] = renderUse(shopper, { ok: false, reason }, apple)
   }
+  const duck = specialtyByKey('duck')
+  out.buyExclusive = renderBuy(shopper, { ok: false, reason: 'not-for-sale' }, duck)
+  out.buyCard = renderBuy(shopper, { ok: true }, RENAME_CARD)
+  out.useCard = renderUse(shopper, { ok: false, reason: 'use-to-rename' }, RENAME_CARD)
+  out.useExclusiveEmpty = renderUse(shopper, { ok: false, reason: 'empty' }, duck)
+  out.useAway = renderUse(shopper, { ok: false, reason: 'away' }, duck)
   out.useFood = renderUse(shopper, { ok: true }, apple)
   out.useRevive = renderUse(shopper, { ok: true }, REVIVE_ITEM)
   out.refusal = renderWorkRefusal(shopper, 'REASON')
@@ -211,7 +256,31 @@ test('render: an English pig gets English cards', () => {
   assert.match(en.statusDead, /💀 Status/)
   assert.match(en['tooSoon.feed'], /again in \d+s\./)
   assert.match(en.buyPoor, /^🪙 Not enough coins/)
-  assert.match(en.about, /\/pig study <subject> <primary\|college\|graduate>/)
+  assert.match(en.about, /\/pig study <subject>\[,subject…\] <primary\|college\|graduate\|doctor>/)
+  // [mod] the world, several subjects, the doctorate, the rename card.
+  assert.match(en.trip, /🧳 Going to {2}Tokyo · 🗾East Asia/)
+  assert.match(en.trip, /🪙 Cost {6}1900 coins/)
+  assert.match(en.trip, /⏱ {2}Time {6}10 h · 9 h time difference/)
+  assert.match(en.trip, /🕐 Home at {3}\S/)
+  assert.match(en.tripList, /^🌍 Around the world · from Asia\/Tokyo · UTC\+9$/m)
+  assert.match(en.tripList, /🗼 Tokyo \(tokyo\) {2}100 coins · 1 h · same time zone {2}❔❔/)
+  assert.match(en.tripList, /🗽 New York \(newyork\) {2}2100 coins · 11 h · 10 h time difference/)
+  assert.match(en.tripListNoZone, /from UTC\+5:30$/m)
+  assert.match(en.tripListVeteran, /✈️Frequent flyer/)
+  assert.match(en.tripListVeteran, /🐼 Chengdu \(chengdu\) {2}1840 coins · 12 h/, 'the frequent-flyer perk takes 20% off')
+  assert.match(en.studyPair, /📚 Lesson {4}Math \+ Art \(University\)/)
+  assert.match(en.studyPair, /🪙 Tuition {3}440 coins/)
+  assert.match(en.studyPair, /📈 Gains {5}Smarts \+2, Charm \+2 · XP \+640/)
+  assert.match(en.studyPair, /2 subjects at once/)
+  assert.match(en.studyDoctor, /Reading \+ Music \+ Martial arts \(Doctorate\)/)
+  assert.match(en.studyDoctor, /🎓 Thesis {4}3\/9 doctorate lessons/)
+  assert.match(en.statusVeteran, /🧳 Souvenirs {2}42\/42 · regions done 7\/7/)
+  assert.match(en.statusVeteran, /🏅 Titles {2}🎓 Doctor · 🌍 Globetrotter/)
+  assert.match(en.statusVeteran, /^🐖 小花 🎓 🌍 {2}/)
+  assert.match(en.weighVeteran, /🧳 Souvenirs 42\/42/)
+  assert.match(en.buyExclusive, /travel-only specialty/)
+  assert.match(en.buyCard, /\/pig name <new name>/)
+  assert.match(en.useCard, /\/pig name <new name>/)
 })
 
 test('render: a Japanese pig gets Japanese cards', () => {
@@ -249,7 +318,18 @@ test('render: Chinese stays exactly as upstream wrote it', () => {
   assert.equal(zh.work.split('\n')[3], `⏱  时长    ${JOBS[0].minutes} 分钟`)
   assert.equal(zh.study.split('\n')[2], '📚 课程    小学语文')
   assert.match(zh.weigh, /\n {3}「还算苗条，继续保持」$/)
-  assert.match(zh.about, /\n\/pig study <科目> <小学\|大学\|研究生>\n/)
+  assert.match(zh.about, /\n\/pig study <科目>\[,科目…\] <小学\|大学\|研究生\|博士>\n/)
+  // [mod] new cards, in the original voice.
+  assert.equal(zh.studyPair.split('\n')[2], '📚 课程    大学数学+美术')
+  assert.equal(zh.studyPair.split('\n')[5], '📈 收获    智力 +2，魅力 +2 · 经验 +640')
+  assert.equal(zh.study.split('\n')[5], '📈 收获    智力 +1 · 经验 +60')
+  assert.equal(zh.trip.split('\n')[2], '🧳 目的地  东京 · 🗾东亚')
+  assert.equal(zh.trip.split('\n')[4], '⏱  时长    10 小时 · 跨 9 个时区')
+  assert.match(zh.tripList, /\n {2}🗼 东京 \(tokyo\) {2}100 金币 · 1 小时 · 同一时区 {2}❔❔\n/)
+  assert.match(zh.tripList, /\n🐉 中国 {2}0\/6 · 集齐解锁「🍚干饭王」：吃东西长肉 \+10%\n/)
+  assert.match(zh.statusVeteran, /\n🧳 纪念品 {2}42\/42 · 集齐地区 7\/7\n/)
+  assert.match(zh.statusVeteran, /\n🏅 称号 {2}🎓 博士 · 🌍 环球旅行家\n/)
+  assert.ok(!zh.status.includes('🎁'), 'no perk line before any region is done')
   assert.match(zh.about, /\n {2}🍎 苹果 {4}6 金币\n/)
 })
 

@@ -40,6 +40,10 @@ import {
   ageDays,
   daysToNextStage,
   kgToNextStage,
+  hasDefaultName,
+  perksOf,
+  regionProgress,
+  tripQuote,
   canChooseLook,
   langOf,
   hasSoul,
@@ -49,7 +53,8 @@ import {
   studyView,
   traitView,
 } from './core.js'
-import { jobByKey, traitBonus } from './data.js'
+import { ALL_ITEMS, KIND_LABEL, KIND_ORDER, PARALLEL_COURSES, RENAME_CARD, jobByKey, traitBonus } from './data.js'
+import { FARE, PLACES, REGIONS, WORLD_BONUS, souvenirByKey, placeByKey, systemTimeZone, systemUtcOffset } from './world.js'
 import {
   renderAbout,
   renderAction,
@@ -59,6 +64,7 @@ import {
   renderStatus,
   renderStudyReport,
   renderTooSoon,
+  renderTripList,
   renderTripReport,
   renderUse,
   renderWeigh,
@@ -122,8 +128,10 @@ const OPERATIONS = {
   play: (store, body) => store.act('play', str(body.item)),
   pet: store => store.act('pet'),
   work: (store, body) => store.startWork(str(body.job)),
-  study: (store, body) => store.startStudy(str(body.subject), str(body.stage)),
+  // [mod] `subjects` (a list, for several at once) or the old single `subject`.
+  study: (store, body) => store.startStudy(Array.isArray(body.subjects) ? body.subjects.map(str) : str(body.subject), str(body.stage)),
   trip: (store, body) => store.startTrip(str(body.trip)),
+  rename: (store, body) => store.renamePig(str(body.name)),
   calloff: store => store.callOffActivity(),
   // [dsh-piggy-claude-code mod] switch an elder pig's drawing.
   look: (store, body) => store.setLook(str(body.look)),
@@ -220,6 +228,9 @@ export function apply(ctx, config = {}) {
             reason: result.reason,
             wait: result.wait,
             price: result.price,
+            // [mod] the limit behind a too-many, the shelf behind a no-item
+            max: result.max,
+            kind: result.kind,
           }, { 'cache-control': 'no-store' })
         },
       }))
@@ -307,12 +318,15 @@ export function snapshot(store, options = {}) {
       subjects: subjectsFor(null),
       stages: SCHOOL_STAGES.map(stage => ({
         ...stage,
+        parallel: PARALLEL_COURSES[stage.key] ?? 1,
         label: tr(lang, stage.label),
         requires: stage.requires === null ? null : { ...stage.requires, label: tr(lang, stage.requires.label) },
       })),
       trips: tripsFor(null),
+      world: worldFor(null),
       shop: shopFor(null),
       inventory: inventoryView({ inventory: {} }),
+      bag: [],
       activity: null, canGoOut: false, awayBlocked: 'absent',
       // The box has a size of its own; the client must not hard-code it.
       boxStage: boxStageView(lang),
@@ -349,6 +363,13 @@ export function snapshot(store, options = {}) {
       kgToNextStage: kgToNextStage(state, nowMs) === null ? null : Number(kgToNextStage(state, nowMs).toFixed(1)),
       canChooseLook: canChooseLook(state),
       look: state.look === 'original' ? 'original' : 'elder',
+      // [mod] naming, travel perks, doctorate.
+      renameFree: hasDefaultName(state),
+      renameCards: state.inventory?.[RENAME_CARD.key] ?? 0,
+      renameCardPrice: RENAME_CARD.price,
+      perks: perksOf(state),
+      doctor: state.doctorDone === true,
+      worldTraveler: state.worldDone === true,
       soul: hasSoul(state, nowMs),
       mood: current.key,
       moodEmoji: current.emoji,
@@ -373,12 +394,15 @@ export function snapshot(store, options = {}) {
     subjects: subjectsFor(state),
     stages: studyView(state).map(stage => ({
       ...stage,
+      parallel: PARALLEL_COURSES[stage.key] ?? 1,
       label: tr(lang, stage.label),
       progress: stage.progress === null ? null : { ...stage.progress, label: tr(lang, stage.progress.label) },
     })),
     trips: tripsFor(state),
+    world: worldFor(state),
     shop: shopFor(state),
     inventory: inventoryView(state),
+    bag: bagFor(state),
     care: Object.fromEntries(Object.entries(careView(state))
       .map(([action, items]) => [action, items.map(item => ({ ...item, label: tr(lang, item.label) }))])),
     activity: activity === null ? null : {
@@ -455,15 +479,83 @@ function subjectsFor(state) {
   }))
 }
 
+/** [mod] Every destination as a flat list (older panels read `trips`). */
 function tripsFor(state) {
+  return worldFor(state).regions.flatMap(region => region.places.map(place => ({ ...place, region: region.key })))
+}
+
+/** "Asia/Tokyo" → "Tokyo". */
+const cityOf = zone => (typeof zone === 'string' && zone.includes('/') ? zone.split('/').pop().replace(/_/g, ' ') : zone ?? '')
+
+/**
+ * [mod] The travel world as the panel draws it: home, then each region with its
+ * destinations (priced from home), its souvenir collection and its reward.
+ */
+function worldFor(state) {
   const lang = langOf(state)
   const open = state !== null && awayBlockedReason(state) === null
-  return TRIPS.map(trip => ({
-    key: trip.key, label: tr(lang, trip.label), emoji: trip.emoji,
-    minutes: trip.minutes, cost: trip.cost, happiness: trip.happiness,
-    available: open,
-    affordable: state === null ? false : state.coins >= trip.cost,
-  }))
+  const homeUtc = systemUtcOffset()
+  const zone = systemTimeZone()
+  const perks = state === null ? [] : perksOf(state)
+  const traitText = traits => Object.entries(traits ?? {})
+    .map(([trait, points]) => `${TRAITS[trait].emoji}${tr(lang, TRAITS[trait].label)} +${points}`)
+  const regions = REGIONS.map(region => {
+    const progress = state === null ? { have: 0, total: region.places.length * 2, done: false } : regionProgress(state, region.key)
+    const reward = [...traitText(region.bonus.traits)]
+    if (region.bonus.weightG) reward.push(tr(lang, '⚖️体重 +{kg} kg', { kg: region.bonus.weightG / 1000 }))
+    return {
+      key: region.key, label: tr(lang, region.label), emoji: region.emoji,
+      have: progress.have, total: progress.total,
+      done: (state?.regionsDone ?? []).includes(region.key),
+      reward,
+      perk: { key: region.perk.key, label: tr(lang, region.perk.label), emoji: region.perk.emoji, text: tr(lang, region.perk.text), active: perks.includes(region.perk.key) },
+      places: region.places.map(place => {
+        const quote = tripQuote(state, place.key, homeUtc)
+        return {
+          key: place.key, label: tr(lang, place.label), emoji: place.emoji, utc: place.utc,
+          zones: quote.zones, cost: quote.cost, minutes: quote.minutes, happiness: quote.happiness,
+          available: open,
+          affordable: state === null ? false : state.coins >= quote.cost,
+          souvenirs: place.souvenirs.map(souvenir => ({
+            key: souvenir.key, label: tr(lang, souvenir.label), emoji: souvenir.emoji,
+            count: state?.collected?.[souvenir.key] ?? 0,
+          })),
+        }
+      }),
+    }
+  })
+  const last = state?.lastTrip ?? null
+  const lastPlace = last === null ? null : placeByKey(last.place)
+  const lastSouvenir = last === null ? null : souvenirByKey(last.souvenir)
+  return {
+    home: { utc: homeUtc, zone, city: cityOf(zone) },
+    // [mod] the fare rule, so the panel never hard-codes it
+    fare: { costPerZone: FARE.costPerZone, hoursPerZone: FARE.minutesPerZone / 60 },
+    regions,
+    worldDone: state?.worldDone === true,
+    worldTitle: { label: tr(lang, WORLD_BONUS.label), emoji: WORLD_BONUS.emoji, reward: traitText(WORLD_BONUS.traits) },
+    lastTrip: lastPlace === null ? null : {
+      place: tr(lang, lastPlace.label), emoji: lastPlace.emoji,
+      souvenir: lastSouvenir === null ? null : { label: tr(lang, lastSouvenir.label), emoji: lastSouvenir.emoji, fresh: last.fresh === true },
+      loot: last.loot.map(key => ALL_ITEMS.find(item => item.key === key)).filter(Boolean).map(item => ({ key: item.key, label: tr(lang, item.label), emoji: item.emoji, exclusive: item.exclusive === true })),
+      regionDone: last.regionDone === null ? null : tr(lang, REGIONS.find(r => r.key === last.regionDone)?.label ?? ''),
+      at: last.at,
+    },
+    // Upstream's four retired trips left these behind; they are kept as keepsakes.
+    oldSouvenirs: (state?.souvenirs ?? []).slice(-30).map(souvenir => tr(lang, souvenir)),
+  }
+}
+
+/** [mod] What is in the bag, with what each thing is, travel-only ones tagged. */
+function bagFor(state) {
+  const lang = langOf(state)
+  return ALL_ITEMS
+    .filter(item => (state?.inventory?.[item.key] ?? 0) > 0)
+    .map(item => ({
+      key: item.key, label: tr(lang, item.label), emoji: item.emoji, kind: item.kind,
+      count: state.inventory[item.key], exclusive: item.exclusive === true,
+      satiety: item.satiety ?? 0, happiness: item.happiness ?? 0, cleanliness: item.cleanliness ?? 0,
+    }))
 }
 
 function shopFor(state) {
@@ -491,19 +583,48 @@ function findByName(entries, input) {
   return wanted === '' ? undefined : entries.find(entry => namesOf(entry).includes(wanted))
 }
 
-/** `<subject> [stage]` — split on the names rather than on spaces, which English labels contain. */
+/**
+ * [mod] `<subject>[,subject…] [stage]` — several subjects at once, separated by
+ * commas, spaces, 、 or +, then the stage (or the stage first). Split on the
+ * names rather than on spaces, which English labels contain ("martial arts",
+ * "graduate school"). With no stage, 小学.
+ * @returns {{subjects: object[], stage: object|undefined}}
+ */
 function parseLesson(input) {
-  const wanted = squash(input)
-  for (const subject of SUBJECTS) {
-    for (const name of namesOf(subject)) {
-      if (name === '' || !wanted.startsWith(name)) continue
-      const rest = wanted.slice(name.length)
-      const stage = rest === '' ? SCHOOL_STAGES.find(s => s.key === 'primary') : findByName(SCHOOL_STAGES, rest)
-      if (stage !== undefined) return { subject, stage }
+  const wanted = squash(String(input ?? '').replace(/[,，、+＋/／;；&・]/g, ' '))
+  const none = { subjects: [], stage: undefined }
+  if (wanted === '') return none
+  // Subjects only, the whole string, longest names first with backtracking
+  // ("mathematics" must not stop at "math").
+  const subjectsOf = text => {
+    if (text === '') return []
+    const options = SUBJECTS.flatMap(subject => namesOf(subject).filter(name => name !== '' && text.startsWith(name)).map(name => ({ subject, name })))
+      .sort((a, b) => b.name.length - a.name.length)
+    for (const { subject, name } of options) {
+      const tail = subjectsOf(text.slice(name.length))
+      if (tail !== null) return [subject, ...tail]
+    }
+    return null
+  }
+  const stageNames = SCHOOL_STAGES.flatMap(stage => namesOf(stage).filter(name => name !== '').map(name => ({ stage, name })))
+    .sort((a, b) => b.name.length - a.name.length)
+  for (const { stage, name } of stageNames) {
+    if (wanted.endsWith(name)) {
+      const subjects = subjectsOf(wanted.slice(0, -name.length))
+      if (subjects !== null && subjects.length > 0) return { subjects, stage }
+    }
+    if (wanted.startsWith(name)) {
+      const subjects = subjectsOf(wanted.slice(name.length))
+      if (subjects !== null && subjects.length > 0) return { subjects, stage }
     }
   }
-  return { subject: undefined, stage: undefined }
+  const subjects = subjectsOf(wanted)
+  if (subjects !== null && subjects.length > 0) return { subjects, stage: SCHOOL_STAGES.find(s => s.key === 'primary') }
+  return none
 }
+
+/** [mod] The host's home for pricing trips: its UTC offset and zone name. */
+const homeOf = () => ({ utc: systemUtcOffset(), zone: systemTimeZone() })
 
 export function performAction(store, action) {
   const state = store.freshen()
@@ -560,31 +681,35 @@ export function dispatch(store, commandName, rawInput) {
 
     case 'study': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
-      const { subject, stage } = parseLesson(argument)
-      if (subject === undefined || stage === undefined) {
+      const { subjects, stage } = parseLesson(argument)
+      if (subjects.length === 0 || stage === undefined) {
         return {
           kind: 'error',
-          text: tr(lang, '用法：/{cmd} study <科目> <{stages}>\n科目：{subjects}', {
+          text: tr(lang, '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}', {
             cmd,
             stages: SCHOOL_STAGES.map(s => tr(lang, s.label)).join('|'),
             subjects: SUBJECTS.map(s => tr(lang, s.label)).join(' · '),
+            limits: SCHOOL_STAGES.map(s => `${tr(lang, s.label)} ${PARALLEL_COURSES[s.key] ?? 1}`).join(' · '),
           }),
         }
       }
-      const result = store.startStudy(subject.key, stage.key)
-      if (!result.ok) return { kind: 'success', text: renderWorkRefusal(state, refusalText(result, state)) }
-      return { kind: 'success', text: renderStudyReport(store.freshen(), Date.now(), subject, stage) }
+      const unique = [...new Set(subjects)]
+      const result = store.startStudy(unique.length === 1 ? unique[0].key : unique.map(subject => subject.key), stage.key)
+      if (!result.ok) return { kind: 'success', text: renderWorkRefusal(state, refusalText(result, state, { stage })) }
+      return { kind: 'success', text: renderStudyReport(store.freshen(), Date.now(), unique, stage) }
     }
 
     case 'trip':
     case 'travel': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
-      const key = argument.trim() === '' ? 'suburb' : argument.trim()
-      const trip = findByName(TRIPS, key)
-      if (trip === undefined) return { kind: 'error', text: tr(lang, '没有「{key}」这个目的地。/{cmd} trip 看有哪些。', { key, cmd }) }
-      const result = store.startTrip(trip.key)
+      const key = argument.trim()
+      // [mod] no destination: the world map, priced from this computer's time zone.
+      if (key === '') return { kind: 'success', text: renderTripList(state, homeOf(), cmd) }
+      const place = findByName(PLACES, key)
+      if (place === undefined) return { kind: 'error', text: tr(lang, '没有「{key}」这个目的地。/{cmd} trip 看有哪些。', { key, cmd }) }
+      const result = store.startTrip(place.key)
       if (!result.ok) return { kind: 'success', text: renderWorkRefusal(state, refusalText(result, state)) }
-      return { kind: 'success', text: renderTripReport(store.freshen(), Date.now(), trip) }
+      return { kind: 'success', text: renderTripReport(store.freshen(), Date.now(), place) }
     }
 
     case 'calloff': {
@@ -599,18 +724,26 @@ export function dispatch(store, commandName, rawInput) {
     }
 
     case 'shop': {
-      const lines = SHOP.map(item => `  ${item.emoji} ${tr(lang, item.label)}  ${tr(lang, '{price} 金币', { price: item.price })}`).join('\n')
-      return { kind: 'success', text: tr(lang, '🛒 商店（你有 {coins} 金币）\n{lines}\n\n买：/{cmd} buy <物品>', { coins: state?.coins ?? 0, lines, cmd }) }
+      // [mod] one block per shelf, the rename card on its own shelf.
+      const shelves = KIND_ORDER.map(kind => {
+        const items = SHOP.filter(item => item.kind === kind)
+        if (items.length === 0) return ''
+        const lines = items.map(item => `  ${item.emoji} ${tr(lang, item.label)}  ${tr(lang, '{price} 金币', { price: item.price })}`)
+        if (kind === 'card') lines.push(tr(lang, '    改名用：/{cmd} name <名字>（第一次起名免费）', { cmd }))
+        return [tr(lang, '【{shelf}】', { shelf: tr(lang, KIND_LABEL[kind]) }), ...lines].join('\n')
+      }).filter(block => block !== '')
+      return { kind: 'success', text: tr(lang, '🛒 商店（你有 {coins} 金币）\n{lines}\n\n买：/{cmd} buy <物品>', { coins: state?.coins ?? 0, lines: shelves.join('\n'), cmd }) }
     }
     case 'buy': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
-      const item = findByName(SHOP, argument)
+      // [mod] travel-only specialties are found too, so the refusal can say why.
+      const item = findByName(ALL_ITEMS, argument)
       if (item === undefined) return { kind: 'error', text: tr(lang, '没有「{name}」这样东西。/{cmd} shop 看货架。', { name: argument, cmd }) }
       return { kind: 'success', text: renderBuy(store.freshen(), store.buy(item.key), item) }
     }
     case 'use': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
-      const item = findByName(SHOP, argument)
+      const item = findByName(ALL_ITEMS, argument)
       if (item === undefined) return { kind: 'error', text: tr(lang, '没有「{name}」这样东西。', { name: argument }) }
       return { kind: 'success', text: renderUse(store.freshen(), store.useItem(item.key), item) }
     }
@@ -637,9 +770,7 @@ export function dispatch(store, commandName, rawInput) {
     }
     case 'name': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
-      const cleaned = store.rename(argument)
-      if (cleaned === null) return { kind: 'error', text: tr(lang, '用法：/{cmd} name <名字>（16 字以内）', { cmd }) }
-      return { kind: 'success', text: tr(lang, '从今天起，它叫「{name}」🐖', { name: cleaned }) }
+      return renameReply(store, state, argument, cmd)
     }
     case 'about':
     case 'help':
@@ -654,15 +785,62 @@ export function dispatch(store, commandName, rawInput) {
   }
 }
 
-function refusalText(result, state) {
+/**
+ * [mod] `/pig name`: free while the pig still wears a default name, then one
+ * 更名卡 per rename. A store without `renamePig` (an old stub) renames freely.
+ */
+function renameReply(store, state, argument, cmd) {
+  const lang = langOf(state)
+  const card = tr(lang, RENAME_CARD.label)
+  if (typeof store.renamePig !== 'function') {
+    const cleaned = store.rename(argument)
+    if (cleaned === null) return { kind: 'error', text: tr(lang, '用法：/{cmd} name <名字>（16 字以内）', { cmd }) }
+    return { kind: 'success', text: tr(lang, '从今天起，它叫「{name}」🐖', { name: cleaned }) }
+  }
+  const result = store.renamePig(argument)
+  if (result.ok) {
+    const lines = [tr(lang, '从今天起，它叫「{name}」🐖', { name: result.name })]
+    if (result.usedCard) {
+      lines.push(tr(lang, '🪪 用掉了一张{card}，还剩 {left} 张。', { card, left: store.state?.inventory?.[RENAME_CARD.key] ?? 0 }))
+    } else {
+      lines.push(tr(lang, '第一次起名免费；以后再改名要用一张{card}（商店 {price} 金币）。', { card, price: RENAME_CARD.price }))
+    }
+    return { kind: 'success', text: lines.join('\n') }
+  }
+  switch (result.reason) {
+    case 'need-card':
+      return {
+        kind: 'success',
+        text: tr(lang, '🪪 {name} 已经有名字了，再改名要用一张{card}（{price} 金币，商店「{shelf}」货架上有）。\n买：/{cmd} buy {key}，然后再 /{cmd} name <新名字>', {
+          name: state.name, card, price: result.price ?? RENAME_CARD.price, shelf: tr(lang, KIND_LABEL.card), key: RENAME_CARD.key, cmd,
+        }),
+      }
+    case 'same-name': return { kind: 'success', text: tr(lang, '它本来就叫「{name}」呀，没改。', { name: state.name }) }
+    case 'dead': return { kind: 'error', text: tr(lang, '{name} 已经走了…', { name: state.name }) }
+    case 'absent': return { kind: 'error', text: renderNoPig(cmd) }
+    default: return { kind: 'error', text: tr(lang, '用法：/{cmd} name <名字>（16 字以内）', { cmd }) }
+  }
+}
+
+/** Why the pig cannot go out; `context.stage` names the school stage for study refusals. */
+function refusalText(result, state, context = {}) {
   const lang = langOf(state)
   const name = state.name
   switch (result.reason) {
     case 'dead': return tr(lang, '{name} 已经走了…', { name })
     case 'away': return tr(lang, '{name} 已经在外面了。', { name })
     case 'sick': return tr(lang, '{name} 病着，不能出门 —— 先治好它。', { name })
+    case 'weak': return tr(lang, '{name} 身体太虚了，先把病治好、养养身体。', { name })
     case 'hungry': return tr(lang, '{name} 太饿了，先喂点东西。', { name })
     case 'poor': return tr(lang, '钱不够，需要 {price} 金币，你只有 {coins}。', { price: result.price, coins: state.coins })
+    case 'too-many': return tr(lang, '{stage}一次最多上 {max} 门课。', { stage: tr(lang, context.stage?.label ?? ''), max: result.max })
+    case 'locked': {
+      const need = result.need
+      if (need === null || need === undefined) return tr(lang, '{stage}还没解锁。', { stage: tr(lang, context.stage?.label ?? '') })
+      return tr(lang, '{stage}还没解锁：要先「{label}」（{done}/{need}）。', {
+        stage: tr(lang, context.stage?.label ?? ''), label: tr(lang, need.label), done: need.done, need: need.need,
+      })
+    }
     case 'unknown': return tr(lang, '没有这个选项。')
     default: return tr(lang, '现在没法出门。')
   }

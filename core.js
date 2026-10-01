@@ -50,6 +50,10 @@ import {
   TRAITS,
   TRAIT_ORDER,
   TRIPS,
+  ALL_ITEMS,
+  DOCTOR_GRADUATION,
+  PARALLEL_COURSES,
+  RENAME_CARD,
   illnessAt,
   itemByKey,
   jobByKey,
@@ -63,6 +67,19 @@ import {
   tripByKey,
 } from './data.js'
 import { defaultLang, langOf, normalizeLang, tr } from './i18n.js'
+import {
+  FARE,
+  LEGACY_TRIPS,
+  PLACES,
+  REGIONS,
+  WORLD_BONUS,
+  fareFor,
+  placeByKey,
+  regionSouvenirs,
+  souvenirByKey,
+  specialtyByKey,
+  systemUtcOffset,
+} from './world.js'
 
 /** Bumped when the saved shape changes in a way migrate() must handle. */
 export const STATE_VERSION = 5
@@ -232,20 +249,38 @@ const word = (state, zh) => tr(langOf(state), zh)
 function activitySourceLabel(activity) {
   if (activity === null || activity === undefined) return ''
   if (activity.kind === 'work') return jobByKey(activity.key)?.label ?? activity.label ?? ''
-  if (activity.kind === 'trip') return tripByKey(activity.key)?.label ?? activity.label ?? ''
-  if (activity.kind === 'study') {
-    const subject = subjectByKey(activity.key)
-    const stage = schoolStageByKey(activity.stage)
-    if (subject !== null && stage !== null) return `${stage.label}${subject.label}`
-  }
+  if (activity.kind === 'trip') return placeByKey(activity.key)?.label ?? tripByKey(activity.key)?.label ?? activity.label ?? ''
   return typeof activity.label === 'string' ? activity.label : ''
 }
 
+/** The subjects of a study sitting (one, or several taken together). */
+export const studyKeys = activity => (Array.isArray(activity?.keys) && activity.keys.length > 0 ? activity.keys : [activity?.key])
+
 /**
- * [dsh-piggy-claude-code mod] An activity's label ("打零工", "小学语文", "郊游")
- * in `lang`. The saved record keeps the Chinese source label.
+ * [dsh-piggy-claude-code mod] "大学数学+美术" — a sitting's stage and subjects,
+ * each translated on its own so any combination reads right in any language.
  */
-export const activityLabel = (activity, lang) => tr(lang, activitySourceLabel(activity))
+export function lessonLabel(lang, stageKey, subjectKeys) {
+  const stage = schoolStageByKey(stageKey)
+  const subjects = subjectKeys.map(subjectByKey).filter(Boolean)
+  if (stage === null || subjects.length === 0) return ''
+  return tr(lang, '{stage}{subjects}', {
+    stage: tr(lang, stage.label),
+    subjects: subjects.map(subject => tr(lang, subject.label)).join(tr(lang, '+')),
+  })
+}
+
+/**
+ * [dsh-piggy-claude-code mod] An activity's label ("打零工", "大学数学+美术",
+ * "东京") in `lang`. The saved record keeps the Chinese source label.
+ */
+export function activityLabel(activity, lang) {
+  if (activity?.kind === 'study') {
+    const label = lessonLabel(lang, activity.stage, studyKeys(activity))
+    if (label !== '') return label
+  }
+  return tr(lang, activitySourceLabel(activity))
+}
 
 /** Upstream's countdown in days; stages no longer follow age, so there is none. */
 export function daysToNextStage(state, nowMs) {
@@ -429,8 +464,14 @@ export function layEgg(nowMs) {
     courses: {},
     // Finished lessons per school stage. QQ Pet starts every pet at 小学 and
     // `college` / `graduate` sit behind it; this is what opens them.
-    lessonsByStage: { primary: 0, college: 0, graduate: 0 },
+    lessonsByStage: { primary: 0, college: 0, graduate: 0, doctor: 0 },
     souvenirs: [],
+    // [dsh-piggy-claude-code mod] the travel collection and what it has paid out.
+    collected: {},
+    regionsDone: [],
+    worldDone: false,
+    doctorDone: false,
+    lastTrip: null,
     illness: null,
     activity: null,
     riskMinutes: 0,
@@ -492,6 +533,12 @@ export function migrate(raw) {
   state.courses = sanitizeCourses(raw.courses)
   state.lessonsByStage = sanitizeLessonsByStage(raw.lessonsByStage, raw.courses)
   state.souvenirs = Array.isArray(raw.souvenirs) ? raw.souvenirs.filter(s => typeof s === 'string').slice(-40) : []
+  // [dsh-piggy-claude-code mod] travel collection, region payouts, doctorate.
+  state.collected = sanitizeCollected(raw.collected)
+  state.regionsDone = Array.isArray(raw.regionsDone) ? REGIONS.map(r => r.key).filter(key => raw.regionsDone.includes(key)) : []
+  state.worldDone = raw.worldDone === true
+  state.doctorDone = raw.doctorDone === true
+  state.lastTrip = sanitizeLastTrip(raw.lastTrip)
   state.pending = []
   state.memories = Array.isArray(raw.memories)
     ? raw.memories.filter(m => typeof m === 'string').slice(-MEMORY_LIMIT)
@@ -521,7 +568,14 @@ export function migrate(raw) {
   state.cleanliness = clamp100(state.cleanliness)
   state.coins = Math.max(0, Math.floor(state.coins))
   state.illness = sanitizeIllness(raw.illness)
-  state.activity = sanitizeActivity(raw.activity ?? raw.work)
+  // [dsh-piggy-claude-code mod] a trip from the retired four is refunded and dropped.
+  const rawActivity = asObject(raw.activity)
+  if (rawActivity !== null && rawActivity.kind === 'trip' && LEGACY_TRIPS.includes(rawActivity.key) && !raw.dead) {
+    state.coins += Math.max(0, Math.floor(Number(rawActivity.cost) || 0))
+    state.activity = null
+  } else {
+    state.activity = sanitizeActivity(raw.activity ?? raw.work)
+  }
   state.dead = state.dead === true || state.health <= 0
   state.hatched = state.hatched === true || state.xp > 0
   return state
@@ -538,9 +592,33 @@ function sanitizeInventory(raw) {
   for (const [key, count] of Object.entries(source)) {
     if (!Number.isFinite(count)) continue
     const n = Math.floor(count)
-    if (n > 0 && SHOP.some(item => item.key === key)) out[key] = n
+    if (n > 0 && ALL_ITEMS.some(item => item.key === key)) out[key] = n
   }
   return out
+}
+
+/** [dsh-piggy-claude-code mod] Souvenir counts, known keys only. */
+function sanitizeCollected(raw) {
+  const source = asObject(raw)
+  if (source === null) return {}
+  const out = {}
+  for (const [key, count] of Object.entries(source)) {
+    if (souvenirByKey(key) !== null && Number.isFinite(count) && count > 0) out[key] = Math.floor(count)
+  }
+  return out
+}
+
+function sanitizeLastTrip(raw) {
+  const source = asObject(raw)
+  if (source === null || placeByKey(source.place) === null) return null
+  return {
+    place: source.place,
+    souvenir: souvenirByKey(source.souvenir) !== null ? source.souvenir : null,
+    fresh: source.fresh === true,
+    loot: Array.isArray(source.loot) ? source.loot.filter(key => itemByKey(key) !== null) : [],
+    regionDone: typeof source.regionDone === 'string' ? source.regionDone : null,
+    at: Number(source.at) || 0,
+  }
 }
 
 function sanitizeTraits(raw) {
@@ -617,12 +695,21 @@ function sanitizeActivity(raw) {
     ? jobByKey(source.key ?? source.job) !== null
     : kind === 'study'
       ? subjectByKey(source.key) !== null
-      : tripByKey(source.key) !== null
+      : placeByKey(source.key) !== null
   if (!known) return null
+  const keys = kind === 'study' && Array.isArray(source.keys)
+    ? source.keys.filter(key => subjectByKey(key) !== null)
+    : []
   return {
     kind,
     key: source.key ?? source.job,
+    keys: kind === 'study' ? (keys.length > 0 ? keys : [source.key]) : undefined,
     stage: kind === 'study' && schoolStageByKey(source.stage) !== null ? source.stage : undefined,
+    // a trip carries its own quote, worked out at departure
+    zones: kind === 'trip' ? Number(source.zones) || 0 : undefined,
+    happiness: kind === 'trip' ? Number(source.happiness) || 0 : undefined,
+    xp: kind === 'trip' ? Number(source.xp) || 0 : undefined,
+    satiety: kind === 'trip' ? Number(source.satiety) || 0 : undefined,
     label: typeof source.label === 'string' ? source.label : '',
     emoji: typeof source.emoji === 'string' ? source.emoji : '',
     startedAt: Number(source.startedAt) || 0,
@@ -665,7 +752,7 @@ export function drainPending(state) {
 /** Inventory counts, always including zeroes so the UI can render a grid. */
 export function inventoryView(state) {
   const out = {}
-  for (const item of SHOP) out[item.key] = state.inventory?.[item.key] ?? 0
+  for (const item of ALL_ITEMS) out[item.key] = state.inventory?.[item.key] ?? 0
   // The free default toy is always in the bag and never runs out, so `玩耍` is
   // never blocked by an empty one.
   out[DEFAULT_TOY.key] = Infinity
@@ -745,7 +832,8 @@ export function decay(state, nowMs) {
     return away ? Math.max(next, Math.min(value, AWAY_FLOOR)) : next
   }
   state.satiety = clamp100(drain(state.satiety, SATIETY_DECAY_PER_MIN))
-  state.happiness = clamp100(drain(state.happiness, HAPPINESS_DECAY_PER_MIN))
+  // [mod] 佛系 (South & Southeast Asia complete): mood drains a quarter slower.
+  state.happiness = clamp100(drain(state.happiness, HAPPINESS_DECAY_PER_MIN * (hasPerk(state, 'zen') ? 0.75 : 1)))
   state.cleanliness = clamp100(drain(state.cleanliness, CLEANLINESS_DECAY_PER_MIN))
 
   // Illness only comes from being left at home. A pig that was out living its
@@ -755,7 +843,8 @@ export function decay(state, nowMs) {
   } else {
     const neglected = state.satiety < THRESHOLDS.sickSatiety || state.cleanliness < THRESHOLDS.sickCleanliness
     state.riskMinutes = neglected ? (state.riskMinutes ?? 0) + minutes : 0
-    if (state.illness === null && state.riskMinutes >= SICK_RISK_MINUTES) {
+    // [mod] 抗寒体质 (Oceania complete): neglect takes twice as long to make it ill.
+    if (state.illness === null && state.riskMinutes >= SICK_RISK_MINUTES * (hasPerk(state, 'hardy') ? 2 : 1)) {
       state.riskMinutes = 0
       catchIllness(state, nowMs)
     }
@@ -822,7 +911,8 @@ function finishWork(state, activity, nowMs) {
   // Trait bonus first, then the sick penalty: going to school should still be
   // worth it while the pig is under the weather.
   const points = state.traits?.[job.trait] ?? 0
-  const withTrait = job.coins * traitBonus(job.trait, points).pay
+  // [mod] 土豪 (Middle East & Africa complete): +15% pay.
+  const withTrait = job.coins * traitBonus(job.trait, points).pay * (hasPerk(state, 'tycoon') ? 1.15 : 1)
   const coins = sick ? Math.max(1, Math.round(withTrait * SICK_PAY_MULTIPLIER)) : Math.round(withTrait)
   state.coins += coins
   state.satiety = clamp100(state.satiety + job.satiety)
@@ -842,42 +932,139 @@ function finishWork(state, activity, nowMs) {
 }
 
 function finishStudy(state, activity, nowMs) {
-  const subject = subjectByKey(activity.key)
   const stage = schoolStageByKey(activity.stage)
-  if (subject === null || stage === null) return
+  const subjects = studyKeys(activity).map(subjectByKey).filter(Boolean)
+  if (stage === null || subjects.length === 0) return
   state.traits = { ...(state.traits ?? {}) }
-  state.traits[subject.trait] = (state.traits[subject.trait] ?? 0) + stage.gain
   state.courses = { ...(state.courses ?? {}) }
-  state.courses[subject.key] = (state.courses[subject.key] ?? 0) + 1
-  // Counted per stage, because that is what unlocks the next school.
   state.lessonsByStage = { ...(state.lessonsByStage ?? {}) }
-  state.lessonsByStage[stage.key] = (state.lessonsByStage[stage.key] ?? 0) + 1
-  state.satiety = clamp100(state.satiety + stage.satiety)
-  state.happiness = clamp100(state.happiness + stage.happiness)
-  state.stats.courses += 1
-  state.stats.lessons += 1
-  applyEffects(state, { xp: stage.xp }, nowMs)
-  const params = {
-    name: state.name, emoji: subject.emoji, gain: stage.gain,
-    lesson: word(state, `${stage.label}${subject.label}`), trait: word(state, TRAITS[subject.trait].label),
+  // [mod] several subjects in one sitting: each pays out, each is tiring.
+  for (const subject of subjects) {
+    state.traits[subject.trait] = (state.traits[subject.trait] ?? 0) + stage.gain
+    state.courses[subject.key] = (state.courses[subject.key] ?? 0) + 1
+    // Counted per stage, because that is what unlocks the next school.
+    state.lessonsByStage[stage.key] = (state.lessonsByStage[stage.key] ?? 0) + 1
+    state.stats.courses += 1
+    state.stats.lessons += 1
   }
-  remember(state, say(state, '{emoji} 上完{lesson}，{trait} +{gain}', params), nowMs)
-  announce(state, 'study', say(state, '{name} 学完{lesson}，{trait} +{gain} 📚', params))
+  state.satiety = clamp100(state.satiety + stage.satiety * subjects.length)
+  state.happiness = clamp100(state.happiness + stage.happiness * subjects.length)
+  applyEffects(state, { xp: stage.xp * subjects.length }, nowMs)
+  const traits = [...new Set(subjects.map(subject => subject.trait))]
+    .map(trait => say(state, '{trait} +{gain}', {
+      trait: word(state, TRAITS[trait].label),
+      gain: stage.gain * subjects.filter(subject => subject.trait === trait).length,
+    }))
+    .join(word(state, '，'))
+  const params = { name: state.name, emoji: activity.emoji, lesson: lessonLabel(langOf(state), stage.key, subjects.map(s => s.key)), gains: traits }
+  remember(state, say(state, '{emoji} 上完{lesson}，{gains}', params), nowMs)
+  announce(state, 'study', say(state, '{name} 学完{lesson}，{gains} 📚', params))
+
+  // [mod] the thesis defence: every 博士 subject once, paid a single time.
+  if (stage.key === 'doctor' && state.doctorDone !== true && (state.lessonsByStage.doctor ?? 0) >= DOCTOR_GRADUATION.lessons) {
+    state.doctorDone = true
+    for (const [trait, points] of Object.entries(DOCTOR_GRADUATION.traits)) state.traits[trait] = (state.traits[trait] ?? 0) + points
+    remember(state, say(state, '🎓 博士答辩通过！三项属性各 +1'), nowMs)
+    announce(state, 'doctor', say(state, '{name} 博士毕业了！🎓 以后请叫它「{name} 博士」', { name: state.name }))
+  }
+}
+
+/** [mod] Which passive perks the pig has earned by completing regions. */
+export function perksOf(state) {
+  const done = new Set(state?.regionsDone ?? [])
+  return REGIONS.filter(region => done.has(region.key)).map(region => region.perk.key)
+}
+const hasPerk = (state, key) => perksOf(state).includes(key)
+
+/** [mod] How many of a region's souvenirs the pig owns, and whether that is all of them. */
+export function regionProgress(state, regionKey) {
+  const all = regionSouvenirs(regionKey)
+  const have = all.filter(souvenir => (state?.collected?.[souvenir.key] ?? 0) > 0).length
+  return { have, total: all.length, done: have === all.length }
+}
+
+/** Pick a souvenir from `place`, favouring one the pig does not have yet. */
+function pickSouvenir(state, place) {
+  const missing = place.souvenirs.filter(s => (state.collected?.[s.key] ?? 0) === 0)
+  if (missing.length > 0 && (missing.length === place.souvenirs.length || Math.random() < FARE.newSouvenirBias)) {
+    return missing[Math.floor(Math.random() * missing.length)]
+  }
+  return place.souvenirs[Math.floor(Math.random() * place.souvenirs.length)]
+}
+
+/** Ordinary shop consumables a trip can bring back, cheaper ones more often. */
+const SHOP_LOOT = SHOP.filter(item => item.kind === 'food' || item.kind === 'bath')
+function pickShopLoot() {
+  const weights = SHOP_LOOT.map(item => 1 / Math.max(1, item.price))
+  let roll = Math.random() * weights.reduce((a, b) => a + b, 0)
+  for (let i = 0; i < SHOP_LOOT.length; i += 1) {
+    roll -= weights[i]
+    if (roll <= 0) return SHOP_LOOT[i]
+  }
+  return SHOP_LOOT[0]
+}
+
+function grantRegion(state, region, nowMs) {
+  state.regionsDone = [...(state.regionsDone ?? []), region.key]
+  state.traits = { ...(state.traits ?? {}) }
+  for (const [trait, points] of Object.entries(region.bonus.traits ?? {})) state.traits[trait] = (state.traits[trait] ?? 0) + points
+  if (region.bonus.weightG) state.weightG = Math.min(500_000, state.weightG + region.bonus.weightG)
+  const params = { name: state.name, emoji: region.emoji, region: word(state, region.label), perk: word(state, region.perk.label), text: word(state, region.perk.text) }
+  remember(state, say(state, '{emoji} 集齐了{region}的纪念品！解锁「{perk}」：{text}', params), nowMs)
+  announce(state, 'region', say(state, '{name} 集齐了{region}！{emoji} 解锁「{perk}」', params))
+
+  if (!state.worldDone && REGIONS.every(r => state.regionsDone.includes(r.key))) {
+    state.worldDone = true
+    for (const [trait, points] of Object.entries(WORLD_BONUS.traits)) state.traits[trait] = (state.traits[trait] ?? 0) + points
+    const world = { name: state.name, emoji: WORLD_BONUS.emoji, title: word(state, WORLD_BONUS.label) }
+    remember(state, say(state, '{emoji} 成为「{title}」！三项属性各 +3', world), nowMs)
+    announce(state, 'world', say(state, '{name} 走遍了全世界，成为「{title}」{emoji}', world))
+  }
 }
 
 function finishTrip(state, activity, nowMs) {
-  const trip = tripByKey(activity.key)
-  if (trip === null) return
-  // Deterministic souvenir rotation keeps the mechanic testable without RNG.
-  const souvenir = trip.souvenirs[state.stats.trips % trip.souvenirs.length]
-  state.souvenirs = [...(state.souvenirs ?? []), souvenir]
-  state.happiness = clamp100(state.happiness + trip.happiness)
-  state.satiety = clamp100(state.satiety + trip.satiety)
+  const place = placeByKey(activity.key)
+  if (place === null) return
+  const region = REGIONS.find(r => r.key === place.region)
+
+  const souvenir = pickSouvenir(state, place)
+  const fresh = (state.collected?.[souvenir.key] ?? 0) === 0
+  state.collected = { ...(state.collected ?? {}), [souvenir.key]: (state.collected?.[souvenir.key] ?? 0) + 1 }
+
+  // A consumable or two: the place's own specialty, or something from the shop.
+  const loot = []
+  const rolls = activity.zones >= FARE.secondRollFromZones ? 2 : 1
+  for (let i = 0; i < rolls; i += 1) {
+    if (Math.random() >= FARE.lootChance) continue
+    const item = Math.random() < FARE.specialtyShare ? specialtyByKey(place.specialty) : pickShopLoot()
+    if (item === null) continue
+    loot.push(item.key)
+    state.inventory = { ...(state.inventory ?? {}), [item.key]: (state.inventory?.[item.key] ?? 0) + 1 }
+  }
+
+  // [mod] 博物馆通票 (Europe complete): half as much joy again from every trip.
+  const joy = Math.round((activity.happiness || 0) * (hasPerk(state, 'museum') ? 1.5 : 1))
+  state.happiness = clamp100(state.happiness + joy)
+  state.satiety = clamp100(state.satiety + (activity.satiety || 0))
   state.stats.trips += 1
-  applyEffects(state, { xp: trip.xp }, nowMs)
-  const params = { name: state.name, emoji: trip.emoji, trip: word(state, trip.label), souvenir: word(state, souvenir) }
-  remember(state, say(state, '{emoji} {trip}回来，带回「{souvenir}」', params), nowMs)
-  announce(state, 'trip', say(state, '{name} 从{trip}回来了，带回「{souvenir}」🧳', params))
+  applyEffects(state, { xp: activity.xp || 0 }, nowMs)
+
+  const lootText = loot.length === 0 ? '' : say(state, '，还带回了 {items}', {
+    items: loot.map(key => { const item = itemByKey(key); return `${item.emoji}${word(state, item.label)}` }).join(word(state, '、')),
+  })
+  const params = {
+    name: state.name, emoji: place.emoji, trip: word(state, place.label),
+    souvenir: `${souvenir.emoji}${word(state, souvenir.label)}`, isNew: fresh ? say(state, '（新！）') : '', loot: lootText,
+  }
+  remember(state, say(state, '{emoji} {trip}回来，带回「{souvenir}」{isNew}{loot}', params), nowMs)
+  announce(state, 'trip', say(state, '{name} 从{trip}回来了，带回「{souvenir}」{isNew}🧳{loot}', params))
+
+  let regionDone = null
+  if (region !== undefined && !state.regionsDone.includes(region.key) && regionProgress(state, region.key).done) {
+    grantRegion(state, region, nowMs)
+    regionDone = region.key
+  }
+  state.lastTrip = { place: place.key, souvenir: souvenir.key, fresh, loot, regionDone, at: nowMs }
 }
 
 function catchIllness(state, nowMs) {
@@ -936,7 +1123,9 @@ function advanceIllness(state, nowMs) {
 function growFromFood(state, satietyGained) {
   if (!(satietyGained > 0) || state.hatched !== true) return
   const perPoint = state.weightG >= GROWTH.elderKg * 1000 ? GROWTH.gramsPerSatietyElder : GROWTH.gramsPerSatiety
-  state.weightG = Math.min(500_000, state.weightG + satietyGained * perPoint)
+  // [mod] 干饭王 (China complete): food sticks a little better.
+  const foodie = hasPerk(state, 'foodie') ? 1.1 : 1
+  state.weightG = Math.min(500_000, state.weightG + satietyGained * perPoint * foodie)
 }
 
 function applyEffects(state, effects, nowMs) {
@@ -1144,10 +1333,16 @@ export function startWork(state, jobKey, nowMs) {
   return result
 }
 
-export function startStudy(state, subjectKey, stageKey, nowMs) {
-  const subject = subjectByKey(subjectKey)
+/**
+ * Enrol in one sitting. [mod] `subjectKeys` may be one key or a list: up to two
+ * subjects at 大学, three from 研究生 on (PARALLEL_COURSES). Each subject pays its
+ * own tuition; the sitting lasts as long as a single lesson.
+ */
+export function startStudy(state, subjectKeys, stageKey, nowMs) {
+  const keys = [...new Set((Array.isArray(subjectKeys) ? subjectKeys : [subjectKeys]).filter(Boolean))]
+  const subjects = keys.map(subjectByKey)
   const stage = schoolStageByKey(stageKey)
-  if (subject === null || stage === null) return { ok: false, reason: 'unknown' }
+  if (subjects.length === 0 || subjects.some(subject => subject === null) || stage === null) return { ok: false, reason: 'unknown' }
   if (state.dead) return { ok: false, reason: 'dead' }
   if (state.activity !== null) return { ok: false, reason: 'away' }
   if (state.health <= TOO_WEAK_HEALTH) return { ok: false, reason: 'weak' }
@@ -1155,44 +1350,65 @@ export function startStudy(state, subjectKey, stageKey, nowMs) {
   if (!stageUnlocked(stage, state.lessonsByStage)) {
     return { ok: false, reason: 'locked', need: stageProgress(stage, state.lessonsByStage) }
   }
-  if (state.coins < stage.tuition) return { ok: false, reason: 'poor', price: stage.tuition }
+  const most = PARALLEL_COURSES[stage.key] ?? 1
+  if (subjects.length > most) return { ok: false, reason: 'too-many', max: most }
+  const tuition = stage.tuition * subjects.length
+  if (state.coins < tuition) return { ok: false, reason: 'poor', price: tuition }
   if (state.satiety < 15) return { ok: false, reason: 'hungry' }
 
-  state.coins -= stage.tuition
+  // [mod] 卷王 (East Asia complete): lessons take a fifth less time.
+  const minutes = Math.max(1, Math.round(stage.minutes * (hasPerk(state, 'grinder') ? 0.8 : 1)))
+  state.coins -= tuition
   const result = begin(state, {
-    kind: 'study', key: subject.key, stage: stage.key,
-    label: `${stage.label}${subject.label}`, emoji: subject.emoji,
-    minutes: stage.minutes, cost: stage.tuition,
+    kind: 'study', key: subjects[0].key, keys: subjects.map(subject => subject.key), stage: stage.key,
+    label: `${stage.label}${subjects.map(subject => subject.label).join('+')}`,
+    emoji: subjects.length === 1 ? subjects[0].emoji : '📚',
+    minutes, cost: tuition,
   }, nowMs)
   if (!result.ok) {
-    state.coins += stage.tuition // refund if the pig turned out to be unavailable
+    state.coins += tuition // refund if the pig turned out to be unavailable
     return result
   }
   remember(state, say(state, '{emoji} 去上{lesson}（学费 {tuition}）', {
-    emoji: subject.emoji, lesson: word(state, `${stage.label}${subject.label}`), tuition: stage.tuition,
+    emoji: result.activity.emoji, lesson: lessonLabel(langOf(state), stage.key, subjects.map(s => s.key)), tuition,
   }), nowMs)
   return result
 }
 
-export function startTrip(state, tripKey, nowMs) {
-  const trip = tripByKey(tripKey)
-  if (trip === null) return { ok: false, reason: 'unknown' }
+/**
+ * [mod] What a trip to `placeKey` costs from `homeUtc` for this pig, perks
+ * included: 100 coins + 200 per time zone, 1 h + 1 h per time zone.
+ */
+export function tripQuote(state, placeKey, homeUtc = systemUtcOffset()) {
+  const place = placeByKey(placeKey)
+  if (place === null) return null
+  const fare = fareFor(place, homeUtc)
+  // 常旅客 (Americas complete): a fifth off every ticket.
+  const cost = Math.round(fare.cost * (hasPerk(state, 'flyer') ? 0.8 : 1))
+  return { ...fare, cost }
+}
+
+export function startTrip(state, placeKey, nowMs, homeUtc = systemUtcOffset()) {
+  const place = placeByKey(placeKey)
+  if (place === null) return { ok: false, reason: 'unknown' }
   if (state.dead) return { ok: false, reason: 'dead' }
   if (state.activity !== null) return { ok: false, reason: 'away' }
   if (state.health <= TOO_WEAK_HEALTH) return { ok: false, reason: 'weak' }
-  if (state.coins < trip.cost) return { ok: false, reason: 'poor', price: trip.cost }
+  const quote = tripQuote(state, place.key, homeUtc)
+  if (state.coins < quote.cost) return { ok: false, reason: 'poor', price: quote.cost }
   if (state.satiety < 15) return { ok: false, reason: 'hungry' }
 
-  state.coins -= trip.cost
+  state.coins -= quote.cost
   const result = begin(state, {
-    kind: 'trip', key: trip.key, label: trip.label, emoji: trip.emoji,
-    minutes: trip.minutes, cost: trip.cost,
+    kind: 'trip', key: place.key, label: place.label, emoji: place.emoji,
+    minutes: quote.minutes, cost: quote.cost,
+    zones: quote.zones, happiness: quote.happiness, xp: quote.xp, satiety: quote.satiety,
   }, nowMs)
   if (!result.ok) {
-    state.coins += trip.cost
+    state.coins += quote.cost
     return result
   }
-  remember(state, say(state, '{emoji} 出发去{trip}（花了 {cost} 金币）', { emoji: trip.emoji, trip: word(state, trip.label), cost: trip.cost }), nowMs)
+  remember(state, say(state, '{emoji} 出发去{trip}（花了 {cost} 金币）', { emoji: place.emoji, trip: word(state, place.label), cost: quote.cost }), nowMs)
   return result
 }
 
@@ -1229,6 +1445,8 @@ export const callOffWork = callOffActivity
 export function buy(state, itemKey) {
   const item = itemByKey(itemKey)
   if (item === null) return { ok: false, reason: 'unknown' }
+  // [mod] travel-only specialties never come from the shop.
+  if (item.exclusive === true) return { ok: false, reason: 'not-for-sale' }
   if (state.dead && item.key !== REVIVE_ITEM.key) return { ok: false, reason: 'dead' }
   if (state.coins < item.price) return { ok: false, reason: 'poor', price: item.price }
 
@@ -1259,6 +1477,8 @@ export function useItem(state, itemKey, nowMs) {
     return { ok: true, item }
   }
   if (state.dead) return { ok: false, reason: 'dead' }
+  // [mod] a rename card is spent by renaming, not from the bag.
+  if (item.kind === 'card') return { ok: false, reason: 'use-to-rename' }
 
   if (item.kind === 'medicine') {
     if (state.illness === null) return { ok: false, reason: 'not-sick' }
@@ -1308,6 +1528,27 @@ export function rename(state, rawName, nowMs) {
   state.name = cleaned
   remember(state, say(state, '改名叫「{name}」', { name: cleaned }), nowMs)
   return cleaned
+}
+
+/** [mod] Is the pig still wearing a default name (in any language)? */
+export const hasDefaultName = state => ['zh', 'ja', 'en'].some(code => tr(code, '猪猪') === state?.name)
+
+/**
+ * [mod] Name the pig. The first name is free while it still has a default
+ * one; after that every rename spends a 更名卡 (1000 coins in the shop).
+ * @returns {{ok:boolean, reason?:string, name?:string, usedCard?:boolean}}
+ */
+export function renamePig(state, rawName, nowMs) {
+  if (state === null || state.hatched !== true) return { ok: false, reason: 'absent' }
+  if (state.dead) return { ok: false, reason: 'dead' }
+  const cleaned = String(rawName ?? '').replace(/\s+/g, ' ').trim()
+  if (cleaned === '' || [...cleaned].length > 16) return { ok: false, reason: 'bad-name' }
+  if (cleaned === state.name) return { ok: false, reason: 'same-name' }
+  const free = hasDefaultName(state)
+  if (!free && (state.inventory?.[RENAME_CARD.key] ?? 0) <= 0) return { ok: false, reason: 'need-card', price: RENAME_CARD.price }
+  if (!free) state.inventory = { ...state.inventory, [RENAME_CARD.key]: state.inventory[RENAME_CARD.key] - 1 }
+  rename(state, cleaned, nowMs)
+  return { ok: true, name: cleaned, usedCard: !free }
 }
 
 const AWAY_MOODS = Object.freeze({

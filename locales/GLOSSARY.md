@@ -35,6 +35,26 @@ The pig is referred to as "it" in English and by name or 「この子」 in Japa
 | 叫回来 | 呼びもどす | Call back |
 | 外出 / 不在家 | おでかけ中 | out |
 | 纪念品 · 收藏册 | おみやげ · コレクション | souvenir · collection |
+| 博士 (school stage) · 博士 (title) | 博士課程 · 博士 | Doctorate · Doctor (Dr. {name}) |
+| 答辩 | 博士論文（の審査） | thesis |
+| 更名卡 | 名前変更カード | Rename card |
+| 道具 (shop shelf) | どうぐ | Items |
+| 特产 · 旅行限定 | 名物 · 旅行限定 | specialty · travel-only |
+| 集齐 (a region) · 收集进度 | コンプリート | complete / collected |
+| 加成 (region perk) | ボーナス | perk |
+| 称号 | 称号 | title |
+| 时区 · 跨 N 个时区 · 同一时区 | 時差 N 時間 · 時差なし | N h time difference · same time zone |
+| 票价 / 旅费 | 運賃 / 旅費 | fare |
+| 中国 · 东亚 · 南亚·东南亚 · 欧洲 | 中国 · 東アジア · 南・東南アジア · ヨーロッパ | China · East Asia · South & SE Asia · Europe |
+| 美洲 · 中东·非洲 · 大洋洲·南极 | アメリカ大陸 · 中東・アフリカ · オセアニア・南極 | The Americas · Middle East & Africa · Oceania & Antarctica |
+| 环球旅行家 | 世界一周トラベラー | Globetrotter |
+| 干饭王 (perk) | ごはん大王 | Chow king |
+| 卷王 (perk) | 勉強の鬼 | Grind king |
+| 佛系 (perk) | のほほん系 | Zen mode |
+| 博物馆通票 (perk) | ミュージアムパス | Museum pass |
+| 常旅客 (perk) | マイル上級会員 | Frequent flyer |
+| 土豪 (perk) | 成金 | Tycoon |
+| 抗寒体质 (perk) | 寒さに強い体 | Cold-proof |
 | 买 · 用 | 買う · 使う | Buy · Use |
 | 语言 | 言語 | Language |
 | 开机自动启动 | ログイン時に起動 | Start at login |
@@ -42,3 +62,10 @@ The pig is referred to as "it" in English and by name or 「この子」 in Japa
 
 Units stay as they are: `kg`, `px`, `%`. Keep every emoji exactly where it is.
 Durations: 分钟/小时/天 → 分/時間/日 · min/h/day(s).
+
+Lists and joins: several subjects 「数学+美术」 → ja 「さんすう・ずこう」, en "Math + Art";
+a stage with its subjects `{stage}{subjects}` → ja `{stage}の{subjects}`, en
+`{subjects} ({stage})`; the list separators '，' and '、' → ja '、', en ', '.
+Souvenir names are small jokes (the London umbrella "because it keeps raining",
+the Singapore gum fine, the kiwi that is a bird, the "Biáng" copybook): keep the
+joke in each language rather than translating word for word.

@@ -171,6 +171,29 @@ window.__ModuleLoader__.load({
         '全套药': 'くすりセット', '弄死': '死なせる', '领养': '新しい子をむかえる', '重置': 'リセット',
         '展开/收起': '開く/閉じる', '+1 小时': '+1 時間', '+1 天': '+1 日',
         '当前：{stage} · 健康 {health} · 🪙 {coins}': '今：{stage} · 健康 {health} · 🪙 {coins}',
+        // [dsh-piggy-claude-code mod] naming, the travel world, multi-lesson study
+        '博士': '博士課程', '博士毕业': '博士号', '道具': 'どうぐ', '改名': 'なまえを変える',
+        '起个名字 · 免费': 'なまえをつけよう · 無料',
+        '改名会用掉 1 张 🪪（还有 {n} 张）': 'なまえを変えると 🪪 を1枚使うよ（のこり {n} 枚）',
+        '改名要用一张 🪪 更名卡 —— 商店里有卖，{price} 🪙': 'なまえを変えるには 🪪 名前変更カードがいるよ —— おみせで {price} 🪙',
+        '最多 16 个字': '16文字まで', '确定': 'けってい', '去商店': 'おみせへ',
+        '名字要 1–16 个字': 'なまえは1〜16文字だよ', '和现在的名字一样': 'いまのなまえと同じだよ',
+        '改名要一张 🪪 更名卡（商店 {price} 🪙）': '🪪 名前変更カードがいるよ（おみせで {price} 🪙）',
+        '好名字！': 'いいなまえ！',
+        '这是旅行限定，商店不卖': 'これは旅行限定。おみせでは売ってないよ',
+        '更名卡要在「状态」里改名时用': '名前変更カードは「ようす」でなまえを変えるときに使うよ',
+        '这一段一次最多上 {n} 门课': 'ここでは一度に {n} こまでだよ',
+        '可以一起上 {n} 门 · 已选 {k}': '{n} こまで一緒にうけられるよ · えらんだ数 {k}',
+        '上课 × {n}（学费 {total} 🪙）': 'じゅぎょう × {n}（授業料 {total} 🪙）',
+        '先选课': 'じゅぎょうをえらんでね', '用来改名': 'なまえを変えるのに使う',
+        '✈️ 限定': '✈️ 旅行限定',
+        '纪念品 {have}/{total} → 去「旅行」看看': 'おみやげ {have}/{total} → 「旅行」で見てね',
+        '家': 'おうち', '每跨一个时区 +{cost} 🪙 · +{hours} 小时': '時差1時間ごとに +{cost} 🪙 · +{hours} 時間',
+        '刚从{place}回来': '{place}から帰ってきたよ', '新！': 'はじめて！', '还带回了：': 'ほかにも：',
+        '集齐了「{region}」！': '「{region}」コンプリート！', '集齐奖励：{list}': 'コンプリート報酬：{list}',
+        '已生效': '発動中', '🔒 集齐后解锁': '🔒 コンプリートで解放', '去{place}能带回来': '{place}で手に入るよ',
+        '以前的纪念品：{list}': 'むかしのおみやげ：{list}', '已获得称号': '称号ゲット！',
+        '环球旅行家': '世界一周トラベラー', '地区': 'エリア',
       },
       en: {
         // tabs
@@ -274,6 +297,29 @@ window.__ModuleLoader__.load({
         '全套药': 'All medicines', '弄死': 'Kill', '领养': 'Adopt', '重置': 'Reset',
         '展开/收起': 'Open/close', '+1 小时': '+1 h', '+1 天': '+1 day',
         '当前：{stage} · 健康 {health} · 🪙 {coins}': 'Now: {stage} · Health {health} · 🪙 {coins}',
+        // [dsh-piggy-claude-code mod] naming, the travel world, multi-lesson study
+        '博士': 'Doctorate', '博士毕业': 'PhD', '道具': 'Items', '改名': 'Rename',
+        '起个名字 · 免费': 'Give it a name · free',
+        '改名会用掉 1 张 🪪（还有 {n} 张）': 'Renaming uses one 🪪 ({n} left)',
+        '改名要用一张 🪪 更名卡 —— 商店里有卖，{price} 🪙': 'Renaming needs a 🪪 rename card — the Shop sells them for {price} 🪙',
+        '最多 16 个字': 'Up to 16 characters', '确定': 'OK', '去商店': 'To the Shop',
+        '名字要 1–16 个字': 'A name is 1–16 characters', '和现在的名字一样': "That's already its name",
+        '改名要一张 🪪 更名卡（商店 {price} 🪙）': 'Needs a 🪪 rename card ({price} 🪙 in the Shop)',
+        '好名字！': 'Nice name!',
+        '这是旅行限定，商店不卖': "That's travel-only; the Shop doesn't sell it",
+        '更名卡要在「状态」里改名时用': 'Rename cards are spent when renaming on the Status tab',
+        '这一段一次最多上 {n} 门课': 'Up to {n} lessons at once here',
+        '可以一起上 {n} 门 · 已选 {k}': 'Take up to {n} together · {k} picked',
+        '上课 × {n}（学费 {total} 🪙）': 'Study × {n} (tuition {total} 🪙)',
+        '先选课': 'Pick lessons first', '用来改名': 'For renaming',
+        '✈️ 限定': '✈️ Travel only',
+        '纪念品 {have}/{total} → 去「旅行」看看': 'Souvenirs {have}/{total} → see Travel',
+        '家': 'Home', '每跨一个时区 +{cost} 🪙 · +{hours} 小时': 'Each time zone crossed: +{cost} 🪙 · +{hours} h',
+        '刚从{place}回来': 'Just back from {place}', '新！': 'New!', '还带回了：': 'Also brought: ',
+        '集齐了「{region}」！': '{region} complete!', '集齐奖励：{list}': 'Complete set: {list}',
+        '已生效': 'active', '🔒 集齐后解锁': '🔒 unlocks on completion', '去{place}能带回来': 'Found in {place}',
+        '以前的纪念品：{list}': 'Old souvenirs: {list}', '已获得称号': 'Title earned!',
+        '环球旅行家': 'Globetrotter', '地区': 'Region',
       },
     }
     // English singulars, picked when `params.n === 1`. Japanese and Chinese
@@ -326,13 +372,19 @@ window.__ModuleLoader__.load({
       bath: '没有洗浴用品了，去买点吧 🧼',
       toy: '没有玩具了，去商店看看 🪀',
     }
-    var KIND_TITLE = { food: ['🍎', '食物'], bath: ['🧼', '洗浴'], toy: ['🪀', '玩具'], medicine: ['💊', '药品'], revive: ['✨', '复活'] }
-    var KIND_ORDER = ['food', 'bath', 'toy', 'medicine', 'revive']
+    var KIND_TITLE = { food: ['🍎', '食物'], bath: ['🧼', '洗浴'], toy: ['🪀', '玩具'], medicine: ['💊', '药品'], revive: ['✨', '复活'], card: ['🪪', '道具'] }
+    var KIND_ORDER = ['food', 'bath', 'toy', 'medicine', 'revive', 'card']
     var STAGES = [
       { key: 'primary', label: '小学' },
       { key: 'college', label: '大学' },
       { key: 'graduate', label: '研究生' },
+      { key: 'doctor', label: '博士' },
     ]
+    // [dsh-piggy-claude-code mod] which travel region is unfolded; '' = none.
+    var REGION_KEY = 'dsh-pig:region'
+    // A finished trip is announced on the travel tab for this long.
+    var LAST_TRIP_MS = 12 * 3600 * 1000
+    var NAME_MAX = 16
 
     // ---------------------------------------------------------------------
     // Defensive readers — the whole point of this file's first hundred lines.
@@ -409,6 +461,15 @@ window.__ModuleLoader__.load({
             strong: num(obj(pig.traits).strong, 0),
           },
           courses: obj(pig.courses),
+          // [dsh-piggy-claude-code mod] naming. An older host sends no
+          // `renameFree` at all and cannot rename, so the ✏️ stays away.
+          canRename: typeof pig.renameFree === 'boolean',
+          renameFree: pig.renameFree === true,
+          renameCards: Math.max(0, Math.floor(num(pig.renameCards, 0))),
+          renameCardPrice: num(pig.renameCardPrice, 1000),
+          perks: arr(pig.perks).filter(k => typeof k === 'string'),
+          doctor: pig.doctor === true,
+          worldTraveler: pig.worldTraveler === true,
           souvenirs: arr(pig.souvenirs),
           memories: arr(pig.memories).filter(m => typeof m === 'string'),
         },
@@ -443,6 +504,8 @@ window.__ModuleLoader__.load({
           minutes: num(obj(stage).minutes, 0),
           tuition: num(obj(stage).tuition, 0),
           gain: num(obj(stage).gain, 0),
+          // How many subjects one sitting may take; an older host meant one.
+          parallel: Math.max(1, Math.floor(num(obj(stage).parallel, 1))),
           // The school ladder: a stage with `unlocked === false` is gated behind
           // finishing the previous one, and says by how much.
           unlocked: obj(stage).unlocked !== false,
@@ -472,6 +535,18 @@ window.__ModuleLoader__.load({
           needed: obj(item).needed === true,
         })).filter(item => item.key !== ''),
         inventory: obj(d.inventory),
+        // [dsh-piggy-claude-code mod] everything the pig holds, travel-only
+        // specialties and rename cards included. `null` = an older host that
+        // only sent `inventory`, which the bag tab then reads instead.
+        bag: Array.isArray(d.bag) ? d.bag.map(item => ({
+          key: str(obj(item).key, ''),
+          label: str(obj(item).label, L('物品')),
+          emoji: str(obj(item).emoji, '📦'),
+          kind: str(obj(item).kind, 'food'),
+          count: Math.max(0, Math.floor(num(obj(item).count, 0))),
+          exclusive: obj(item).exclusive === true,
+        })).filter(item => item.key !== '' && item.count > 0) : null,
+        world: normalizeWorld(d.world, L),
         // Which items each care action could spend right now.
         care: (() => {
           const out = {}
@@ -508,6 +583,87 @@ window.__ModuleLoader__.load({
         awayBlocked: typeof d.awayBlocked === 'string' ? d.awayBlocked : null,
         pending: arr(d.pending).filter(e => isObj(e) && typeof e.at === 'number'),
         maxHealth: num(d.maxHealth, 5),
+      }
+    }
+
+    /**
+     * [dsh-piggy-claude-code mod] The travel world, or `null` when the host
+     * predates it (the travel tab then falls back to the flat `trips` list).
+     */
+    function normalizeWorld(raw, L) {
+      if (!isObj(raw)) return null
+      var regions = arr(raw.regions).map(region => {
+        var r = obj(region)
+        var perk = isObj(r.perk) ? {
+          label: str(r.perk.label, ''),
+          emoji: str(r.perk.emoji, '⭐'),
+          text: str(r.perk.text, ''),
+          active: r.perk.active === true,
+        } : null
+        return {
+          key: str(r.key, ''),
+          label: str(r.label, L('地区')),
+          emoji: str(r.emoji, '🗺'),
+          have: Math.max(0, num(r.have, 0)),
+          total: Math.max(0, num(r.total, 0)),
+          done: r.done === true,
+          reward: arr(r.reward).filter(t => typeof t === 'string' && t !== ''),
+          perk: perk !== null && perk.label !== '' ? perk : null,
+          places: arr(r.places).map(place => {
+            var p = obj(place)
+            return {
+              key: str(p.key, ''),
+              label: str(p.label, L('目的地')),
+              emoji: str(p.emoji, '🧳'),
+              cost: num(p.cost, 0),
+              minutes: num(p.minutes, 0),
+              available: p.available === true,
+              affordable: p.affordable === true,
+              souvenirs: arr(p.souvenirs).map(s => ({
+                key: str(obj(s).key, ''),
+                label: str(obj(s).label, L('纪念品')),
+                emoji: str(obj(s).emoji, '🎁'),
+                count: Math.max(0, Math.floor(num(obj(s).count, 0))),
+              })).filter(s => s.key !== ''),
+            }
+          }).filter(p => p.key !== ''),
+        }
+      }).filter(r => r.key !== '')
+      if (regions.length === 0) return null
+      var home = obj(raw.home)
+      var title = obj(raw.worldTitle)
+      var last = isObj(raw.lastTrip) ? raw.lastTrip : null
+      return {
+        home: {
+          utc: typeof home.utc === 'number' && isFinite(home.utc) ? home.utc : null,
+          city: str(home.city, str(home.zone, '')),
+        },
+        regions: regions,
+        worldDone: raw.worldDone === true,
+        worldTitle: {
+          label: str(title.label, L('环球旅行家')),
+          emoji: str(title.emoji, '🌍'),
+          reward: arr(title.reward).filter(t => typeof t === 'string' && t !== ''),
+        },
+        lastTrip: last === null ? null : {
+          place: str(last.place, L('目的地')),
+          emoji: str(last.emoji, '🧳'),
+          souvenir: isObj(last.souvenir) ? {
+            label: str(last.souvenir.label, L('纪念品')),
+            emoji: str(last.souvenir.emoji, '🎁'),
+            fresh: last.souvenir.fresh === true,
+          } : null,
+          loot: arr(last.loot).map(item => ({
+            key: str(obj(item).key, ''),
+            label: str(obj(item).label, L('物品')),
+            emoji: str(obj(item).emoji, '📦'),
+            exclusive: obj(item).exclusive === true,
+          })).filter(item => item.key !== ''),
+          regionDone: str(last.regionDone, null),
+          at: num(last.at, 0),
+        },
+        oldSouvenirs: arr(raw.oldSouvenirs).filter(t => typeof t === 'string' && t !== ''),
+        fare: { costPerZone: num(obj(raw.fare).costPerZone, 200), hoursPerZone: num(obj(raw.fare).hoursPerZone, 1) },
       }
     }
 
@@ -855,7 +1011,9 @@ window.__ModuleLoader__.load({
       'color:var(--ac-text);font-weight:700}',
 
       /* ---------- list rows ---------- */
-      '.dp-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
+      // minmax(0,…): a long caption must shrink (ellipsis), not push the grid past the panel.
+      '.dp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}',
+      '.dp-grid>.dp-item{min-width:0}',
       '.dp-list{display:flex;flex-direction:column;gap:7px}',
       '.dp-shelf{margin:9px 0 1px;font-size:10px;font-weight:700;color:var(--ac-text-2);',
       'letter-spacing:.04em}',
@@ -904,6 +1062,74 @@ window.__ModuleLoader__.load({
       '.dp-locked{margin:0 0 8px;font-size:10.5px;font-weight:600;line-height:1.5;',
       'color:var(--ac-text-body);background:#fdf7e2;border:2px solid #f0dfa8;',
       'border-radius:var(--ac-radius-sm);padding:6px 9px}',
+
+      /* ---------- [dsh-piggy-claude-code mod] naming ---------- */
+      '.dp-name{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:12px;font-weight:700;',
+      'color:var(--ac-text)}',
+      '.dp-name .dp-grow{flex:1;min-width:0;overflow-wrap:anywhere}',
+      '.dp-icon-btn{flex:0 0 auto;font:inherit;font-size:12px;line-height:1;cursor:pointer;padding:4px 7px;',
+      'border-radius:var(--ac-pill);border:2px solid var(--ac-border-light);background:var(--ac-bg-input);',
+      'transition:all .2s var(--ac-ease)}',
+      '.dp-icon-btn:hover{background:var(--ac-hover)}',
+      '.dp-icon-btn[aria-expanded="true"]{background:var(--ac-active);border-color:#9db0d6}',
+      '.dp-icon-btn:focus-visible{outline:2px solid var(--ac-primary);outline-offset:1px}',
+      '.dp-rename{margin:0 0 9px;padding:8px 9px;border-radius:var(--ac-radius-sm);',
+      'background:var(--ac-bg-content);border:2px solid var(--ac-border-light)}',
+      '.dp-rename-row{display:flex;align-items:center;gap:6px;margin-top:6px}',
+      '.dp-rename-row .dp-btn{padding:5px 9px;white-space:nowrap}',
+      '.dp-rename-row .dp-mini{white-space:nowrap}',
+      // The widget is user-select:none; a text field must still be editable.
+      '.dp-input{flex:1 1 auto;min-width:0;font:inherit;font-size:11px;font-weight:600;color:var(--ac-text);',
+      'padding:6px 10px;border-radius:var(--ac-pill);border:2px solid var(--ac-border);',
+      'background:var(--ac-bg-input);box-shadow:var(--ac-inset);-webkit-user-select:text;user-select:text}',
+      '.dp-input::placeholder{color:var(--ac-text-disabled)}',
+      '.dp-input:focus{outline:none;border-color:var(--ac-warning)}',
+      '.dp-note{font-size:10px;font-weight:600;color:var(--ac-text-2);line-height:1.5;overflow-wrap:anywhere}',
+      '.dp-tag{display:inline-block;margin-left:4px;font-size:9px;font-weight:700;line-height:1.5;',
+      'color:#8a5a00;background:#fdf0c2;border-radius:var(--ac-pill);padding:0 6px;white-space:nowrap}',
+      '.dp-badge{display:inline-block;margin:0 0 7px;font-size:10.5px;font-weight:700;color:var(--ac-text);',
+      'background:#fdf0c2;border:2px solid #f0dfa8;border-radius:var(--ac-pill);padding:2px 9px}',
+      '.dp-link{display:block;width:100%;margin-top:10px;font:inherit;font-size:10.5px;font-weight:600;',
+      'text-align:left;color:var(--ac-text-muted);cursor:pointer;padding:6px 9px;',
+      'border-radius:var(--ac-radius-sm);border:2px dashed var(--ac-border-light);background:none}',
+      '.dp-link:hover{background:var(--ac-hover);color:var(--ac-text)}',
+
+      /* ---------- study: several subjects in one sitting ---------- */
+      '.dp-seg.dp-seg-2{grid-template-columns:repeat(2,1fr)}',
+      '.dp-item[aria-pressed="true"]{background:var(--ac-active);border-color:#9db0d6}',
+      '.dp-item[aria-pressed="true"] .dp-check{color:var(--ac-text)}',
+      '.dp-check{flex:0 0 auto;font-size:10px;line-height:1;color:var(--ac-text-disabled)}',
+      '.dp-study-go{margin-top:9px}',
+
+      /* ---------- travel: home, last trip, regions as an accordion ---------- */
+      '.dp-alert.dp-trip{background:#eef8ec;border-color:#c5e4bc}',
+      '.dp-alert .dp-line{margin-top:2px;overflow-wrap:anywhere}',
+      '.dp-region{margin-top:6px;border-radius:var(--ac-radius-sm);border:2px solid var(--ac-border-light);',
+      'background:var(--ac-bg-content);overflow:hidden}',
+      '.dp-region[data-done="true"]{border-color:#c5e4bc}',
+      '.dp-region-head{display:flex;align-items:center;gap:6px;width:100%;font:inherit;font-size:11px;',
+      'font-weight:700;color:var(--ac-text);text-align:left;cursor:pointer;padding:7px 9px;',
+      'background:none;border:0;transition:background .2s var(--ac-ease)}',
+      '.dp-region-head:hover{background:var(--ac-hover)}',
+      '.dp-region-head:focus-visible{outline:2px solid var(--ac-primary);outline-offset:-2px}',
+      '.dp-region-head .dp-grow{flex:1;min-width:0;overflow-wrap:anywhere}',
+      '.dp-region-head .dp-caret{flex:0 0 auto;width:10px;color:var(--ac-text-2);font-size:9px}',
+      '.dp-region-head .dp-have{flex:0 0 auto;font-size:10px;font-weight:600;color:var(--ac-text-2)}',
+      '.dp-region-body{display:flex;flex-direction:column;gap:5px;padding:0 8px 8px}',
+      '.dp-perk{font-size:10px;font-weight:600;line-height:1.5;color:var(--ac-text-muted);overflow-wrap:anywhere}',
+      '.dp-perk[data-active="true"]{color:#3f7d1a}',
+      '.dp-region-body .dp-item{padding:5px 7px;gap:6px;background:var(--ac-bg)}',
+      '.dp-region-body .dp-item .dp-grow div:first-child{overflow-wrap:anywhere}',
+      '.dp-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}',
+      '.dp-chip{font-size:10px;font-weight:600;line-height:1.5;padding:1px 7px;border-radius:var(--ac-pill);',
+      'color:var(--ac-text-body);background:var(--ac-bg-input);border:1.5px solid var(--ac-border-light);',
+      'overflow-wrap:anywhere;max-width:100%}',
+      '.dp-chip[data-have="false"]{color:var(--ac-text-disabled);background:var(--ac-bg-disabled);border-style:dashed}',
+      '.dp-world{display:flex;align-items:center;gap:6px;margin-top:10px;padding:7px 9px;',
+      'font-size:11px;font-weight:700;color:var(--ac-text);border-radius:var(--ac-radius-sm);',
+      'border:2px solid var(--ac-border-light);background:var(--ac-bg-input)}',
+      '.dp-world[data-done="true"]{background:#fdf7e2;border-color:var(--ac-warning)}',
+      '.dp-world .dp-grow{flex:1;min-width:0}',
 
       '.dp-empty{color:var(--ac-text-2);font-size:10.5px;font-weight:500;line-height:1.65;',
       'margin-top:4px}',
@@ -1215,6 +1441,15 @@ window.__ModuleLoader__.load({
       var stage = 'primary'
       // Which care action's item picker is open, if any.
       var picker = null
+      // [dsh-piggy-claude-code mod] the rename field: whether it is open, what
+      // has been typed so far, and the live <input> (rebuilt on every render).
+      var renaming = false
+      var renameDraft = ''
+      var renameInput = null
+      // Subjects ticked for one multi-subject sitting, and the stage they are for.
+      var studyPicks = { stage: null, keys: [] }
+      // The unfolded travel region: null until the player picks one.
+      var openRegion = readStore(REGION_KEY)
       var isOpen = readStore(OPEN_KEY) === 'true'
       var lastStage = null
       var lastPendingAt = 0
@@ -1275,6 +1510,7 @@ window.__ModuleLoader__.load({
         calloff: { kind: 'refuse', ms: 520, fx: ['💨'], count: 1, say: '提前回来了…' },
         buy: { kind: 'pet', ms: 620, fx: ['🪙', '🛒'], count: 2, say: '买到了！' },
         use: { kind: 'pet', ms: 620, fx: ['✨'], count: 2, say: '用掉了。' },
+        rename: { kind: 'levelup', ms: 900, fx: ['✏️', '✨'], count: 2, say: '好名字！' },
       }
 
       function flash(action) {
@@ -1440,6 +1676,7 @@ window.__ModuleLoader__.load({
       function statusTab() {
         var p = view.pig
         if (p === null) return
+        nameRow()
         labelledBar('🍚 ' + T('饱食'), p.satiety, p.satiety + '%')
         labelledBar('❤️ ' + T('心情'), p.happiness, p.happiness + '%', 'dp-mood')
         labelledBar('🫧 ' + T('清洁'), p.cleanliness, p.cleanliness + '%', 'dp-clean')
@@ -1523,6 +1760,128 @@ window.__ModuleLoader__.load({
       }
 
       /**
+       * [dsh-piggy-claude-code mod] The pig's name with a ✏️. The field it opens
+       * lives in `renameDraft`, not in the DOM: the panel is rebuilt on every
+       * poll, so the <input> itself is disposable.
+       */
+      function nameRow() {
+        var p = view.pig
+        var row = el('div', 'dp-name')
+        row.appendChild(el('span', null, '🏷️'))
+        row.appendChild(el('span', 'dp-grow', p.name))
+        var editable = p.canRename && !view.dead
+        if (editable) {
+          var edit = button('dp-icon-btn', {
+            'data-rename': 'open', 'aria-label': T('改名'), 'aria-expanded': String(renaming),
+          }, function () {
+            if (renaming) { cancelRename(); return }
+            renaming = true
+            renameDraft = p.renameFree ? '' : p.name
+            renderContent()
+            focusRename(null)
+          })
+          edit.title = T('改名')
+          edit.textContent = '✏️'
+          row.appendChild(edit)
+        }
+        content.appendChild(row)
+        if (renaming && editable) content.appendChild(renamePanel())
+        else renameInput = null
+      }
+
+      function renamePanel() {
+        var p = view.pig
+        var wrap = el('div', 'dp-rename')
+        var line = el('div', 'dp-rename-row')
+        renameInput = null
+        // No free rename and no card: say where one comes from instead of
+        // offering a field that can only be refused.
+        if (!p.renameFree && p.renameCards <= 0) {
+          wrap.appendChild(el('div', 'dp-note',
+            T('改名要用一张 🪪 更名卡 —— 商店里有卖，{price} 🪙', { price: p.renameCardPrice })))
+          var shop = button('dp-mini', { 'data-rename': 'shop' }, function () {
+            renaming = false
+            select('shop')
+          })
+          shop.textContent = T('去商店')
+          line.appendChild(shop)
+          var back = button('dp-btn', { 'data-rename': 'cancel' }, cancelRename)
+          back.textContent = T('算了')
+          line.appendChild(back)
+          wrap.appendChild(line)
+          return wrap
+        }
+        wrap.appendChild(el('div', 'dp-note', p.renameFree
+          ? T('起个名字 · 免费')
+          : T('改名会用掉 1 张 🪪（还有 {n} 张）', { n: p.renameCards })))
+        var input = document.createElement('input')
+        input.className = 'dp-input'
+        input.type = 'text'
+        input.maxLength = NAME_MAX
+        input.value = renameDraft
+        input.placeholder = p.renameFree ? T('最多 16 个字') : p.name
+        input.setAttribute('data-rename', 'input')
+        input.setAttribute('aria-label', T('改名'))
+        input.setAttribute('autocomplete', 'off')
+        input.addEventListener('input', function () { renameDraft = String(input.value ?? '') })
+        input.addEventListener('keydown', function (event) {
+          // Keys typed into the field are the field's, not the host page's.
+          event.stopPropagation?.()
+          // Enter that confirms an IME candidate must not submit the name.
+          if (event.isComposing || event.keyCode === 229) return
+          if (event.key === 'Enter') { event.preventDefault?.(); submitRename() }
+          else if (event.key === 'Escape') { event.preventDefault?.(); cancelRename() }
+        })
+        line.appendChild(input)
+        var ok = button('dp-mini', { 'data-rename': 'ok' }, submitRename)
+        ok.textContent = T('确定')
+        line.appendChild(ok)
+        var cancel = button('dp-btn', { 'data-rename': 'cancel' }, cancelRename)
+        cancel.textContent = T('算了')
+        line.appendChild(cancel)
+        wrap.appendChild(line)
+        renameInput = input
+        return wrap
+      }
+
+      function submitRename() {
+        if (busy) return
+        var name = renameDraft.trim()
+        if (name === '' || Array.from(name).length > NAME_MAX) {
+          showBubble(T('名字要 1–16 个字'), 2400)
+          return
+        }
+        renaming = false
+        renameInput = null
+        renderContent()
+        send('rename', { name: name })
+      }
+
+      function cancelRename() {
+        renaming = false
+        renameDraft = ''
+        renameInput = null
+        renderContent()
+      }
+
+      /** Is the player typing a name right now? Then the poll must not rebuild under them. */
+      function renameHasFocus() {
+        return renaming && renameInput !== null && document.activeElement === renameInput
+      }
+
+      /** Put the caret back in the (rebuilt) field; `range` is the old selection. */
+      function focusRename(range) {
+        if (renameInput === null || typeof renameInput.focus !== 'function') return
+        try {
+          renameInput.focus()
+          var end = String(renameInput.value ?? '').length
+          if (typeof renameInput.setSelectionRange === 'function') {
+            renameInput.setSelectionRange(range ? range[0] : end, range ? range[1] : end)
+          }
+        } catch (error) { /* not focusable yet */ }
+      }
+
+      /**
        * [dsh-piggy-claude-code mod] 🌐 语言: one button per language the host
        * offers, each named in its own language so it can be found from any of
        * them. The current one is pressed; the others post `lang`.
@@ -1598,18 +1957,33 @@ window.__ModuleLoader__.load({
         return parts.join(' · ')
       }
 
+      /** The school ladder as the host sent it, or the client's own when it sent none. */
+      function stageList() {
+        if (view.stages.length > 0) return view.stages
+        return STAGES.map(entry => ({
+          key: entry.key, label: T(entry.label), minutes: 0, tuition: null, gain: 0,
+          unlocked: true, progress: null, parallel: 1, fallback: true,
+        }))
+      }
+
+      function stageDetail(key) {
+        for (var d = 0; d < view.stages.length; d += 1) if (view.stages[d].key === key) return view.stages[d]
+        return null
+      }
+
       function studyTab() {
         if (view.subjects.length === 0) {
           content.appendChild(el('div', 'dp-empty', T('宿主还没提供课程表。')))
           return
         }
-        var seg = el('div', 'dp-seg')
-        for (var s = 0; s < STAGES.length; s += 1) {
+        if (view.pig !== null && view.pig.doctor) content.appendChild(el('div', 'dp-badge', '🎓 ' + T('博士毕业')))
+        var ladder = stageList()
+        // Four stages do not fit one row of pills in Japanese, so 2 × 2.
+        var seg = el('div', 'dp-seg' + (ladder.length > 3 ? ' dp-seg-2' : ''))
+        for (var s = 0; s < ladder.length; s += 1) {
           (function (entry) {
-            var detail = null
-            for (var k = 0; k < view.stages.length; k += 1) if (view.stages[k].key === entry.key) detail = view.stages[k]
-            var locked = detail !== null && detail.unlocked === false
-            var label = T(entry.label) + (detail ? ' · ' + detail.tuition + '🪙' : '') + (locked ? ' 🔒' : '')
+            var locked = entry.unlocked === false
+            var label = entry.label + (entry.tuition !== null ? ' · ' + entry.tuition + '🪙' : '') + (locked ? ' 🔒' : '')
             // A locked stage stays clickable on purpose: selecting it is how the
             // pig tells you what it is still missing. Only the courses inside it
             // are inert.
@@ -1621,12 +1995,13 @@ window.__ModuleLoader__.load({
             btn.setAttribute('data-active', entry.key === stage ? 'true' : 'false')
             btn.setAttribute('data-locked', locked ? 'true' : 'false')
             seg.appendChild(btn)
-          })(STAGES[s])
+          })(ladder[s])
         }
         content.appendChild(seg)
 
-        var detail = null
-        for (var d = 0; d < view.stages.length; d += 1) if (view.stages[d].key === stage) detail = view.stages[d]
+        var detail = stageDetail(stage)
+        var locked = detail !== null && detail.unlocked === false
+        var most = detail === null ? 1 : detail.parallel
         if (detail !== null) {
           var note = el('div', 'dp-empty', T('{time} · 学费 {tuition} 🪙 · 属性 +{gain}',
             { time: formatMinutes(detail.minutes), tuition: detail.tuition, gain: detail.gain }))
@@ -1634,19 +2009,48 @@ window.__ModuleLoader__.load({
           note.style.marginTop = '0'
           content.appendChild(note)
           // A gated stage says exactly what it is waiting for.
-          if (detail.unlocked === false && detail.progress !== null) {
+          if (locked && detail.progress !== null) {
             content.appendChild(el('div', 'dp-locked', '🔒 ' + T('要先念完{label}（{done}/{need}）',
               { label: detail.progress.label, done: detail.progress.done, need: detail.progress.need })))
           }
         }
 
+        // Ticks belong to one stage; switching stage starts over.
+        if (studyPicks.stage !== stage) studyPicks = { stage: stage, keys: [] }
+        var known = view.subjects.map(sub => sub.key)
+        studyPicks.keys = studyPicks.keys.filter(key => known.indexOf(key) >= 0).slice(0, most)
+        var multi = most > 1
+
+        if (multi) {
+          var hint = el('div', 'dp-note', T('可以一起上 {n} 门 · 已选 {k}', { n: most, k: studyPicks.keys.length }))
+          hint.style.marginBottom = '6px'
+          content.appendChild(hint)
+        }
+
         var grid = el('div', 'dp-grid')
         for (var i = 0; i < view.subjects.length; i += 1) {
           (function (sub) {
+            var picked = studyPicks.keys.indexOf(sub.key) >= 0
             var btn = button('dp-item', { 'data-subject': sub.key }, function () {
-              send('study', { subject: sub.key, stage: stage })
+              // One subject per sitting: a tap sends it off, as it always has.
+              if (!multi) {
+                send('study', { subject: sub.key, stage: stage })
+                return
+              }
+              var at = studyPicks.keys.indexOf(sub.key)
+              if (at >= 0) {
+                studyPicks.keys.splice(at, 1)
+              } else if (studyPicks.keys.length >= most) {
+                // Over the limit: ignored, and the pig says why.
+                showBubble(T('这一段一次最多上 {n} 门课', { n: most }), 2200)
+                return
+              } else {
+                studyPicks.keys.push(sub.key)
+              }
+              renderContent()
             })
-            if (detail !== null && detail.unlocked === false) btn.disabled = true
+            if (multi) btn.setAttribute('aria-pressed', picked ? 'true' : 'false')
+            if (locked) btn.disabled = true
             btn.style.cursor = 'pointer'
             btn.style.textAlign = 'left'
             btn.appendChild(el('span', null, sub.emoji))
@@ -1654,10 +2058,27 @@ window.__ModuleLoader__.load({
             grow.appendChild(el('div', null, sub.label))
             grow.appendChild(el('div', 'dp-dim', sub.traitLabel + ' · ' + T('已上 {n} 次', { n: sub.level })))
             btn.appendChild(grow)
+            if (multi) btn.appendChild(el('span', 'dp-check', picked ? '✅' : '⬜'))
             grid.appendChild(btn)
           })(view.subjects[i])
         }
         content.appendChild(grid)
+
+        if (multi) {
+          var count = studyPicks.keys.length
+          var wrap = el('div', 'dp-actions dp-study-go')
+          var go = button('dp-btn dp-btn-wide', { 'data-study': 'go' }, function () {
+            if (studyPicks.keys.length === 0) return
+            send('study', { subjects: studyPicks.keys.slice(0, most), stage: stage })
+          })
+          go.appendChild(el('span', null, '📚'))
+          go.appendChild(el('span', null, count === 0
+            ? T('先选课')
+            : T('上课 × {n}（学费 {total} 🪙）', { n: count, total: detail.tuition * count })))
+          go.disabled = count === 0 || locked
+          wrap.appendChild(go)
+          content.appendChild(wrap)
+        }
       }
 
       function workTab() {
@@ -1721,7 +2142,8 @@ window.__ModuleLoader__.load({
             row.appendChild(el('span', null, item.emoji))
             var grow = el('div', 'dp-grow')
             grow.appendChild(el('div', null, item.label))
-            grow.appendChild(el('div', 'dp-dim', item.price + ' 🪙' + (item.needed ? ' · ' + T('现在需要') : '')))
+            grow.appendChild(el('div', 'dp-dim', item.price + ' 🪙' + (item.needed ? ' · ' + T('现在需要') : '')
+              + (item.kind === 'card' ? ' · ' + T('用来改名') : '')))
             row.appendChild(grow)
             var buy = button('dp-mini', { 'data-buy': item.key }, function () { send('buy', { item: item.key }) })
             buy.textContent = T('买')
@@ -1733,7 +2155,152 @@ window.__ModuleLoader__.load({
         content.appendChild(list)
       }
 
+      /**
+       * [dsh-piggy-claude-code mod] The travel world: where home is, what the
+       * last trip brought back, then the seven regions as an accordion — one
+       * open at a time — each with its three destinations and its souvenirs.
+       */
       function travelTab() {
+        var w = view.world
+        if (w === null) {
+          legacyTravelTab()
+          return
+        }
+        var head = el('div', 'dp-title')
+        head.appendChild(el('b', null, '🏠 ' + homeLabel(w.home)))
+        head.appendChild(el('span', null, '🪙 ' + view.pig.coins))
+        content.appendChild(head)
+        var rule = el('div', 'dp-note', T('每跨一个时区 +{cost} 🪙 · +{hours} 小时', { cost: w.fare.costPerZone, hours: w.fare.hoursPerZone }))
+        rule.style.margin = '-4px 0 8px'
+        content.appendChild(rule)
+
+        var last = w.lastTrip
+        if (last !== null && last.at > 0 && Date.now() - last.at < LAST_TRIP_MS) content.appendChild(lastTripBanner(last))
+
+        // Nothing chosen yet: unfold the first region still missing souvenirs.
+        var current = openRegion
+        if (current === null) {
+          current = ''
+          for (var f = 0; f < w.regions.length; f += 1) {
+            if (!w.regions[f].done) { current = w.regions[f].key; break }
+          }
+        }
+        for (var i = 0; i < w.regions.length; i += 1) content.appendChild(regionBlock(w.regions[i], w.regions[i].key === current))
+
+        var done = w.regions.filter(r => r.done).length
+        var world = el('div', 'dp-world')
+        world.setAttribute('data-done', w.worldDone ? 'true' : 'false')
+        world.appendChild(el('span', null, w.worldTitle.emoji))
+        var grow = el('div', 'dp-grow')
+        grow.appendChild(el('div', null, w.worldTitle.label + (w.worldDone ? ' ✅' : '')))
+        if (w.worldDone) grow.appendChild(el('div', 'dp-note', T('已获得称号')))
+        else if (w.worldTitle.reward.length > 0) grow.appendChild(el('div', 'dp-note', T('集齐奖励：{list}', { list: w.worldTitle.reward.join(' · ') })))
+        world.appendChild(grow)
+        world.appendChild(el('b', null, done + '/' + w.regions.length))
+        content.appendChild(world)
+
+        if (w.oldSouvenirs.length > 0) {
+          var old = el('div', 'dp-note', '🗃 ' + T('以前的纪念品：{list}', { list: w.oldSouvenirs.join(' · ') }))
+          old.style.marginTop = '8px'
+          content.appendChild(old)
+        }
+      }
+
+      /** "Tokyo · UTC+9", "UTC+5:30" — wherever the player's computer is. */
+      function homeLabel(home) {
+        var parts = []
+        if (home.city !== '') parts.push(home.city)
+        if (home.utc !== null) parts.push(utcLabel(home.utc))
+        return parts.length > 0 ? parts.join(' · ') : T('家')
+      }
+
+      function utcLabel(hours) {
+        var abs = Math.abs(hours)
+        var whole = Math.floor(abs)
+        var mins = Math.round((abs - whole) * 60)
+        return 'UTC' + (hours < 0 ? '-' : '+') + whole + (mins > 0 ? ':' + (mins < 10 ? '0' : '') + mins : '')
+      }
+
+      function lastTripBanner(last) {
+        var box = el('div', 'dp-alert dp-trip')
+        box.setAttribute('data-last-trip', 'true')
+        box.appendChild(el('b', null, last.emoji + ' ' + T('刚从{place}回来', { place: last.place })))
+        if (last.souvenir !== null) {
+          var got = el('div', 'dp-line', '🎁 ' + last.souvenir.emoji + last.souvenir.label)
+          if (last.souvenir.fresh) got.appendChild(el('span', 'dp-tag', T('新！')))
+          box.appendChild(got)
+        }
+        if (last.loot.length > 0) {
+          var loot = el('div', 'dp-line', T('还带回了：'))
+          for (var i = 0; i < last.loot.length; i += 1) {
+            var item = last.loot[i]
+            loot.appendChild(el('span', null, (i > 0 ? ' · ' : '') + item.emoji + item.label))
+            if (item.exclusive) loot.appendChild(el('span', 'dp-tag', T('✈️ 限定')))
+          }
+          box.appendChild(loot)
+        }
+        if (last.regionDone !== null) box.appendChild(el('div', 'dp-line', '🎉 ' + T('集齐了「{region}」！', { region: last.regionDone })))
+        return box
+      }
+
+      function regionBlock(region, open) {
+        var wrap = el('div', 'dp-region')
+        wrap.setAttribute('data-done', region.done ? 'true' : 'false')
+        var head = button('dp-region-head', { 'data-region': region.key, 'aria-expanded': String(open) }, function () {
+          openRegion = open ? '' : region.key
+          writeStore(REGION_KEY, openRegion)
+          renderContent()
+        })
+        head.appendChild(el('span', 'dp-caret', open ? '▼' : '▶'))
+        head.appendChild(el('span', null, region.emoji))
+        head.appendChild(el('span', 'dp-grow', region.label))
+        head.appendChild(el('span', 'dp-have', region.have + '/' + region.total + (region.done ? ' ✅' : '')))
+        wrap.appendChild(head)
+        if (!open) return wrap
+
+        var body = el('div', 'dp-region-body')
+        if (region.reward.length > 0) body.appendChild(el('div', 'dp-note', '🎁 ' + T('集齐奖励：{list}', { list: region.reward.join(' · ') })))
+        if (region.perk !== null) {
+          var perk = el('div', 'dp-perk', region.perk.emoji + ' ' + region.perk.label
+            + (region.perk.text !== '' ? ' · ' + region.perk.text : '') + ' · '
+            + (region.perk.active ? T('已生效') : T('🔒 集齐后解锁')))
+          perk.setAttribute('data-active', region.perk.active ? 'true' : 'false')
+          body.appendChild(perk)
+        }
+        var chips = el('div', 'dp-chips')
+        for (var i = 0; i < region.places.length; i += 1) {
+          (function (place) {
+            var row = el('div', 'dp-item')
+            row.appendChild(el('span', null, place.emoji))
+            var grow = el('div', 'dp-grow')
+            grow.appendChild(el('div', null, place.label))
+            grow.appendChild(el('div', 'dp-dim', place.cost + ' 🪙 · ' + formatDuration(place.minutes)))
+            row.appendChild(grow)
+            var go = button('dp-mini', { 'data-trip': place.key }, function () { send('trip', { trip: place.key }) })
+            go.textContent = T('出发')
+            go.disabled = !view.canGoOut || !place.available || !place.affordable
+            row.appendChild(go)
+            body.appendChild(row)
+            for (var k = 0; k < place.souvenirs.length; k += 1) {
+              var souvenir = place.souvenirs[k]
+              var have = souvenir.count > 0
+              var chip = el('span', 'dp-chip', have
+                ? souvenir.emoji + souvenir.label + (souvenir.count > 1 ? ' ×' + souvenir.count : '')
+                : '？')
+              chip.setAttribute('data-souvenir', souvenir.key)
+              chip.setAttribute('data-have', have ? 'true' : 'false')
+              if (!have) chip.title = T('去{place}能带回来', { place: place.label })
+              chips.appendChild(chip)
+            }
+          })(region.places[i])
+        }
+        body.appendChild(chips)
+        wrap.appendChild(body)
+        return wrap
+      }
+
+      /** An older host: the flat list of trips and the plain souvenir names. */
+      function legacyTravelTab() {
         if (view.trips.length === 0) {
           content.appendChild(el('div', 'dp-empty', T('宿主还没提供目的地。')))
           return
@@ -1765,9 +2332,16 @@ window.__ModuleLoader__.load({
       }
 
       function bagTab() {
-        var owned = []
-        for (var i = 0; i < view.shop.length; i += 1) {
-          if (num(view.inventory[view.shop[i].key], 0) > 0) owned.push(view.shop[i])
+        // [dsh-piggy-claude-code mod] `bag` is everything the pig holds, travel
+        // specialties and rename cards included; an older host only sent the
+        // shop's counts, so read those instead.
+        var owned = view.bag
+        if (owned === null) {
+          owned = []
+          for (var i = 0; i < view.shop.length; i += 1) {
+            var count = num(view.inventory[view.shop[i].key], 0)
+            if (count > 0) owned.push({ key: view.shop[i].key, label: view.shop[i].label, emoji: view.shop[i].emoji, kind: view.shop[i].kind, count: count, exclusive: false })
+          }
         }
         if (owned.length === 0) {
           content.appendChild(el('div', 'dp-empty', T('背包空空的 —— 去「商店」买点东西。')))
@@ -1775,21 +2349,38 @@ window.__ModuleLoader__.load({
           var list = el('div', 'dp-list')
           for (var j = 0; j < owned.length; j += 1) {
             (function (item) {
-              var row = el('div', 'dp-item' + (item.needed ? ' dp-wanted' : ''))
+              var needed = view.shop.some(entry => entry.key === item.key && entry.needed)
+              var row = el('div', 'dp-item' + (needed ? ' dp-wanted' : ''))
               row.appendChild(el('span', null, item.emoji))
               var grow = el('div', 'dp-grow')
-              grow.appendChild(el('div', null, item.label + ' ×' + num(view.inventory[item.key], 0)))
-              grow.appendChild(el('div', 'dp-dim', kindLabel(item)))
+              var name = el('div', null, item.label + ' ×' + item.count)
+              if (item.exclusive) name.appendChild(el('span', 'dp-tag', T('✈️ 限定')))
+              grow.appendChild(name)
+              grow.appendChild(el('div', 'dp-dim', kindLabel({ kind: item.kind, needed: needed })))
               row.appendChild(grow)
-              var use = button('dp-mini', { 'data-use': item.key }, function () { send('use', { item: item.key }) })
-              use.textContent = T('使用')
-              row.appendChild(use)
+              // A rename card is spent by renaming, so it gets no Use button.
+              if (item.kind !== 'card') {
+                var use = button('dp-mini', { 'data-use': item.key }, function () { send('use', { item: item.key }) })
+                use.textContent = T('使用')
+                row.appendChild(use)
+              }
               list.appendChild(row)
             })(owned[j])
           }
           content.appendChild(list)
         }
 
+        var w = view.world
+        if (w !== null) {
+          // The collection lives on the travel tab now; the bag only points there.
+          var have = 0
+          var total = 0
+          for (var r = 0; r < w.regions.length; r += 1) { have += w.regions[r].have; total += w.regions[r].total }
+          var link = button('dp-link', { 'data-goto': 'travel' }, function () { select('travel') })
+          link.textContent = '🎁 ' + T('纪念品 {have}/{total} → 去「旅行」看看', { have: have, total: total })
+          content.appendChild(link)
+          return
+        }
         var souvenirs = view.pig.souvenirs
         var head = el('div', 'dp-title')
         head.style.marginTop = '10px'
@@ -1810,16 +2401,36 @@ window.__ModuleLoader__.load({
         return T('{n} 分钟', { n: num(minutes, 0) })
       }
 
+      /** Whole hours read as hours ("3 小时"); anything else stays in minutes. */
+      function formatDuration(minutes) {
+        var m = num(minutes, 0)
+        return m >= 60 && m % 60 === 0 ? T('{n} 小时', { n: m / 60 }) : formatMinutes(m)
+      }
+
       function kindLabel(item) {
         if (item.kind === 'medicine') return T(item.needed ? '对症！' : '药')
         if (item.kind === 'revive') return T('复活用')
+        if (item.kind === 'card') return T('用来改名')
         if (item.kind === 'bath') return T('洗浴')
         if (item.kind === 'toy') return T('玩具')
         return T('食物')
       }
 
+      /**
+       * Rebuild the content area. If the player is typing a name, the rebuilt
+       * field gets the caret back exactly where it was (the draft itself lives
+       * in `renameDraft`, so the text survives regardless).
+       */
       function renderContent() {
+        var typing = renameHasFocus()
+        var range = typing ? [num(renameInput.selectionStart, 0), num(renameInput.selectionEnd, 0)] : null
+        renderContentNow()
+        if (typing && renameInput !== null) focusRename(range)
+      }
+
+      function renderContentNow() {
         content.textContent = ''
+        renameInput = null
         for (var k = 0; k < TABS.length; k += 1) {
           icons[TABS[k].key].setAttribute('data-active', TABS[k].key === tab ? 'true' : 'false')
         }
@@ -2015,6 +2626,11 @@ window.__ModuleLoader__.load({
           else if (event.kind === 'trip') { react('away', 900); burst(['🧳', '🎁'], 3) }
         }
 
+        // [dsh-piggy-claude-code mod] A poll lands every few seconds. Rebuilding
+        // the field mid-word would break an IME composition (Japanese, Chinese),
+        // so while the name field has focus the content area waits; the hud and
+        // toasts above still update, and the next poll after blur catches up.
+        if (renameHasFocus()) return
         renderContent()
       }
 
@@ -2049,7 +2665,15 @@ window.__ModuleLoader__.load({
             body: JSON.stringify(body),
           })
           var next = await res.json()
+          var refused = next && next.ok === false
+          // A refused name reopens the field with what was typed, so it can be fixed.
+          if (action === 'rename') {
+            if (refused && ['bad-name', 'same-name', 'need-card'].indexOf(next.reason) >= 0) renaming = true
+            else if (!refused) renameDraft = ''
+          }
+          if (action === 'study' && !refused) studyPicks = { stage: null, keys: [] }
           render(next)
+          if (action === 'rename' && renaming) focusRename(null)
           if (next && next.ok === false) {
             react('refuse', 520)
             if (next.reason === 'no-item') {
@@ -2068,6 +2692,21 @@ window.__ModuleLoader__.load({
               dead: '它已经走了…',
               idle: '它没在外面',
               'bad-lang': '不认识这种语言',
+              'not-for-sale': '这是旅行限定，商店不卖',
+              'use-to-rename': '更名卡要在「状态」里改名时用',
+              'bad-name': '名字要 1–16 个字',
+              'same-name': '和现在的名字一样',
+            }
+            // [dsh-piggy-claude-code mod] refusals that carry a number.
+            if (next.reason === 'too-many') {
+              var most = num(next.max, stageDetail(stage) === null ? 1 : stageDetail(stage).parallel)
+              showBubble(T('这一段一次最多上 {n} 门课', { n: most }), 2400)
+              return
+            }
+            if (next.reason === 'need-card') {
+              var price = num(next.price, view.pig === null ? 1000 : view.pig.renameCardPrice)
+              showBubble(T('改名要一张 🪪 更名卡（商店 {price} 🪙）', { price: price }), 3200)
+              return
             }
             showBubble(next.reason === 'cooldown'
               ? T('还要等 {n} 秒', { n: num(next.wait, 0) })

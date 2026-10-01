@@ -35,6 +35,7 @@ import {
   hatchEgg,
   migrate,
   rename as coreRename,
+  renamePig as coreRenamePig,
   startStudy as coreStartStudy,
   startTrip as coreStartTrip,
   startWork as coreStartWork,
@@ -171,6 +172,9 @@ export function createStore(filePath = defaultStatePath(), options = {}) {
 
     /** [dsh-piggy-claude-code mod] Elder look: 'elder' or 'original'. */
     setLook: look => mutate(live => coreSetLook(live, look, now())),
+
+    /** [mod] Name the pig: free while it has a default name, then a 更名卡 each time. */
+    renamePig: name => mutate(live => coreRenamePig(live, name, now())),
 
     /**
      * [dsh-piggy-claude-code mod] Language: zh · ja · en. Works before there is a

@@ -89,6 +89,9 @@ function fakeDom() {
 
     addEventListener(name, fn) { (this.listeners[name] ??= []).push(fn) }
     setPointerCapture() {}
+    // Focus is tracked like a browser does, on `document.activeElement`.
+    focus() { document.activeElement = this }
+    setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end }
     querySelector() { return null }
 
     /** Fire a listener with `this` bound like a real DOM. */
@@ -113,6 +116,7 @@ function fakeDom() {
   const document = {
     head,
     body,
+    activeElement: null,
     createElement(tag) { return new FakeElement(tag) },
     querySelector() { return null },
     addEventListener() {},
@@ -633,7 +637,7 @@ test('the shop tab disables what the pig cannot afford and flags the needed medi
   assert.deepEqual(JSON.parse(post.body), { action: 'buy', item: 'apple' })
 })
 
-test('the travel tab lists destinations and the souvenir collection', async () => {
+test('an older host without a travel world still gets the flat destination list', async () => {
   const { registration, dom, net } = await loadClient()
   registration.factory(() => {}).apply({})
   await settle()
@@ -653,7 +657,7 @@ test('the travel tab lists destinations and the souvenir collection', async () =
   assert.deepEqual(JSON.parse(post.body), { action: 'trip', trip: 'suburb' })
 })
 
-test('the bag tab lists owned items with a use button', async () => {
+test('an older host without a bag list still shows owned shop items with a use button', async () => {
   const { registration, dom, net } = await loadClient()
   registration.factory(() => {}).apply({})
   await settle()
@@ -1338,4 +1342,404 @@ test('every string the bundle translates has a translation', async () => {
   assert.ok(used.length > 50, `expected many T() calls, got ${used.length}`)
   const missing = [...new Set(used)].filter(key => !(key in I18N.ja) || !(key in I18N.en))
   assert.deepEqual(missing, [], 'T() keys missing from the dictionary')
+})
+
+// ===========================================================================
+// [dsh-piggy-claude-code mod] Naming, the travel world, the bag, multi-lesson study
+// ===========================================================================
+
+/** Load with the poll captured, so a test can fire a re-render on demand. */
+async function loadWithPoll(options) {
+  const loaded = await loadClient(options)
+  let poll = null
+  globalThis.window.setInterval = fn => { poll = fn; return 1 }
+  loaded.registration.factory(() => {}).apply({})
+  await settle()
+  return { ...loaded, poll: async () => { await poll(); await settle() } }
+}
+
+const countByAttr = (root, attr, value) => {
+  let n = 0
+  root.walk(node => { if (node.attributes?.[attr] === value) n += 1 })
+  return n
+}
+
+const postsOf = net => net.calls.filter(call => call.method === 'POST').map(call => JSON.parse(call.body))
+
+test('a pig with a default name is renamed for free from the status tab', async () => {
+  const status = { ...SNAPSHOT, pig: { ...PIG, name: '猪猪', renameFree: true, renameCards: 0, renameCardPrice: 1000 } }
+  const { dom, net } = await loadWithPoll({ status, actResult: { ...status, pig: { ...status.pig, name: '小花', renameFree: false } } })
+  openPanel(dom)
+
+  const row = findByClass(contentOf(dom), 'dp-name')
+  assert.ok(row.allText().includes('猪猪'), row.allText())
+  findByAttr(contentOf(dom), 'data-rename', 'open').fire('click')
+
+  const text = contentOf(dom).allText()
+  assert.ok(text.includes('起个名字 · 免费'), text)
+  const input = findLastByAttr(contentOf(dom), 'data-rename', 'input')
+  assert.notEqual(input, undefined, 'the free path offers the field')
+  assert.equal(input.maxLength, 16)
+  assert.equal(input.value, '', 'a default name is not pre-filled')
+  assert.equal(dom.document.activeElement, input, 'and the field is focused')
+
+  input.value = '小花'
+  input.fire('input')
+  input.fire('keydown', { key: 'Enter' })
+  await settle()
+  await settle()
+  assert.deepEqual(postsOf(net), [{ action: 'rename', name: '小花' }])
+  assert.ok(findLastByAttr(contentOf(dom), 'data-rename', 'open').attributes['aria-expanded'] === 'false', 'the field closes after sending')
+})
+
+test('Enter while an IME is composing does not submit, and Escape cancels', async () => {
+  const status = { ...SNAPSHOT, pig: { ...PIG, renameFree: true } }
+  const { dom, net } = await loadWithPoll({ status })
+  openPanel(dom)
+  findByAttr(contentOf(dom), 'data-rename', 'open').fire('click')
+  const input = findLastByAttr(contentOf(dom), 'data-rename', 'input')
+  input.value = 'はな'
+  input.fire('input')
+  input.fire('keydown', { key: 'Enter', isComposing: true })
+  await settle()
+  assert.deepEqual(postsOf(net), [], 'confirming a kana candidate is not a submit')
+  input.fire('keydown', { key: 'Escape' })
+  assert.equal(findLastByAttr(contentOf(dom), 'data-rename', 'open').attributes['aria-expanded'], 'false')
+  assert.deepEqual(postsOf(net), [])
+})
+
+test('renaming a named pig spends a card and says how many are left', async () => {
+  const status = { ...SNAPSHOT, pig: { ...PIG, renameFree: false, renameCards: 2, renameCardPrice: 1000 } }
+  const { dom, net } = await loadWithPoll({ status })
+  openPanel(dom)
+  findByAttr(contentOf(dom), 'data-rename', 'open').fire('click')
+  const text = contentOf(dom).allText()
+  assert.ok(text.includes('改名会用掉 1 张 🪪（还有 2 张）'), text)
+  const input = findLastByAttr(contentOf(dom), 'data-rename', 'input')
+  assert.equal(input.value, '大花', 'the current name is the starting point')
+  input.value = '二花'
+  input.fire('input')
+  findLastByAttr(contentOf(dom), 'data-rename', 'ok').fire('click')
+  await settle()
+  await settle()
+  assert.deepEqual(postsOf(net), [{ action: 'rename', name: '二花' }])
+})
+
+test('without a card the rename field points at the shop instead', async () => {
+  const status = { ...SNAPSHOT, pig: { ...PIG, renameFree: false, renameCards: 0, renameCardPrice: 1000 } }
+  const { dom, net } = await loadWithPoll({ status })
+  openPanel(dom)
+  findByAttr(contentOf(dom), 'data-rename', 'open').fire('click')
+  const text = contentOf(dom).allText()
+  assert.ok(text.includes('更名卡'), text)
+  assert.ok(text.includes('1000 🪙'), text)
+  assert.equal(findByAttr(contentOf(dom), 'data-rename', 'input'), undefined, 'no field that can only be refused')
+  findLastByAttr(contentOf(dom), 'data-rename', 'shop').fire('click')
+  assert.equal(findByAttr(barOf(dom), 'data-tab', 'shop').attributes['data-active'], 'true')
+  assert.deepEqual(postsOf(net), [])
+})
+
+test('an older host that cannot rename shows no pencil', async () => {
+  const { dom } = await loadWithPoll()
+  openPanel(dom)
+  assert.ok(findByClass(contentOf(dom), 'dp-name').allText().includes('大花'))
+  assert.equal(findByAttr(contentOf(dom), 'data-rename', 'open'), undefined)
+})
+
+test('typing a name survives the poll re-rendering the panel', async () => {
+  const status = { ...SNAPSHOT, pig: { ...PIG, renameFree: true } }
+  const { dom, poll } = await loadWithPoll({ status })
+  openPanel(dom)
+  findByAttr(contentOf(dom), 'data-rename', 'open').fire('click')
+  const input = findLastByAttr(contentOf(dom), 'data-rename', 'input')
+  input.value = '小'
+  input.fire('input')
+  assert.equal(dom.document.activeElement, input)
+
+  // While the field has focus, a poll leaves the content area alone.
+  const before = countByAttr(contentOf(dom), 'data-rename', 'input')
+  await poll()
+  assert.equal(countByAttr(contentOf(dom), 'data-rename', 'input'), before, 'no rebuild while typing')
+  assert.equal(input.value, '小')
+  assert.equal(dom.document.activeElement, input)
+
+  // A rebuild that does happen (here: after focus left) restores the draft.
+  input.value = '小花'
+  input.fire('input')
+  dom.document.activeElement = null
+  await poll()
+  const rebuilt = findLastByAttr(contentOf(dom), 'data-rename', 'input')
+  assert.notEqual(rebuilt, input, 'the content was rebuilt')
+  assert.equal(rebuilt.value, '小花', 'with the draft intact')
+})
+
+test('rename refusals explain themselves and keep what was typed', async () => {
+  const status = { ...SNAPSHOT, pig: { ...PIG, renameFree: false, renameCards: 1 } }
+  for (const [reason, expected] of [['same-name', '和现在的名字一样'], ['need-card', '1000'], ['bad-name', '1–16']]) {
+    const { dom } = await loadWithPoll({ status, actResult: { ...status, ok: false, reason, price: 1000 } })
+    openPanel(dom)
+    findByAttr(contentOf(dom), 'data-rename', 'open').fire('click')
+    const input = findLastByAttr(contentOf(dom), 'data-rename', 'input')
+    input.value = '大花2'
+    input.fire('input')
+    input.fire('keydown', { key: 'Enter' })
+    await settle()
+    await settle()
+    const bubble = findByClass(hostOf(dom), 'dp-bubble').allText()
+    assert.ok(bubble.includes(expected), `${reason}: ${bubble}`)
+    assert.equal(findLastByAttr(contentOf(dom), 'data-rename', 'input').value, '大花2', `${reason}: the draft comes back`)
+  }
+})
+
+const place = (key, label, emoji, cost, affordable, souvenirs) => ({
+  key, label, emoji, utc: 8, zones: 1, cost, minutes: 120, happiness: 13, available: true, affordable, souvenirs,
+})
+
+const WORLD = {
+  home: { utc: 9, zone: 'Asia/Tokyo', city: 'Tokyo' },
+  regions: [
+    {
+      key: 'china', label: '中国', emoji: '🐉', have: 2, total: 6, done: false,
+      reward: ['💪武力 +3', '⚖️体重 +5 kg'],
+      perk: { key: 'foodie', label: '干饭王', emoji: '🍚', text: '吃东西长肉 +10%', active: false },
+      places: [
+        place('beijing', '北京', '🏯', 300, true, [
+          { key: 'wallbrick', label: '长城砖（复刻版）', emoji: '🧱', count: 2 },
+          { key: 'tanghulu', label: '冰糖葫芦签', emoji: '🍡', count: 0 },
+        ]),
+        place('chengdu', '成都', '🐼', 300, true, [
+          { key: 'pandabutt', label: '熊猫屁屁抱枕', emoji: '🐼', count: 1 },
+          { key: 'facemask', label: '变脸面具', emoji: '🎭', count: 0 },
+        ]),
+        place('xian', '西安', '🗿', 2300, false, [
+          { key: 'terracotta', label: '兵马俑手办', emoji: '🗿', count: 0 },
+          { key: 'biangcard', label: '写着「Biáng」的字帖', emoji: '📜', count: 0 },
+        ]),
+      ],
+    },
+    {
+      key: 'europe', label: '欧洲', emoji: '🏰', have: 6, total: 6, done: true,
+      reward: ['🧠智力 +4'],
+      perk: { key: 'museum', label: '博物馆通票', emoji: '🖼', text: '旅行回来心情 +50%', active: true },
+      places: [
+        place('paris', '巴黎', '🗼', 1700, true, [{ key: 'eiffel', label: '埃菲尔铁塔钥匙扣', emoji: '🗼', count: 1 }]),
+      ],
+    },
+  ],
+  worldDone: false,
+  worldTitle: { label: '环球旅行家', emoji: '🌍', reward: ['🧠智力 +3'] },
+  lastTrip: null,
+  oldSouvenirs: ['贝壳'],
+}
+
+const worldSnapshot = (world = WORLD) => ({ ...SNAPSHOT, world, trips: [] })
+
+test('the travel tab shows home, the fare rule and the regions as an accordion', async () => {
+  const { dom, net, store } = await loadWithPoll({ status: worldSnapshot() })
+  openPanel(dom)
+  pickTab(dom, 'travel')
+
+  let text = contentOf(dom).allText()
+  assert.ok(text.includes('🏠 Tokyo · UTC+9'), text)
+  assert.ok(text.includes('每跨一个时区 +200 🪙 · +1 小时'), text)
+  for (const bit of ['中国', '2/6', '欧洲', '6/6 ✅', '🌍', '环球旅行家', '1/2', '以前的纪念品：贝壳']) {
+    assert.ok(text.includes(bit), `expected "${bit}" in: ${text}`)
+  }
+  // The first unfinished region is open; its places, reward, perk and chips show.
+  assert.equal(findByAttr(contentOf(dom), 'data-region', 'china').attributes['aria-expanded'], 'true')
+  for (const bit of ['北京', '300 🪙 · 2 小时', '集齐奖励：💪武力 +3 · ⚖️体重 +5 kg', '干饭王', '🔒 集齐后解锁']) {
+    assert.ok(text.includes(bit), `expected "${bit}" in: ${text}`)
+  }
+  const brick = findByAttr(contentOf(dom), 'data-souvenir', 'wallbrick')
+  assert.equal(brick.textContent, '🧱长城砖（复刻版） ×2')
+  assert.equal(findByAttr(contentOf(dom), 'data-souvenir', 'pandabutt').textContent, '🐼熊猫屁屁抱枕', 'no ×1')
+  const missing = findByAttr(contentOf(dom), 'data-souvenir', 'tanghulu')
+  assert.equal(missing.textContent, '？')
+  assert.equal(missing.attributes['data-have'], 'false')
+  assert.ok(!text.includes('冰糖葫芦签'), 'a missing souvenir is not spoiled')
+  assert.equal(findByAttr(contentOf(dom), 'data-trip', 'xian').disabled, true, 'unaffordable')
+  assert.equal(findByAttr(contentOf(dom), 'data-trip', 'paris'), undefined, 'a closed region hides its places')
+
+  findByAttr(contentOf(dom), 'data-trip', 'beijing').fire('click')
+  await settle()
+  await settle()
+  assert.deepEqual(postsOf(net), [{ action: 'trip', trip: 'beijing' }])
+
+  // One region open at a time, remembered.
+  findLastByAttr(contentOf(dom), 'data-region', 'europe').fire('click')
+  assert.equal(store.get('dsh-pig:region'), 'europe')
+  assert.equal(findLastByAttr(contentOf(dom), 'data-region', 'europe').attributes['aria-expanded'], 'true')
+  assert.equal(findLastByAttr(contentOf(dom), 'data-region', 'china').attributes['aria-expanded'], 'false')
+  text = contentOf(dom).allText()
+  assert.ok(text.includes('博物馆通票') && text.includes('已生效'), text)
+  // Tapping the open one folds everything.
+  findLastByAttr(contentOf(dom), 'data-region', 'europe').fire('click')
+  assert.equal(store.get('dsh-pig:region'), '')
+  assert.equal(findLastByAttr(contentOf(dom), 'data-region', 'europe').attributes['aria-expanded'], 'false')
+})
+
+test('the remembered region is the one that opens', async () => {
+  const loaded = await loadClient({ status: worldSnapshot() })
+  loaded.store.set('dsh-pig:region', 'europe')
+  loaded.registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(loaded.dom)
+  pickTab(loaded.dom, 'travel')
+  assert.equal(findLastByAttr(contentOf(loaded.dom), 'data-region', 'europe').attributes['aria-expanded'], 'true')
+  assert.equal(findLastByAttr(contentOf(loaded.dom), 'data-region', 'china').attributes['aria-expanded'], 'false')
+})
+
+test('a recent trip is announced on the travel tab, an old one is not', async () => {
+  const lastTrip = {
+    place: '成都', emoji: '🐼',
+    souvenir: { label: '变脸面具', emoji: '🎭', fresh: true },
+    loot: [{ key: 'hotpot', label: '九宫格火锅', emoji: '🍲', exclusive: true }, { key: 'apple', label: '苹果', emoji: '🍎', exclusive: false }],
+    regionDone: '中国',
+    at: Date.now() - 60 * 1000,
+  }
+  const { dom } = await loadWithPoll({ status: worldSnapshot({ ...WORLD, lastTrip }) })
+  openPanel(dom)
+  pickTab(dom, 'travel')
+  const banner = findByAttr(contentOf(dom), 'data-last-trip', 'true')
+  assert.notEqual(banner, undefined)
+  const text = banner.allText()
+  for (const bit of ['刚从成都回来', '🎭变脸面具', '新！', '🍲九宫格火锅', '✈️ 限定', '🍎苹果', '集齐了「中国」！']) {
+    assert.ok(text.includes(bit), `expected "${bit}" in: ${text}`)
+  }
+  // Only the specialty is tagged as travel-only.
+  assert.equal(text.split('✈️ 限定').length - 1, 1, text)
+
+  const stale = await loadWithPoll({ status: worldSnapshot({ ...WORLD, lastTrip: { ...lastTrip, at: Date.now() - 13 * 3600 * 1000 } }) })
+  openPanel(stale.dom)
+  pickTab(stale.dom, 'travel')
+  assert.equal(findByAttr(contentOf(stale.dom), 'data-last-trip', 'true'), undefined)
+})
+
+test('the bag lists everything held, tags specialties and has no Use for rename cards', async () => {
+  const bag = [
+    { key: 'apple', label: '苹果', emoji: '🍎', kind: 'food', count: 2, exclusive: false },
+    { key: 'duck', label: '北京烤鸭', emoji: '🦆', kind: 'food', count: 1, exclusive: true },
+    { key: 'renamecard', label: '更名卡', emoji: '🪪', kind: 'card', count: 1, exclusive: false },
+  ]
+  const { dom, net } = await loadWithPoll({ status: { ...worldSnapshot(), bag } })
+  openPanel(dom)
+  pickTab(dom, 'bag')
+  const text = contentOf(dom).allText()
+  assert.ok(text.includes('北京烤鸭 ×1'), text)
+  assert.ok(text.includes('✈️ 限定'), text)
+  assert.ok(text.includes('用来改名'), text)
+  assert.notEqual(findByAttr(contentOf(dom), 'data-use', 'duck'), undefined, 'a specialty is used like any food')
+  assert.equal(findByAttr(contentOf(dom), 'data-use', 'renamecard'), undefined, 'a card is spent by renaming')
+  // The souvenir list moved to the travel tab; the bag sums it up and links there.
+  const link = findByAttr(contentOf(dom), 'data-goto', 'travel')
+  assert.ok(link.textContent.includes('纪念品 8/12'), link.textContent)
+  assert.ok(!text.includes('贝壳'), 'no souvenir list in the bag any more')
+  link.fire('click')
+  assert.equal(findByAttr(barOf(dom), 'data-tab', 'travel').attributes['data-active'], 'true')
+
+  pickTab(dom, 'bag')
+  findLastByAttr(contentOf(dom), 'data-use', 'duck').fire('click')
+  await settle()
+  await settle()
+  assert.deepEqual(postsOf(net), [{ action: 'use', item: 'duck' }])
+})
+
+test('the shop has an items shelf with the rename card', async () => {
+  const shop = [...SHOP, { key: 'renamecard', label: '更名卡', emoji: '🪪', price: 1000, kind: 'card', tier: null, affordable: false, needed: false }]
+  for (const [lang, shelf] of [['zh', '🪪 道具'], ['ja', '🪪 どうぐ'], ['en', '🪪 Items']]) {
+    const { dom } = await loadWithPoll({ status: { ...SNAPSHOT, shop, lang, langs: LANGS } })
+    openPanel(dom)
+    pickTab(dom, 'shop')
+    assert.ok(contentOf(dom).allText().includes(shelf), `${lang}: ${contentOf(dom).allText()}`)
+    assert.equal(findByAttr(contentOf(dom), 'data-buy', 'renamecard').disabled, true)
+  }
+})
+
+const STUDY_SUBJECTS = [
+  ...SUBJECTS,
+  { key: 'math', label: '数学', emoji: '🔢', traitLabel: '智力', level: 0, available: true },
+]
+const LADDER = [
+  { key: 'primary', label: '小学', minutes: 120, tuition: 40, gain: 1, parallel: 1, unlocked: true, progress: null },
+  { key: 'college', label: '大学', minutes: 240, tuition: 220, gain: 2, parallel: 2, unlocked: true, progress: null },
+  { key: 'graduate', label: '研究生', minutes: 480, tuition: 900, gain: 4, parallel: 3, unlocked: true, progress: null },
+  { key: 'doctor', label: '博士', minutes: 720, tuition: 2400, gain: 7, parallel: 3, unlocked: false, progress: { done: 4, need: 9, label: '研究生九门课各上一次' } },
+]
+
+test('a stage that allows several subjects lets them be ticked and sent together', async () => {
+  const { dom, net } = await loadWithPoll({ status: { ...SNAPSHOT, subjects: STUDY_SUBJECTS, stages: LADDER } })
+  openPanel(dom)
+  pickTab(dom, 'study')
+  assert.ok(contentOf(dom).allText().includes('博士'), 'the doctorate is on the ladder')
+  findByAttr(contentOf(dom), 'data-stage', 'graduate').fire('click')
+  assert.ok(contentOf(dom).allText().includes('可以一起上 3 门 · 已选 0'), contentOf(dom).allText())
+  assert.equal(findLastByAttr(contentOf(dom), 'data-study', 'go').disabled, true, 'nothing ticked yet')
+
+  for (const key of ['chinese', 'art', 'wushu', 'math']) findLastByAttr(contentOf(dom), 'data-subject', key).fire('click')
+  assert.ok(findByClass(hostOf(dom), 'dp-bubble').allText().includes('最多上 3 门课'), 'the 4th tick is refused with a hint')
+  assert.equal(findLastByAttr(contentOf(dom), 'data-subject', 'math').attributes['aria-pressed'], 'false')
+  assert.equal(findLastByAttr(contentOf(dom), 'data-subject', 'art').attributes['aria-pressed'], 'true')
+  // Untick and tick again works.
+  findLastByAttr(contentOf(dom), 'data-subject', 'art').fire('click')
+  findLastByAttr(contentOf(dom), 'data-subject', 'math').fire('click')
+
+  const go = findLastByAttr(contentOf(dom), 'data-study', 'go')
+  assert.equal(go.disabled, false)
+  assert.ok(go.allText().includes('上课 × 3（学费 2700 🪙）'), go.allText())
+  assert.deepEqual(postsOf(net), [], 'ticking sends nothing')
+  go.fire('click')
+  await settle()
+  await settle()
+  assert.deepEqual(postsOf(net), [{ action: 'study', subjects: ['chinese', 'wushu', 'math'], stage: 'graduate' }])
+})
+
+test('a one-subject stage keeps the one-tap lesson, the doctorate shows its lock and badge', async () => {
+  const { dom, net } = await loadWithPoll({
+    status: { ...SNAPSHOT, subjects: STUDY_SUBJECTS, stages: LADDER, pig: { ...PIG, doctor: true } },
+  })
+  openPanel(dom)
+  pickTab(dom, 'study')
+  assert.ok(contentOf(dom).allText().includes('🎓 博士毕业'), 'a doctor wears the badge')
+  assert.equal(findByAttr(contentOf(dom), 'data-study', 'go'), undefined, 'no tick-and-send at 小学')
+  assert.match(findByClass(contentOf(dom), 'dp-seg').className, /dp-seg-2/, 'four stages sit in two rows')
+
+  findLastByAttr(contentOf(dom), 'data-stage', 'doctor').fire('click')
+  const text = contentOf(dom).allText()
+  assert.ok(text.includes('要先念完研究生九门课各上一次（4/9）'), text)
+  assert.equal(findLastByAttr(contentOf(dom), 'data-subject', 'art').disabled, true)
+
+  findLastByAttr(contentOf(dom), 'data-stage', 'primary').fire('click')
+  findLastByAttr(contentOf(dom), 'data-subject', 'art').fire('click')
+  await settle()
+  await settle()
+  assert.deepEqual(postsOf(net), [{ action: 'study', subject: 'art', stage: 'primary' }])
+})
+
+test('the new refusals explain themselves', async () => {
+  const cases = [
+    ['too-many', { max: 2 }, '最多上 2 门课'],
+    ['not-for-sale', {}, '旅行限定'],
+    ['use-to-rename', {}, '改名时用'],
+  ]
+  for (const [reason, extra, expected] of cases) {
+    const { dom } = await loadWithPoll({ actResult: { ...SNAPSHOT, ok: false, reason, ...extra } })
+    openPanel(dom)
+    pickTab(dom, 'work')
+    findByAttr(contentOf(dom), 'data-job', 'odd').fire('click')
+    await settle()
+    await settle()
+    const bubble = findByClass(hostOf(dom), 'dp-bubble').allText()
+    assert.ok(bubble.includes(expected), `${reason}: ${bubble}`)
+  }
+})
+
+test('the travel world reads in Japanese without stray Chinese from the client', async () => {
+  const { dom } = await loadWithPoll({ status: { ...worldSnapshot(), lang: 'ja', langs: LANGS } })
+  openPanel(dom)
+  pickTab(dom, 'travel')
+  const text = contentOf(dom).allText()
+  for (const bit of ['時差1時間ごとに +200 🪙 · +1 時間', '2時間', 'コンプリート報酬', '出発', 'むかしのおみやげ']) {
+    assert.ok(text.includes(bit), `expected "${bit}" in: ${text}`)
+  }
+  for (const zh of ['每跨', '集齐', '小时', '以前的']) assert.ok(!text.includes(zh), `"${zh}" leaked: ${text}`)
 })

@@ -6,6 +6,9 @@
  * Run: node --test test/*.test.js
  */
 
+import { PLACES, REGIONS, SOUVENIRS, SPECIALTIES, WORLD_BONUS, fareFor, zonesBetween } from '../world.js'
+import { ALL_ITEMS, PARALLEL_COURSES, RENAME_CARD } from '../data.js'
+import { hasDefaultName, perksOf, regionProgress, renamePig, tripQuote } from '../core.js'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
@@ -396,7 +399,7 @@ test('school starts at primary and the higher stages are gated behind it', () =>
 test('finishing a lesson counts toward the stage, not just the subject', () => {
   const pig = hatchEgg(T0)
   pig.coins = 5000
-  assert.deepEqual(pig.lessonsByStage, { primary: 0, college: 0, graduate: 0 })
+  assert.deepEqual(pig.lessonsByStage, { primary: 0, college: 0, graduate: 0, doctor: 0 })
   startStudy(pig, 'music', 'primary', T0)
   advance(pig, SCHOOL_STAGES[0].minutes + 1)
   assert.equal(pig.lessonsByStage.primary, 1)
@@ -790,7 +793,7 @@ test('the course table mirrors the QQ Pet subjects and stages', () => {
   assert.equal(SUBJECTS.length, 9)
   assert.deepEqual(SUBJECTS.map(s => s.label),
     ['语文', '数学', '政治', '美术', '音乐', '礼仪', '体育', '武术', '劳动'])
-  assert.deepEqual(SCHOOL_STAGES.map(s => s.label), ['小学', '大学', '研究生'])
+  assert.deepEqual(SCHOOL_STAGES.map(s => s.label), ['小学', '大学', '研究生', '博士'])
   // Every subject feeds exactly one of the three traits.
   for (const subject of SUBJECTS) assert.ok(['intel', 'charm', 'strong'].includes(subject.trait))
   // The three groups the original art implies.
@@ -876,78 +879,169 @@ test('study is refused when broke, away, sick or dead', () => {
 // Travel — souvenirs for the collection
 // ===========================================================================
 
-test('the trip table is well formed and gets dearer with distance', () => {
-  assert.ok(TRIPS.length >= 3)
-  for (const trip of TRIPS) {
-    assert.ok(trip.cost > 0)
-    assert.ok(trip.minutes > 0)
-    assert.ok(trip.souvenirs.length >= 2)
+// [dsh-piggy-claude-code mod] the travel world: priced by time zones from home.
+test('the travel world is well formed', () => {
+  assert.equal(REGIONS.length, 7)
+  for (const region of REGIONS) {
+    assert.equal(region.places.length, 3)
+    assert.ok(region.perk.key && region.perk.label)
   }
-  const costs = TRIPS.map(t => t.cost)
-  assert.deepEqual(costs, [...costs].sort((a, b) => a - b), 'trips should be ordered by cost')
+  assert.equal(PLACES.length, 21)
+  assert.equal(SOUVENIRS.length, 42)
+  assert.equal(new Set(SOUVENIRS.map(s => s.key)).size, 42, 'souvenir keys are unique')
+  assert.equal(new Set(PLACES.map(p => p.key)).size, 21, 'place keys are unique')
+  for (const place of PLACES) {
+    const specialty = SPECIALTIES.find(item => item.key === place.specialty)
+    assert.ok(specialty, `${place.key} has a specialty`)
+    assert.equal(specialty.exclusive, true)
+  }
+  assert.equal(new Set(ALL_ITEMS.map(i => i.key)).size, ALL_ITEMS.length, 'no item key clashes with a specialty')
 })
 
-test('travelling costs coins up front and brings back a souvenir', () => {
-  const pig = hatchEgg(T0)
-  pig.coins = 200
-  const trip = TRIPS[0]
-  const happiness = pig.happiness
-  const result = startTrip(pig, trip.key, T0)
-  assert.equal(result.ok, true)
-  assert.equal(pig.coins, 200 - trip.cost)
-  assert.equal(pig.activity.kind, 'trip')
+test('a trip costs 100 + 200 per time zone and takes 1 h + 1 h per zone, the short way round', () => {
+  assert.equal(zonesBetween(9, 9), 0)
+  assert.equal(zonesBetween(9, 8), 1)
+  assert.equal(zonesBetween(9, -5), 10, 'Tokyo → New York goes over the Pacific')
+  assert.equal(zonesBetween(9, 5.5), 4, 'half-hour zones round to whole hours')
+  const tokyo = PLACES.find(p => p.key === 'tokyo')
+  const paris = PLACES.find(p => p.key === 'paris')
+  assert.deepEqual([fareFor(tokyo, 9).cost, fareFor(tokyo, 9).minutes], [100, 60], 'staying in your own zone')
+  assert.deepEqual([fareFor(paris, 9).cost, fareFor(paris, 9).minutes], [1700, 540])
+  assert.deepEqual([fareFor(paris, 1).cost, fareFor(paris, 1).minutes], [100, 60], 'it depends on where home is')
+})
 
-  advance(pig, trip.minutes + 1)
+test('travelling costs coins up front and brings back a souvenir from that place', () => {
+  const pig = hatchEgg(T0)
+  pig.coins = 1000
+  const happiness = pig.happiness
+  const result = startTrip(pig, 'beijing', T0, 9)
+  assert.equal(result.ok, true)
+  assert.equal(pig.coins, 1000 - 300)
+  assert.equal(pig.activity.kind, 'trip')
+  assert.equal((pig.activity.endsAt - pig.activity.startedAt) / MIN, 120)
+
+  advance(pig, 121)
   assert.equal(pig.activity, null)
-  assert.equal(pig.souvenirs.length, 1)
-  assert.ok(trip.souvenirs.includes(pig.souvenirs[0]), 'the souvenir comes from this trip')
+  const got = Object.keys(pig.collected)
+  assert.equal(got.length, 1)
+  assert.ok(['wallbrick', 'tanghulu'].includes(got[0]), 'the souvenir comes from Beijing')
+  assert.equal(pig.lastTrip.place, 'beijing')
   assert.ok(pig.happiness > happiness - 5, 'a trip should not leave the pig sad')
   assert.equal(pig.stats.trips, 1)
   assert.ok(pig.pending.some(e => e.kind === 'trip'))
 })
 
-test('the souvenir rotation is deterministic, so every keepsake is reachable', () => {
+test('souvenirs favour the missing one, trips bring specialties, and a full region pays out', () => {
+  const real = Math.random
+  try {
+    // 0 → always the first missing souvenir, always loot, always the specialty.
+    Math.random = () => 0
+    const pig = hatchEgg(T0)
+    pig.coins = 100_000
+    let clock = T0
+    const strongBefore = pig.traits.strong
+    const weightBefore = pig.weightG
+    for (const place of ['beijing', 'beijing', 'chengdu', 'chengdu', 'xian', 'xian']) {
+      pig.satiety = 100
+      assert.equal(startTrip(pig, place, clock, 8).ok, true)
+      clock += 61 * MIN
+      decay(pig, clock)
+    }
+    assert.deepEqual(regionProgress(pig, 'china'), { have: 6, total: 6, done: true }, 'six trips, six different souvenirs')
+    assert.ok(pig.inventory.duck >= 1 && pig.inventory.hotpot >= 1 && pig.inventory.biang >= 1, 'local specialties came home')
+    assert.deepEqual(pig.regionsDone, ['china'])
+    assert.equal(pig.traits.strong, strongBefore + 3, 'China: strength +3')
+    assert.ok(pig.weightG >= weightBefore + 5000, 'China: +5 kg')
+    assert.deepEqual(perksOf(pig), ['foodie'])
+    assert.ok(pig.pending.some(e => e.kind === 'region'))
+    assert.equal(pig.lastTrip.regionDone, 'china')
+  } finally {
+    Math.random = real
+  }
+})
+
+test('travel-only specialties cannot be bought, but can be eaten', () => {
   const pig = hatchEgg(T0)
   pig.coins = 5000
-  const trip = TRIPS[0]
-  const collected = []
-  let clock = T0
-  for (let i = 0; i < trip.souvenirs.length + 1; i += 1) {
-    pig.satiety = 100
-    startTrip(pig, trip.key, clock)
-    clock += (trip.minutes + 1) * MIN
-    decay(pig, clock)
-    collected.push(pig.souvenirs[i])
+  assert.equal(buy(pig, 'duck').reason, 'not-for-sale')
+  pig.inventory.duck = 1
+  pig.satiety = 20
+  assert.equal(act(pig, 'feed', T0, 'duck').ok, true)
+  assert.ok(pig.satiety > 20)
+})
+
+test('every region done makes a 环球旅行家, once', () => {
+  const real = Math.random
+  try {
+    Math.random = () => 0.99 // no loot, keeps it short
+    const pig = hatchEgg(T0)
+    for (const souvenir of SOUVENIRS) pig.collected[souvenir.key] = 1
+    for (const region of REGIONS) {
+      if (region.key !== 'oceania') pig.regionsDone.push(region.key)
+    }
+    delete pig.collected.penguinpic
+    pig.coins = 100_000
+    const intel = pig.traits.intel
+    startTrip(pig, 'antarctica', T0, 12)
+    Math.random = () => 0 // the missing souvenir
+    decay(pig, T0 + 61 * MIN)
+    assert.equal(pig.worldDone, true)
+    assert.equal(pig.traits.intel, intel + WORLD_BONUS.traits.intel)
+    assert.equal(perksOf(pig).length, 7)
+  } finally {
+    Math.random = real
   }
-  assert.deepEqual(collected.slice(0, trip.souvenirs.length), [...trip.souvenirs])
-  assert.equal(collected[trip.souvenirs.length], trip.souvenirs[0], 'it wraps around')
+})
+
+test('perks change the numbers they promise', () => {
+  const pig = hatchEgg(T0)
+  pig.coins = 100_000
+  const plain = tripQuote(pig, 'paris', 9).cost
+  pig.regionsDone = ['americas']
+  assert.equal(tripQuote(pig, 'paris', 9).cost, Math.round(plain * 0.8), '常旅客: a fifth off')
+
+  const student = hatchEgg(T0)
+  student.coins = 100_000
+  student.regionsDone = ['eastasia']
+  startStudy(student, 'chinese', 'primary', T0)
+  assert.equal((student.activity.endsAt - student.activity.startedAt) / MIN, Math.round(SCHOOL_STAGES[0].minutes * 0.8), '卷王: shorter lessons')
 })
 
 test('a trip is refused when broke, and nothing is spent', () => {
   const pig = hatchEgg(T0)
   pig.coins = 5
-  const result = startTrip(pig, 'abroad', T0)
+  const result = startTrip(pig, 'newyork', T0, 9)
   assert.equal(result.ok, false)
   assert.equal(result.reason, 'poor')
-  assert.equal(result.price, TRIPS[3].cost)
+  assert.equal(result.price, 2100)
   assert.equal(pig.coins, 5)
   assert.equal(pig.activity, null)
-  assert.equal(startTrip(pig, 'mars', T0).reason, 'unknown')
+  assert.equal(startTrip(pig, 'mars', T0, 9).reason, 'unknown')
 })
 
 test('care is blocked while travelling, and the pig can be recalled', () => {
   const pig = hatchEgg(T0)
   pig.coins = 200
-  const trip = TRIPS[0]
-  startTrip(pig, trip.key, T0)
-  assert.equal(act(pig, 'feed', T0).reason, 'away')
+  startTrip(pig, 'tokyo', T0, 9)
+  pig.inventory.apple = 1
+  assert.equal(act(pig, 'feed', T0, 'apple').reason, 'away')
   assert.equal(startWork(pig, 'odd', T0).reason, 'away')
 
   const recalled = callOffActivity(pig, T0)
   assert.equal(recalled.ok, true)
-  assert.equal(recalled.refunded, trip.cost, 'an unfinished trip is refunded')
+  assert.equal(recalled.refunded, 100, 'an unfinished trip is refunded')
   assert.equal(pig.coins, 200, 'coins are back')
-  assert.equal(pig.souvenirs.length, 0)
+  assert.deepEqual(pig.collected, {})
+})
+
+test('a save caught mid-way on a retired trip gets its money back', () => {
+  const old = hatchEgg(T0)
+  old.coins = 10
+  old.activity = { kind: 'trip', key: 'sea', label: '看海', emoji: '🌊', startedAt: T0, endsAt: T0 + 1000, cost: 620 }
+  const upgraded = migrate(JSON.parse(JSON.stringify(old)))
+  assert.equal(upgraded.activity, null)
+  assert.equal(upgraded.coins, 630)
+  assert.deepEqual(upgraded.collected, {})
 })
 
 test('recalling a study session refunds the tuition; recalling work does not pay', () => {
@@ -976,7 +1070,7 @@ test('the three activities are mutually exclusive', () => {
   pig.coins = 500
   startWork(pig, 'odd', T0)
   assert.equal(startStudy(pig, 'chinese', 'primary', T0).reason, 'away')
-  assert.equal(startTrip(pig, 'suburb', T0).reason, 'away')
+  assert.equal(startTrip(pig, 'tokyo', T0, 9).reason, 'away')
   assert.equal(pig.activity.kind, 'work')
 })
 
@@ -994,7 +1088,7 @@ test('anything away from home drains the pig faster', () => {
       away.lessonsByStage = { primary: 9, college: 9, graduate: 0 }
       startStudy(away, 'chinese', 'graduate', T0)
     }
-    else startTrip(away, 'abroad', T0)
+    else startTrip(away, 'newyork', T0, 9)
     advance(away, 2)
     advance(idle, 2)
     assert.ok(away.satiety < idle.satiety, `${kind} should make the pig hungrier`)
@@ -1018,7 +1112,7 @@ test('the shop is well formed and every illness stage has a cure on sale', () =>
   for (const item of SHOP) {
     assert.equal(typeof item.key, 'string')
     assert.ok(item.price > 0)
-    assert.ok(['food', 'bath', 'toy', 'medicine', 'revive'].includes(item.kind))
+    assert.ok(['food', 'bath', 'toy', 'medicine', 'revive', 'card'].includes(item.kind))
   }
   for (let stage = 1; stage <= 4; stage += 1) {
     const med = medicineForStage(stage)
@@ -1051,8 +1145,8 @@ test('buying is refused when broke, and for unknown goods', () => {
 test('snapshot-independent inventory view always lists every item', () => {
   const pig = hatchEgg(T0)
   const view = inventoryView(pig)
-  // Every shop item, plus the free default toy the pig always owns.
-  assert.equal(Object.keys(view).length, SHOP.length + 1)
+  // Every item (shop and travel-only), plus the free default toy the pig always owns.
+  assert.equal(Object.keys(view).length, ALL_ITEMS.length + 1)
   assert.equal(view[DEFAULT_TOY.key], Infinity, 'the default toy never runs out')
   for (const item of SHOP) assert.equal(view[item.key], 0)
 })
@@ -1140,4 +1234,59 @@ test('a save from the age-based rules is re-ranked quietly, never announced back
   decay(old, T0 + 4 * DAY + 1000)
   assert.equal(old.stage, 'young')
   assert.ok(old.pending.some(event => event.kind === 'stage'), 'growing up is still announced')
+})
+
+// [dsh-piggy-claude-code mod] several subjects at once, and a doctorate.
+test('university takes two subjects at once, graduate school and the doctorate three', () => {
+  assert.deepEqual(PARALLEL_COURSES, { primary: 1, college: 2, graduate: 3, doctor: 3 })
+  const pig = hatchEgg(T0)
+  pig.coins = 100_000
+  assert.equal(startStudy(pig, ['chinese', 'music'], 'primary', T0).reason, 'too-many')
+  pig.lessonsByStage = { primary: 9, college: 0, graduate: 0, doctor: 0 }
+  const before = { ...pig.traits }
+  const coins = pig.coins
+  assert.equal(startStudy(pig, ['chinese', 'music'], 'college', T0).ok, true)
+  assert.equal(pig.coins, coins - 2 * SCHOOL_STAGES[1].tuition, 'tuition per subject')
+  advance(pig, SCHOOL_STAGES[1].minutes + 1)
+  assert.equal(pig.traits.intel, before.intel + 2)
+  assert.equal(pig.traits.charm, before.charm + 2)
+  assert.equal(pig.lessonsByStage.college, 2, 'both count toward the next school')
+  assert.equal(startStudy(pig, ['chinese', 'music', 'pe'], 'college', T0 + 86_400_000).reason, 'too-many')
+})
+
+test('the doctorate opens after graduate school, and the thesis pays once', () => {
+  const pig = hatchEgg(T0)
+  pig.coins = 1_000_000
+  pig.lessonsByStage = { primary: 9, college: 9, graduate: 8, doctor: 0 }
+  assert.equal(startStudy(pig, 'chinese', 'doctor', T0).reason, 'locked')
+  pig.lessonsByStage.graduate = 9
+  let clock = T0
+  for (const trio of [['chinese', 'mathematics', 'politics'], ['art', 'music', 'manner'], ['pe', 'wushu', 'labouring']]) {
+    pig.satiety = 100
+    pig.happiness = 100
+    assert.equal(startStudy(pig, trio, 'doctor', clock).ok, true)
+    clock += (SCHOOL_STAGES[3].minutes + 1) * MIN
+    decay(pig, clock)
+  }
+  assert.equal(pig.doctorDone, true)
+  assert.ok(pig.pending.some(e => e.kind === 'doctor'))
+  assert.equal(pig.traits.intel, 3 * SCHOOL_STAGES[3].gain + 1, 'three lessons plus the thesis')
+})
+
+// [dsh-piggy-claude-code mod] the first name is free; after that, a rename card.
+test('the first name is free, every rename after that costs a rename card', () => {
+  const pig = hatchEgg(T0)
+  assert.equal(hasDefaultName(pig), true)
+  assert.deepEqual(renamePig(pig, '大花', T0), { ok: true, name: '大花', usedCard: false })
+  assert.equal(hasDefaultName(pig), false)
+  assert.equal(renamePig(pig, '二花', T0).reason, 'need-card')
+  assert.equal(renamePig(pig, '   ', T0).reason, 'bad-name')
+  assert.equal(renamePig(pig, 'x'.repeat(17), T0).reason, 'bad-name')
+
+  pig.coins = 1500
+  assert.equal(buy(pig, RENAME_CARD.key).ok, true)
+  assert.equal(pig.coins, 500, 'a rename card costs 1000')
+  assert.equal(useItem(pig, RENAME_CARD.key, T0).reason, 'use-to-rename')
+  assert.deepEqual(renamePig(pig, '二花', T0), { ok: true, name: '二花', usedCard: true })
+  assert.equal(pig.inventory[RENAME_CARD.key], 0)
 })

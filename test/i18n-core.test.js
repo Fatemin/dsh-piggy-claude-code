@@ -23,6 +23,7 @@ import { tr } from '../i18n.js'
 import coreLocale from '../locales/core.js'
 import dataLocale from '../locales/data.js'
 import indexLocale from '../locales/index.js'
+import { REGIONS, SOUVENIRS } from '../world.js'
 
 const MIN = 60_000
 const HAN = /[一-鿿]/
@@ -96,16 +97,73 @@ function playThrough(lang) {
     assert.equal(studying.activity.key, 'chinese')
     tick(40)
     store.freshen()
-    assert.equal(store.startTrip('suburb').ok, true)
-    tick(90)
-    store.freshen()
-    assert.equal(store.startTrip('suburb').ok, true)
+    store.state.coins = 50_000
+    store.state.satiety = 100
+    const real = Math.random
+    try {
+      // [mod] a world trip that always brings back loot (the place's specialty).
+      Math.random = () => 0
+      assert.equal(store.startTrip('tokyo').ok, true)
+      tick(5)
+      shot()
+      tick(24 * 60)
+      store.freshen()
+      const back = shot()
+      assert.ok(back.pending.some(event => event.kind === 'trip'))
+      assert.ok(back.world.lastTrip.loot.length > 0, 'the trip brought something back')
+      reply(dispatch(store, 'pig', 'trip').text)
+
+      // [mod] the last souvenir of China, which is also the last one in the world.
+      store.state.collected = Object.fromEntries(SOUVENIRS.filter(s => s.key !== 'wallbrick').map(s => [s.key, 1]))
+      store.state.regionsDone = REGIONS.map(region => region.key).filter(key => key !== 'china')
+      store.state.satiety = 100
+      assert.equal(store.startTrip('beijing').ok, true)
+      tick(24 * 60)
+      store.freshen()
+      const world = shot()
+      assert.ok(world.pending.some(event => event.kind === 'region'))
+      assert.ok(world.pending.some(event => event.kind === 'world'))
+      assert.equal(world.pig.worldTraveler, true)
+      reply(dispatch(store, 'pig', 'trip').text)
+
+      // [mod] the doctorate, three subjects at a time, through the command.
+      store.state.lessonsByStage = { primary: 9, college: 9, graduate: 9, doctor: 6 }
+      store.state.satiety = 100
+      reply(dispatch(store, 'pig', 'study reading, music, martial arts doctorate').text)
+      assert.equal(store.state.activity?.kind, 'study')
+      tick(5)
+      shot()
+      tick(24 * 60)
+      store.freshen()
+      const doctor = shot()
+      assert.equal(doctor.pig.doctor, true)
+      assert.ok(doctor.pending.some(event => event.kind === 'doctor'))
+      reply(dispatch(store, 'pig', 'status').text.split('🕘')[0])
+      reply(dispatch(store, 'pig', 'weigh').text)
+    } finally {
+      Math.random = real
+    }
+    store.state.satiety = 100
+    store.state.coins = 50_000
+    assert.equal(store.startTrip('seoul').ok, true)
     assert.equal(store.callOffActivity().ok, true)
+
+    // [mod] renaming: the pig already has a name, so it takes a rename card.
+    reply(dispatch(store, 'pig', 'name Ann').text)
+    assert.equal(store.state.name, 'Bo')
+    assert.equal(store.buy('renamecard').ok, true)
+    reply(dispatch(store, 'pig', 'name Ann').text)
+    assert.equal(store.state.name, 'Ann')
+    reply(dispatch(store, 'pig', 'name Ann').text)
+    for (const line of ['trip tokyo', 'study math art', 'study math art music university', 'study math art university', 'buy duck', 'use renamecard', 'use duck']) {
+      reply(dispatch(store, 'pig', line).text)
+    }
+    store.callOffActivity()
 
     // Neglect it until it falls ill.
     store.state.satiety = 5
     store.state.cleanliness = 5
-    tick(15)
+    tick(30) // the Oceania perk (抗寒体质) doubles how long neglect takes
     store.freshen()
     const sick = shot()
     assert.equal(sick.pig.mood, 'sick')
@@ -141,7 +199,8 @@ test('an English pig: no Chinese anywhere in the snapshot or the command replies
     assert.equal(at, -1, `Chinese left in: …${text.slice(Math.max(0, at - 80), at + 40)}…`)
   }
   const all = seen.join('\n')
-  for (const phrase of ['Young pig', 'Odd jobs', 'Reading (Primary school)', 'Picnic', 'Cold', 'Revival pill', 'Grave', 'coins']) {
+  for (const phrase of ['Young pig', 'Odd jobs', 'Reading (Primary school)', 'Tokyo', 'Cold', 'Revival pill', 'Grave', 'coins',
+    'Kusatsu onsen bath salts', 'Chow king', 'Globetrotter', 'Reading + Music + Martial arts (Doctorate)', 'Dr. ', 'Rename card', 'travel-only']) {
     assert.ok(all.includes(phrase), `${phrase} missing`)
   }
 })
@@ -149,10 +208,12 @@ test('an English pig: no Chinese anywhere in the snapshot or the command replies
 test('a Japanese pig: the Chinese-only phrases are gone', () => {
   const { seen } = playThrough('ja')
   const all = seen.join('\n')
-  for (const zh of ['金币', '打零工', '青年猪', '长成了', '得了', '还魂丹', '墓碑', '纸盒', '郊游', '小学语文', '提前回来', '已经走了', '没有「']) {
+  for (const zh of ['金币', '打零工', '青年猪', '长成了', '得了', '还魂丹', '墓碑', '纸盒', '郊游', '小学语文', '提前回来', '已经走了', '没有「',
+    '纪念品', '集齐', '环球旅行家', '更名卡', '特产', '博士毕业', '东京']) {
     assert.ok(!all.includes(zh), `${zh} is still there`)
   }
-  for (const ja of ['わかブタ', 'ちょいバイト', 'コイン', 'よみがえりの薬', 'かぜ', '小学校のこくご']) {
+  for (const ja of ['わかブタ', 'ちょいバイト', 'コイン', 'よみがえりの薬', 'かぜ', '小学校のこくご',
+    '東京', '草津温泉の入浴剤', 'コンプリート', '世界一周トラベラー', '博士課程のこくご・おんがく・ぶじゅつ', '名前変更カード']) {
     assert.ok(all.includes(ja), `${ja} missing`)
   }
 })

@@ -8,6 +8,7 @@
  * Run: node --test test/*.test.js
  */
 
+import { ALL_ITEMS } from '../data.js'
 import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -219,8 +220,8 @@ test('the snapshot exposes everything the panel draws', async () => {
     assert.equal(snap.pig.healthPercent, 100)
     assert.deepEqual(
       Object.keys(snap.inventory).sort(),
-      [...SHOP.map(i => i.key), DEFAULT_TOY.key].sort(),
-      'every shop item plus the free default toy',
+      [...ALL_ITEMS.map(i => i.key), DEFAULT_TOY.key].sort(),
+      'every item (shop and travel-only) plus the free default toy',
     )
     assert.equal(snap.maxHealth, 5)
   } finally {

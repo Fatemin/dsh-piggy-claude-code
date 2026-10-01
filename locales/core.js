@@ -5,7 +5,8 @@
 // Placeholders: {name} is the pig's name (never translated), {stage} {job}
 // {lesson} {trip} {ill} {cure} {item} {trait} {souvenir} are already-translated
 // data labels, the rest are numbers or emoji. English tags that follow a word
-// directly ({tag}, {saved}) carry their own leading space.
+// directly ({tag}, {saved}, {isNew}) carry their own leading space; {loot}
+// starts with its own separator. {gains} is "{trait} +{gain}" joined by '，'.
 export default {
   ja: {
     // --- the default name (only at egg time; a name is never translated after)
@@ -41,12 +42,26 @@ export default {
     '（{trait} {points}，省了 {minutes} 分钟）': '（{trait} {points}、{minutes} 分短縮）',
     '{emoji} 出门{job}去了{saved}': '{emoji} {job}に出かけた{saved}',
     // --- study --------------------------------------------------------------
-    '{emoji} 上完{lesson}，{trait} +{gain}': '{emoji} {lesson}のじゅぎょうが終わった。{trait} +{gain}',
-    '{name} 学完{lesson}，{trait} +{gain} 📚': '{name}は{lesson}を勉強した。{trait} +{gain} 📚',
+    '{emoji} 上完{lesson}，{gains}': '{emoji} {lesson}のじゅぎょうが終わった。{gains}',
+    '{name} 学完{lesson}，{gains} 📚': '{name}は{lesson}を勉強した。{gains} 📚',
+    '{trait} +{gain}': '{trait} +{gain}',
+    // "大学数学+美术" → 大学の さんすう・ずこう
+    '{stage}{subjects}': '{stage}の{subjects}',
+    '+': '・',
+    '，': '、',
+    '、': '、',
+    '🎓 博士答辩通过！三项属性各 +1': '🎓 博士論文の審査に合格！3つの能力がそれぞれ +1',
+    '{name} 博士毕业了！🎓 以后请叫它「{name} 博士」': '{name}が博士課程を修了！🎓 これからは「{name}博士」と呼んでね',
     '{emoji} 去上{lesson}（学费 {tuition}）': '{emoji} {lesson}のじゅぎょうへ（授業料 {tuition}）',
     // --- trips --------------------------------------------------------------
-    '{emoji} {trip}回来，带回「{souvenir}」': '{emoji} {trip}から帰ってきた。おみやげは「{souvenir}」',
-    '{name} 从{trip}回来了，带回「{souvenir}」🧳': '{name}が{trip}から帰ってきた。おみやげは「{souvenir}」🧳',
+    '{emoji} {trip}回来，带回「{souvenir}」{isNew}{loot}': '{emoji} {trip}から帰ってきた。おみやげは「{souvenir}」{isNew}{loot}',
+    '{name} 从{trip}回来了，带回「{souvenir}」{isNew}🧳{loot}': '{name}が{trip}から帰ってきた。おみやげは「{souvenir}」{isNew}🧳{loot}',
+    '（新！）': '（NEW！）',
+    '，还带回了 {items}': '。ほかに {items} も',
+    '{emoji} 集齐了{region}的纪念品！解锁「{perk}」：{text}': '{emoji} {region}のおみやげをコンプリート！「{perk}」ゲット：{text}',
+    '{name} 集齐了{region}！{emoji} 解锁「{perk}」': '{name}が{region}をコンプリート！{emoji}「{perk}」ゲット',
+    '{emoji} 成为「{title}」！三项属性各 +3': '{emoji}「{title}」になった！3つの能力がそれぞれ +3',
+    '{name} 走遍了全世界，成为「{title}」{emoji}': '{name}は世界中をまわって「{title}」になった {emoji}',
     '{emoji} 出发去{trip}（花了 {cost} 金币）': '{emoji} {trip}に出発（{cost} コイン）',
     '{emoji} 从{label}提前回来了，钱退回来了': '{emoji} {label}から早めに帰ってきた。お金はもどってきた',
     '{emoji} 从{label}提前回来了，白跑一趟': '{emoji} {label}から早めに帰ってきた。むだ足だった',
@@ -110,12 +125,26 @@ export default {
     '（{trait} {points}，省了 {minutes} 分钟）': ' ({trait} {points}, {minutes} min saved)',
     '{emoji} 出门{job}去了{saved}': '{emoji} Off to work: {job}{saved}',
     // --- study --------------------------------------------------------------
-    '{emoji} 上完{lesson}，{trait} +{gain}': '{emoji} Finished {lesson}, {trait} +{gain}',
-    '{name} 学完{lesson}，{trait} +{gain} 📚': '{name} finished {lesson}: {trait} +{gain} 📚',
+    '{emoji} 上完{lesson}，{gains}': '{emoji} Finished {lesson}, {gains}',
+    '{name} 学完{lesson}，{gains} 📚': '{name} finished {lesson}: {gains} 📚',
+    '{trait} +{gain}': '{trait} +{gain}',
+    // "大学数学+美术" → Math + Art (University)
+    '{stage}{subjects}': '{subjects} ({stage})',
+    '+': ' + ',
+    '，': ', ',
+    '、': ', ',
+    '🎓 博士答辩通过！三项属性各 +1': '🎓 Thesis defended! All three traits +1',
+    '{name} 博士毕业了！🎓 以后请叫它「{name} 博士」': '{name} earned a doctorate! 🎓 Call it "Dr. {name}" from now on',
     '{emoji} 去上{lesson}（学费 {tuition}）': '{emoji} Off to class: {lesson} (tuition {tuition})',
     // --- trips --------------------------------------------------------------
-    '{emoji} {trip}回来，带回「{souvenir}」': '{emoji} Home from the trip ({trip}) with: {souvenir}',
-    '{name} 从{trip}回来了，带回「{souvenir}」🧳': '{name} is home from the trip ({trip}) with: {souvenir} 🧳',
+    '{emoji} {trip}回来，带回「{souvenir}」{isNew}{loot}': '{emoji} Back from {trip} with {souvenir}{isNew}{loot}',
+    '{name} 从{trip}回来了，带回「{souvenir}」{isNew}🧳{loot}': '{name} is back from {trip} with {souvenir}{isNew} 🧳{loot}',
+    '（新！）': ' (new!)',
+    '，还带回了 {items}': ', plus {items}',
+    '{emoji} 集齐了{region}的纪念品！解锁「{perk}」：{text}': '{emoji} Every {region} souvenir collected! Unlocked "{perk}": {text}',
+    '{name} 集齐了{region}！{emoji} 解锁「{perk}」': '{name} completed {region}! {emoji} Unlocked "{perk}"',
+    '{emoji} 成为「{title}」！三项属性各 +3': '{emoji} Now a {title}! All three traits +3',
+    '{name} 走遍了全世界，成为「{title}」{emoji}': '{name} has seen the whole world and is now a {title} {emoji}',
     '{emoji} 出发去{trip}（花了 {cost} 金币）': '{emoji} Off on a trip: {trip} ({cost} coins)',
     '{emoji} 从{label}提前回来了，钱退回来了': '{emoji} Came back early ({label}), money refunded',
     '{emoji} 从{label}提前回来了，白跑一趟': '{emoji} Came back early ({label}), all for nothing',

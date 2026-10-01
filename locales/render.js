@@ -6,7 +6,6 @@ export default {
     // shared helpers
     '「{line}」': '「{line}」',
     猪: 'この子',
-    '{stage}{subject}': '{stage}の{subject}',
     '🍚 饱食  {bar}  {value}': '🍚 おなか    {bar}  {value}',
     '❤️  心情  {bar}  {value}': '❤️  きげん    {bar}  {value}',
     '🫧 清洁  {bar}  {value}': '🫧 きれいさ  {bar}  {value}',
@@ -56,7 +55,6 @@ export default {
     '{name} 背上书包去上课了 {emoji}': '{name}はランドセルをしょってじゅぎょうへ {emoji}',
     '📚 课程    {course}': '📚 じゅぎょう  {course}',
     '🪙 学费    {tuition} 金币': '🪙 授業料      {tuition} コイン',
-    '📈 收获    {trait} +{gain} · 经验 +{xp}': '📈 せいか      {trait} +{gain} · けいけんち +{xp}',
     '🍚 消耗    饱食 {satiety} · 心情 {happiness}': '🍚 しょうひ    おなか {satiety} · きげん {happiness}',
     '这门课已经上了 {level} 次。预计 {seconds} 秒后下课。': 'このじゅぎょうはこれまで {level} 回。あと {seconds} 秒ぐらいでおわるよ。',
     '{name} 拖着小行李箱出发了 {emoji}': '{name}は小さなスーツケースをひいて出発 {emoji}',
@@ -64,7 +62,6 @@ export default {
     '🪙 花费    {cost} 金币': '🪙 ひよう      {cost} コイン',
     '❤️  心情    +{happiness} · 经验 +{xp}': '❤️  きげん      +{happiness} · けいけんち +{xp}',
     '🍚 消耗    饱食 {satiety}': '🍚 しょうひ    おなか {satiety}',
-    '会带回一件纪念品。预计 {seconds} 秒后回来。': 'おみやげをひとつ持って帰ってくるよ。あと {seconds} 秒ぐらいでもどるよ。',
     '💼 出不了门': '💼 出かけられない',
     '现在：{emoji} {mood} · 🍚 {satiety} · 🪙 {coins}': 'いま：{emoji} {mood} · 🍚 {satiety} · 🪙 {coins}',
 
@@ -98,7 +95,6 @@ export default {
 
     // about
     '  {emoji} {label}（{minutes} 分钟 · {coins} 金币）': '  {emoji} {label}（{minutes} 分 · {coins} コイン）',
-    '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain}）': '{stage}（{minutes} 分 · 授業料 {tuition} · +{gain}）',
     '  {emoji} {item}  {price} 金币': '  {emoji} {item}  {price} コイン',
     '🐖 dsh-pig —— 一只住在 DSH 里的猪': '🐖 dsh-pig —— DSH にすんでいるブタ',
     '最省事的用法：点右下角的 🐖，面板上六个图标点着用。': 'いちばんかんたんな使いかた：右下の 🐖 をクリックして、パネルの6つのアイコンを使ってね。',
@@ -106,23 +102,72 @@ export default {
     '照顾：{actions}': 'お世話：{actions}',
     '📚 学习（涨智力 / 魅力 / 武力）：': '📚 勉強（かしこさ / みりょく / ちからがアップ）：',
     '💼 打工（出门赚钱）：': '💼 バイト（出かけてコインをかせぐ）：',
-    '🧳 旅行（带回纪念品）：': '🧳 旅行（おみやげを持って帰る）：',
     '🛒 商店：': '🛒 おみせ：',
     '🤒 生病：饿着或脏着太久会得病，健康上限 5。必须对症下药；': '🤒 びょうき：おなかがすいたまま・よごれたままが長いとびょうきになるよ。健康は最大 5。病気に合ったくすりがひつよう；',
     '      健康归零就没了，用 {item} 救回来（保留等级、金币和收藏）。': '      健康が 0 になるといなくなっちゃう。{item}で生きかえるよ（レベル・コイン・コレクションはそのまま）。',
     '命令（不想点鼠标时才用）：': 'コマンド（マウスを使いたくないときに）：',
-    '/{cmd} study <科目> <小学|大学|研究生>': '/{cmd} study <かもく> <primary|college|graduate>',
     '/{cmd} shop · buy <物品> · use <物品>': '/{cmd} shop · buy <アイテム> · use <アイテム>',
     '/{cmd} weigh · name <名字> · about': '/{cmd} weigh · name <なまえ> · about',
     '它不调用模型、不注入上下文、不花一个 token。': 'モデルは呼ばないし、コンテキストにも入らない。トークンはひとつも使わないよ。',
     '存档在 $DSH_HOME/dsh-pig/state.json。': 'セーブデータは $DSH_HOME/dsh-pig/state.json にあるよ。',
     '这里还没有猪。/{cmd} hatch 孵一只 🥚 —— 它会吃你之后的真实工作长大。': 'まだブタがいないよ。/{cmd} hatch でむかえよう 🥚 —— これからのあなたの作業を食べて育つよ。',
+    // [dsh-piggy-claude-code mod] durations, clocks and time zones
+    '{n} 分钟': '{n}分',
+    '{n} 小时': '{n}時間',
+    '{h} 小时 {m} 分钟': '{h}時間{m}分',
+    '明天 {time}': 'あした {time}',
+    '{month}月{day}日 {time}': '{month}月{day}日 {time}',
+    '跨 {n} 个时区': '時差 {n} 時間',
+    同一时区: '時差なし',
+
+    // [mod] status card: collection, perks, titles
+    '🧳 纪念品  {have}/{total} · 集齐地区 {regions}/{all}': '🧳 おみやげ  {have}/{total} · コンプリート地域 {regions}/{all}',
+    '🎁 加成  {perks}': '🎁 ボーナス  {perks}',
+    '🎓 博士': '🎓 博士',
+    '🏅 称号  {titles}': '🏅 称号  {titles}',
+
+    // [mod] study: several subjects, the doctorate
+    '📈 收获    {gains} · 经验 +{xp}': '📈 せいか      {gains} · けいけんち +{xp}',
+    '🎓 答辩    {done}/{need} 节博士课': '🎓 博士論文    博士のじゅぎょう {done}/{need}',
+    '{count} 门课一起上，只花一门课的时间，{time} 下课。': '{count} 科目まとめて、1科目ぶんの時間で受けるよ。{time} におわるよ。',
+    '⏱  时长    {duration}': '⏱  時間        {duration}',
+
+    // [mod] trips: the world map and the departure card
+    '⏱  时长    {duration} · {zones}': '⏱  時間        {duration} · {zones}',
+    '🕐 到家    {time}': '🕐 帰宅        {time}',
+    '会带回一件纪念品，运气好还有当地特产。': 'おみやげをひとつ持って帰ってくるよ。運がよければ、ご当地の名物も。',
+    '🌍 环游世界 · 从 {home} 出发': '🌍 世界旅行 · {home} から出発',
+    '票价 {base} 金币 + 每个时区 {perZone} · 时长 1 小时 + 每个时区 1 小时': '運賃 {base} コイン + 時差1時間ごとに {perZone} · 所要 1 時間 + 時差1時間ごとに 1 時間',
+    '{emoji} {region}  {have}/{total} ✅ 已解锁「{perk}」：{text}': '{emoji} {region}  {have}/{total} ✅「{perk}」ゲット済み：{text}',
+    '{emoji} {region}  {have}/{total} · 集齐解锁「{perk}」：{text}': '{emoji} {region}  {have}/{total} · コンプリートで「{perk}」：{text}',
+    '  {emoji} {place} ({key})  {cost} 金币 · {duration} · {zones}  {souvenirs}': '  {emoji} {place} ({key})  {cost} コイン · {duration} · {zones}  {souvenirs}',
+    '{emoji} 已经是「{title}」了！': '{emoji} もう「{title}」だよ！',
+    '{emoji} 七个地区都集齐，就是「{title}」：三项属性各 +3': '{emoji} 7地域ぜんぶコンプリートで「{title}」：3つの能力がそれぞれ +3',
+    '🪙 你有 {coins} 金币': '🪙 いま {coins} コイン',
+    '出发：/{cmd} trip <目的地>（中文、日文、英文名或括号里的 key 都行）': '出発：/{cmd} trip <行き先>（日本語・中国語・英語の名前か、カッコ内の key でOK）',
+
+    // [mod] shop and bag: specialties and the rename card
+    '🧳 {emoji} {item} 是旅行限定的特产，商店不卖 —— 只能出门旅行时碰运气带回来。': '🧳 {emoji} {item}は旅行限定の名物。おみせでは売ってないよ —— 旅行先で運がよければ持って帰ってこれるよ。',
+    '改名时会自动用掉一张：/pig name <新名字>': '名前を変えるとき自動で1枚使うよ：/pig name <新しい名前>',
+    '🎒 背包里没有 {emoji} {item}。这是旅行限定的特产，只能出门旅行时带回来。': '🎒 バッグに {emoji} {item}がないよ。旅行限定の名物だから、旅行で持って帰ってくるしかないよ。',
+    '{emoji} {item} 不用在这里 —— 直接 /pig name <新名字>，改名时自动用掉一张。': '{emoji} {item}はここでは使わないよ —— /pig name <新しい名前> で名前を変えると自動で1枚使うよ。',
+    '{name} 在外面，回来再用。': '{name}はおでかけ中。帰ってきてから使ってね。',
+    '   🧳 纪念品 {have}/{total} · 集齐地区 {regions}/{all}': '   🧳 おみやげ {have}/{total} · コンプリート地域 {regions}/{all}',
+
+    // [mod] about
+    '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain} · 一次最多 {parallel} 门）': '{stage}（{minutes} 分 · 授業料 {tuition} · +{gain} · いちどに {parallel} 科目まで）',
+    '  票价 {base} 金币 + 每个时区 {perZone} · 时长 1 小时 + 每个时区 1 小时': '  運賃 {base} コイン + 時差1時間ごとに {perZone} · 所要 1 時間 + 時差1時間ごとに 1 時間',
+    '  {emoji} {region}：{places}': '  {emoji} {region}：{places}',
+    '  每个地区 6 件纪念品，集齐解锁加成；七个地区都集齐成为「{title}」{emoji}': '  各地域におみやげ6つ。コンプリートでボーナス、7地域ぜんぶで「{title}」{emoji}',
+    '🧳 旅行（带回纪念品，有时还有特产）：': '🧳 旅行（おみやげと、ときどき名物を持って帰る）：',
+    '/{cmd} study <科目>[,科目…] <小学|大学|研究生|博士>': '/{cmd} study <かもく>[,かもく…] <primary|college|graduate|doctor>',
+    '/{cmd} work <odd|site|office> · trip [目的地] · calloff': '/{cmd} work <odd|site|office> · trip [行き先] · calloff',
+    '      第一次起名免费，之后每次改名用一张{card}（{price} 金币）': '      さいしょの名づけは無料。そのあとは名前を変えるたびに{card}を1枚（{price} コイン）',
   },
   en: {
     // shared helpers
     '「{line}」': '"{line}"',
     猪: 'Your pig',
-    '{stage}{subject}': '{stage} {subject}',
     '🍚 饱食  {bar}  {value}': '🍚 Fullness     {bar}  {value}',
     '❤️  心情  {bar}  {value}': '❤️  Mood         {bar}  {value}',
     '🫧 清洁  {bar}  {value}': '🫧 Cleanliness  {bar}  {value}',
@@ -172,7 +217,6 @@ export default {
     '{name} 背上书包去上课了 {emoji}': '{name} put on its schoolbag and went to class {emoji}',
     '📚 课程    {course}': '📚 Lesson    {course}',
     '🪙 学费    {tuition} 金币': '🪙 Tuition   {tuition} coins',
-    '📈 收获    {trait} +{gain} · 经验 +{xp}': '📈 Gains     {trait} +{gain} · XP +{xp}',
     '🍚 消耗    饱食 {satiety} · 心情 {happiness}': '🍚 Costs     Fullness {satiety} · Mood {happiness}',
     '这门课已经上了 {level} 次。预计 {seconds} 秒后下课。': 'Lessons taken in this subject so far: {level}. Class ends in about {seconds}s.',
     '{name} 拖着小行李箱出发了 {emoji}': '{name} set off pulling a little suitcase {emoji}',
@@ -180,7 +224,6 @@ export default {
     '🪙 花费    {cost} 金币': '🪙 Cost      {cost} coins',
     '❤️  心情    +{happiness} · 经验 +{xp}': '❤️  Mood      +{happiness} · XP +{xp}',
     '🍚 消耗    饱食 {satiety}': '🍚 Costs     Fullness {satiety}',
-    '会带回一件纪念品。预计 {seconds} 秒后回来。': "It'll bring back a souvenir. Back in about {seconds}s.",
     '💼 出不了门': "💼 Can't head out",
     '现在：{emoji} {mood} · 🍚 {satiety} · 🪙 {coins}': 'Now: {emoji} {mood} · 🍚 {satiety} · 🪙 {coins}',
 
@@ -214,7 +257,6 @@ export default {
 
     // about
     '  {emoji} {label}（{minutes} 分钟 · {coins} 金币）': '  {emoji} {label} ({minutes} min · {coins} coins)',
-    '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain}）': '{stage} ({minutes} min · tuition {tuition} · +{gain})',
     '  {emoji} {item}  {price} 金币': '  {emoji} {item}  {price} coins',
     '🐖 dsh-pig —— 一只住在 DSH 里的猪': '🐖 dsh-pig — a pig that lives in DSH',
     '最省事的用法：点右下角的 🐖，面板上六个图标点着用。': 'Easiest way: click the 🐖 in the bottom-right corner and use the six icons on the panel.',
@@ -222,16 +264,66 @@ export default {
     '照顾：{actions}': 'Care: {actions}',
     '📚 学习（涨智力 / 魅力 / 武力）：': '📚 Study (raises Smarts / Charm / Strength):',
     '💼 打工（出门赚钱）：': '💼 Work (go out and earn coins):',
-    '🧳 旅行（带回纪念品）：': '🧳 Travel (brings back souvenirs):',
     '🛒 商店：': '🛒 Shop:',
     '🤒 生病：饿着或脏着太久会得病，健康上限 5。必须对症下药；': '🤒 Sickness: staying hungry or dirty too long makes it sick; max health is 5. It needs the right medicine;',
     '      健康归零就没了，用 {item} 救回来（保留等级、金币和收藏）。': "      at zero health it's gone — a {item} brings it back (level, coins and collection are kept).",
     '命令（不想点鼠标时才用）：': "Commands (for when you'd rather not click):",
-    '/{cmd} study <科目> <小学|大学|研究生>': '/{cmd} study <subject> <primary|college|graduate>',
     '/{cmd} shop · buy <物品> · use <物品>': '/{cmd} shop · buy <item> · use <item>',
     '/{cmd} weigh · name <名字> · about': '/{cmd} weigh · name <name> · about',
     '它不调用模型、不注入上下文、不花一个 token。': 'It never calls a model, never injects context and never spends a single token.',
     '存档在 $DSH_HOME/dsh-pig/state.json。': 'Saved at $DSH_HOME/dsh-pig/state.json.',
     '这里还没有猪。/{cmd} hatch 孵一只 🥚 —— 它会吃你之后的真实工作长大。': 'No pig here yet. /{cmd} hatch to hatch one 🥚 — it grows by eating your real work from now on.',
+    // [dsh-piggy-claude-code mod] durations, clocks and time zones
+    '{n} 分钟': '{n} min',
+    '{n} 小时': '{n} h',
+    '{h} 小时 {m} 分钟': '{h} h {m} min',
+    '明天 {time}': 'tomorrow {time}',
+    '{month}月{day}日 {time}': '{month}/{day} {time}',
+    '跨 {n} 个时区': '{n} h time difference',
+    同一时区: 'same time zone',
+
+    // [mod] status card: collection, perks, titles
+    '🧳 纪念品  {have}/{total} · 集齐地区 {regions}/{all}': '🧳 Souvenirs  {have}/{total} · regions done {regions}/{all}',
+    '🎁 加成  {perks}': '🎁 Perks  {perks}',
+    '🎓 博士': '🎓 Doctor',
+    '🏅 称号  {titles}': '🏅 Titles  {titles}',
+
+    // [mod] study: several subjects, the doctorate
+    '📈 收获    {gains} · 经验 +{xp}': '📈 Gains     {gains} · XP +{xp}',
+    '🎓 答辩    {done}/{need} 节博士课': '🎓 Thesis    {done}/{need} doctorate lessons',
+    '{count} 门课一起上，只花一门课的时间，{time} 下课。': '{count} subjects at once, in the time of one. Class is out at {time}.',
+    '⏱  时长    {duration}': '⏱  Time      {duration}',
+
+    // [mod] trips: the world map and the departure card
+    '⏱  时长    {duration} · {zones}': '⏱  Time      {duration} · {zones}',
+    '🕐 到家    {time}': '🕐 Home at   {time}',
+    '会带回一件纪念品，运气好还有当地特产。': "It'll bring back a souvenir — and, with luck, a local specialty.",
+    '🌍 环游世界 · 从 {home} 出发': '🌍 Around the world · from {home}',
+    '票价 {base} 金币 + 每个时区 {perZone} · 时长 1 小时 + 每个时区 1 小时': 'Fare {base} coins + {perZone} per time zone · 1 h + 1 h per time zone',
+    '{emoji} {region}  {have}/{total} ✅ 已解锁「{perk}」：{text}': '{emoji} {region}  {have}/{total} ✅ unlocked "{perk}": {text}',
+    '{emoji} {region}  {have}/{total} · 集齐解锁「{perk}」：{text}': '{emoji} {region}  {have}/{total} · complete for "{perk}": {text}',
+    '  {emoji} {place} ({key})  {cost} 金币 · {duration} · {zones}  {souvenirs}': '  {emoji} {place} ({key})  {cost} coins · {duration} · {zones}  {souvenirs}',
+    '{emoji} 已经是「{title}」了！': '{emoji} Already a {title}!',
+    '{emoji} 七个地区都集齐，就是「{title}」：三项属性各 +3': '{emoji} Complete all seven regions to become a {title}: all three traits +3',
+    '🪙 你有 {coins} 金币': '🪙 You have {coins} coins',
+    '出发：/{cmd} trip <目的地>（中文、日文、英文名或括号里的 key 都行）': 'Go: /{cmd} trip <place> (English, Japanese or Chinese name, or the key in brackets)',
+
+    // [mod] shop and bag: specialties and the rename card
+    '🧳 {emoji} {item} 是旅行限定的特产，商店不卖 —— 只能出门旅行时碰运气带回来。': "🧳 {emoji} {item} is a travel-only specialty — the shop doesn't sell it. Only a lucky trip brings one home.",
+    '改名时会自动用掉一张：/pig name <新名字>': 'Renaming uses one up automatically: /pig name <new name>',
+    '🎒 背包里没有 {emoji} {item}。这是旅行限定的特产，只能出门旅行时带回来。': '🎒 No {emoji} {item} in the bag. It is a travel-only specialty; only trips bring it home.',
+    '{emoji} {item} 不用在这里 —— 直接 /pig name <新名字>，改名时自动用掉一张。': '{emoji} {item} is not used here — just /pig name <new name> and one is spent automatically.',
+    '{name} 在外面，回来再用。': "{name} is out — use it once it's back.",
+    '   🧳 纪念品 {have}/{total} · 集齐地区 {regions}/{all}': '   🧳 Souvenirs {have}/{total} · regions done {regions}/{all}',
+
+    // [mod] about
+    '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain} · 一次最多 {parallel} 门）': '{stage} ({minutes} min · tuition {tuition} · +{gain} · up to {parallel} at once)',
+    '  票价 {base} 金币 + 每个时区 {perZone} · 时长 1 小时 + 每个时区 1 小时': '  Fare {base} coins + {perZone} per time zone · 1 h + 1 h per time zone',
+    '  {emoji} {region}：{places}': '  {emoji} {region}: {places}',
+    '  每个地区 6 件纪念品，集齐解锁加成；七个地区都集齐成为「{title}」{emoji}': '  6 souvenirs per region; complete one for a perk, all seven to become a {title} {emoji}',
+    '🧳 旅行（带回纪念品，有时还有特产）：': '🧳 Travel (brings back souvenirs, sometimes a specialty):',
+    '/{cmd} study <科目>[,科目…] <小学|大学|研究生|博士>': '/{cmd} study <subject>[,subject…] <primary|college|graduate|doctor>',
+    '/{cmd} work <odd|site|office> · trip [目的地] · calloff': '/{cmd} work <odd|site|office> · trip [place] · calloff',
+    '      第一次起名免费，之后每次改名用一张{card}（{price} 金币）': '      The first name is free; each rename after that takes a {card} ({price} coins)',
   },
 }
