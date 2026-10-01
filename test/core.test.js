@@ -1364,3 +1364,17 @@ test('scratch cards: the prize table, the price and one card every ten minutes',
   poor.coins = 50
   assert.equal(scratchLottery(poor, T0, () => 0).reason, 'poor')
 })
+
+test('a VTuber stream pays a roll but still runs its full, trainable length', () => {
+  const vtuber = JOBS.find(job => job.key === 'vtuber')
+  assert.deepEqual(vtuber.random, [200, 2400])
+  assert.equal(vtuber.fixed, false)
+  const pig = hatchEgg(T0)
+  pig.coins = 0
+  pig.traits = { intel: 10, charm: 30, strong: 0 }
+  assert.equal(startWorkAgain(pig, 'vtuber', T0).ok, true)
+  assert.ok(pig.activity.endsAt - T0 < vtuber.minutes * MIN, 'charm still shortens the stream')
+  decay(pig, pig.activity.endsAt)
+  // 30 charm is the 3x pay cap
+  assert.ok(pig.coins >= 200 * 3 && pig.coins <= 2400 * 3, `paid ${pig.coins}`)
+})

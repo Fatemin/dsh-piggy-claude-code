@@ -262,7 +262,8 @@ export const RENAME_CARD = Object.freeze({ key: 'renamecard', label: '更名卡'
  *
  * Every trait has a ladder of shift lengths, plus one 15-minute gig whose pay
  * is a roll (`random: [min, max]`, before the trait bonus) and whose length is
- * `fixed` — schooling raises its pay but never shortens it. The top rung of
+ * `fixed` — schooling raises its pay but never shortens it. Any job may roll
+ * its pay (VTuber does); only `fixed` keeps the length. The top rung of
  * each trait is a "career" that needs trait points first (`requires`) and has
  * its own outfit and working animation (`art`, drawn in assets/job-*.svg).
  */
@@ -279,7 +280,8 @@ export const JOBS = Object.freeze([
   JOB({ key: 'odd', label: '打零工', emoji: '🧹', trait: 'charm', minutes: MINUTES.quarter, coins: 30, xp: 40, satiety: -6, cleanliness: -4 }),
   JOB({ key: 'tea', label: '奶茶店员', emoji: '🧋', trait: 'charm', minutes: 90, coins: 280, xp: 300, satiety: -14, cleanliness: -8 }),
   JOB({ key: 'influencer', label: '网红', emoji: '🤳', trait: 'charm', minutes: MINUTES.twoHours, coins: 750, xp: 760, satiety: -18, cleanliness: -6, tier: 'pro', requires: Object.freeze({ charm: 15 }), art: 'influencer' }),
-  JOB({ key: 'vtuber', label: 'VTuber', emoji: '🎙️', trait: 'charm', minutes: MINUTES.threeHours, coins: 1300, xp: 1300, satiety: -26, cleanliness: -8, tier: 'pro', requires: Object.freeze({ charm: 30, intel: 10 }), art: 'vtuber' }),
+  // A stream can flop or go viral: the pay is a roll, but the stream still runs its full length.
+  JOB({ key: 'vtuber', label: 'VTuber', emoji: '🎙️', trait: 'charm', minutes: MINUTES.threeHours, coins: 1300, random: Object.freeze([200, 2400]), xp: 1300, satiety: -26, cleanliness: -8, tier: 'pro', requires: Object.freeze({ charm: 30, intel: 10 }), art: 'vtuber' }),
   // --- 💪 strength ----------------------------------------------------------
   JOB({ key: 'rider', label: '外卖骑手', emoji: '🛵', trait: 'strong', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([10, 80]), fixed: true, xp: 45, satiety: -8, cleanliness: -6 }),
   JOB({ key: 'site', label: '搬砖', emoji: '🧱', trait: 'strong', minutes: MINUTES.hour, coins: 160, xp: 200, satiety: -16, cleanliness: -14 }),
