@@ -12,6 +12,14 @@
 - Preserve the user's and other sessions' uncommitted files, branches and worktrees. Other Claude sessions edit this repo concurrently: check `git status` and the current branch first, touch only your own files, stop on unclear ownership, never clean up.
 - Use current code, relevant tests, recent commits and worktree state as evidence. Memory or old documents' task status and test counts do not prove current state.
 
+### Session numbering
+
+- Every interactive main session numbers its task before the first one: **ST** = development (design, implementation, refactor), **AC** = operation (real-data writes, release, environment), **Q** = query (read-only review, diagnosis, questions). Run `node scripts/harness/session-number.mjs new --type <ST|AC|Q> --title "<≤30 chars>" --session <session_id> --cwd <cwd>`, then rename the session to the returned `full_title` (`mcp__ccd_session_mgmt__set_session_title`, `session_id="self"`; load via ToolSearch if deferred). Without a rename tool, or if it is declined, report the number in the first reply and do not retry.
+- One sequence across the three types, allocated only by that script (registry `~/.agent-framework/sessions.json`); never hand-write or guess a number. The counter continues only within one project (this git repository, worktrees included); a different project/path starts again at 0001.
+- A task changing nature mid-session (query → implementation) keeps its number. A resumed session whose `session_id` changed but continues a numbered task reuses the old number: do not run `new` again.
+- Branches are `feature/<number>-<name>`; commit messages start with `[<number>]`.
+- Non-interactive sessions (`claude -p`, bridge, subagents, scheduled tasks) are not numbered; ignore the hook reminder there. The reminder comes from `scripts/harness/session-number-hook.mjs` and is silent once the session has a number.
+
 ## 2. Critical safeguards
 
 1. **Stage only this task's exact paths.** Never `git add .`, `git add -A` or `git commit -a`. Run `git diff --check` and `git diff --cached --check` before committing; after the commit `git status --porcelain` must show none of your files.

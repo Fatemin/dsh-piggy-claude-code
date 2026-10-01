@@ -19,6 +19,11 @@
             "type": "command",
             "command": "node \"$(git -C \"${CLAUDE_PROJECT_DIR:-$PWD}\" rev-parse --path-format=absolute --git-common-dir)/../scripts/harness/claude-test-consent.mjs\" || exit 2",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node \"$(git -C \"${CLAUDE_PROJECT_DIR:-$PWD}\" rev-parse --path-format=absolute --git-common-dir)/../scripts/harness/session-number-hook.mjs\" || true",
+            "timeout": 10
           }
         ]
       }
@@ -29,6 +34,11 @@
           {
             "type": "command",
             "command": "node \"$(git -C \"${CLAUDE_PROJECT_DIR:-$PWD}\" rev-parse --path-format=absolute --git-common-dir)/../scripts/harness/claude-test-consent.mjs\" || exit 2",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node \"$(git -C \"${CLAUDE_PROJECT_DIR:-$PWD}\" rev-parse --path-format=absolute --git-common-dir)/../scripts/harness/session-number-hook.mjs\" || true",
             "timeout": 10
           }
         ]
