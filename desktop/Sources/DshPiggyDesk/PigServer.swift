@@ -1,5 +1,14 @@
 import Foundation
 
+/// `/pig/peek`: the status line and the pig's language. Declared at file scope,
+/// not nested in the main-actor `PigServer`: nested, its Decodable conformance
+/// became main-actor isolated, and decoding it hit a runtime isolation check
+/// that crashed the app (SIGSEGV in swift_task_isMainExecutorImpl).
+nonisolated struct PigPeek: Decodable, Sendable {
+    let line: String
+    let lang: String?
+}
+
 /// The node panel server (`pig serve`) that owns the save file.
 ///
 /// Reuses one that is already running (another desk instance, or a manual
@@ -59,15 +68,10 @@ final class PigServer {
         }
     }
 
-    struct Peek: Decodable {
-        let line: String
-        let lang: String?
-    }
-
     /// The status line and the pig's language, without draining the panel's news.
-    func peek() async -> Peek? {
+    func peek() async -> PigPeek? {
         guard let data = await get("pig/peek", timeout: 1) else { return nil }
-        return try? JSONDecoder().decode(Peek.self, from: data)
+        return try? JSONDecoder().decode(PigPeek.self, from: data)
     }
 
     /// POST one panel action (e.g. `["action": "lang", "lang": "ja"]`).

@@ -94,9 +94,13 @@ final class PetWindow: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     /// Only asks the page while the cursor is over the window.
     private func startHitTesting() {
         hitTimer?.invalidate()
-        hitTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.updateHit() }
-        }
+        // A selector timer on the main run loop: no Swift concurrency check per
+        // tick (MainActor.assumeIsolated crashed here with the Swift 6.3 runtime).
+        hitTimer = Timer.scheduledTimer(timeInterval: 1.0 / 30.0, target: self, selector: #selector(hitTick), userInfo: nil, repeats: true)
+    }
+
+    @objc private func hitTick() {
+        updateHit()
     }
 
     private func updateHit() {
@@ -115,12 +119,11 @@ final class PetWindow: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         hitInFlight = true
         let x = mouse.x - frame.minX
         let y = frame.maxY - mouse.y
+        // WebKit calls back on the main thread; the handler is main-actor isolated.
         webView.evaluateJavaScript("window.__pigHit ? window.__pigHit(\(x), \(y)) : false") { [weak self] result, _ in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                self.hitInFlight = false
-                self.window.ignoresMouseEvents = (result as? Bool) != true
-            }
+            guard let self else { return }
+            self.hitInFlight = false
+            self.window.ignoresMouseEvents = (result as? Bool) != true
         }
     }
 

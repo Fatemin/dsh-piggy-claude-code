@@ -48,6 +48,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Menu titles follow the pig's language, so the menu is rebuilt when it changes.
     private func rebuildMenu() {
+        // The status line is one item reused across rebuilds; AppKit throws if
+        // it is added to a new menu while still in the old one — and an
+        // Objective-C exception unwinding through Swift async code left the
+        // concurrency runtime corrupt, so the app crashed later elsewhere.
+        statusLineItem.menu?.removeItem(statusLineItem)
         let menu = NSMenu()
         menu.addItem(statusLineItem)
         menu.addItem(.separator())
