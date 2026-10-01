@@ -42,6 +42,16 @@ const SHUT = { closed: 'M80 141Q91 152 102 141M154 156Q165 167 176 156', happy: 
  * The pig. `eyes`: 'open' (blinks) | 'closed' | 'happy'. `face` is drawn on
  * top of the face (glasses, tears…), `back` between the far leg and the body.
  */
+/**
+ * Both cheeks. The near one sits right of the snout; the far one, left of the
+ * snout under the far eye, is a little smaller since the face is turned.
+ */
+const cheeks = (rx, ry, fill, opacity, cls = '') => {
+  const c = cls === '' ? '' : ` class="${cls}"`
+  return `<ellipse${c} cx="155" cy="187" rx="${rx}" ry="${ry}" fill="${fill}" opacity="${opacity}"/>`
+    + `<ellipse${c} cx="60" cy="170" rx="${+(rx * .75).toFixed(1)}" ry="${+(ry * .75).toFixed(1)}" fill="${fill}" opacity="${opacity}"/>`
+}
+
 function pig({ eyes = 'open', face = '', back = '', blush = '' } = {}) {
   const eyeMarkup = eyes === 'open'
     ? `<path class="eye" fill="${C.eye}" d="${P.eye1}"/><path class="eye" fill="${C.eye}" d="${P.eye2}"/>`
@@ -58,7 +68,7 @@ function pig({ eyes = 'open', face = '', back = '', blush = '' } = {}) {
     <g class="snout"><path fill="${C.snout}" d="${P.snout}"/>
     <path fill="${C.eye}" d="${P.nostril1}"/>
     <path fill="${C.eye}" d="${P.nostril2}"/></g>
-    <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="${C.blush}" opacity=".75"/>
+    ${cheeks(12, 7, C.blush, '.75', 'blush')}
     ${blush}
     ${face}
   </g>`
@@ -228,7 +238,7 @@ const SPRITES = {
     @keyframes heat{0%,100%{opacity:.2;transform:translateY(6px)}50%{opacity:1;transform:translateY(-6px)}}`,
     wrap: 'shiver',
     pig: {
-      blush: `<ellipse cx="155" cy="187" rx="22" ry="12" fill="#FF6F6F" opacity=".4"/><ellipse cx="60" cy="160" rx="10" ry="8" fill="#FF6F6F" opacity=".3"/>`,
+      blush: cheeks(22, 12, '#FF6F6F', '.4'),
       face: `<path d="M70 104L178 116L174 136L66 124Z" fill="#9FD3E6"/>
     <path d="M90 110v10M112 112v10M134 115v10M156 117v10" fill="none" stroke="#7FBFD6" stroke-width="4" stroke-linecap="round"/>
     <path d="M78 214L36 238" fill="none" stroke="#F4F6F8" stroke-width="11" stroke-linecap="round"/>
@@ -337,7 +347,7 @@ const SPRITES = {
     @keyframes sneeze{0%,55%,100%{transform:rotate(0)}65%{transform:rotate(2deg) translateY(-2px)}72%{transform:rotate(-4deg) translateX(-6px)}80%{transform:rotate(0)}}
     @keyframes spray{0%,70%{opacity:0;transform:translate(0,0)}74%{opacity:1}100%{opacity:0;transform:translate(-30px,6px)}}`,
     wrap: 'sneeze',
-    pig: { blush: `<ellipse cx="155" cy="187" rx="16" ry="9" fill="#FF7F7F" opacity=".35"/>` },
+    pig: { blush: cheeks(16, 9, '#FF7F7F', '.35') },
     over: `<g class="spray">${drop(60, 196, 1.2, '#CDEBA8', '')}<path d="M48 176l-12-6M46 190l-14 0" fill="none" stroke="#D8D2C6" stroke-width="5" stroke-linecap="round"/></g>`,
   },
   'mood-sick-3': {
@@ -354,7 +364,7 @@ const SPRITES = {
     wrap: 'droop',
     pig: {
       eyes: 'closed',
-      blush: `<ellipse cx="155" cy="187" rx="20" ry="11" fill="#B9C6E8" opacity=".45"/>`,
+      blush: cheeks(20, 11, '#B9C6E8', '.45'),
       face: `<path d="M86 92C96 70 150 66 168 88C158 108 98 112 86 92Z" fill="#CDEBF7"/>
     <path d="M110 78l8 8M134 76l6 8" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
     <path d="M128 66V54" fill="none" stroke="#7FBFD6" stroke-width="6" stroke-linecap="round"/>
@@ -483,7 +493,7 @@ const SPRITES = {
     @keyframes pat{0%,100%{transform:translateY(-10px)}50%{transform:translateY(6px)}}
     @keyframes rise{0%{opacity:0;transform:translateY(12px) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translateY(-30px) scale(1)}}`,
     wrap: 'nuzzle',
-    pig: { eyes: 'happy', blush: `<ellipse cx="155" cy="187" rx="18" ry="10" fill="#FF9AA0" opacity=".6"/>` },
+    pig: { eyes: 'happy', blush: cheeks(18, 10, '#FF9AA0', '.6') },
     over: `<g class="hand"><g transform="translate(14 28)"><path d="M88 22C92 2 132-2 152 8 166 15 166 32 152 36H106C96 36 86 32 88 22Z" fill="#FBE3CF"/>
     <path d="M108 8V32M124 6V32M140 8V32" fill="none" stroke="#EBC9AE" stroke-width="4" stroke-linecap="round"/>
     <path d="M152 20H230" fill="none" stroke="#FBE3CF" stroke-width="24" stroke-linecap="round"/></g></g>
@@ -553,7 +563,7 @@ const SPRITES = {
     @keyframes flash{0%,44%,56%,94%,100%{opacity:0}46%,96%{opacity:1}}
     @keyframes rise{0%{opacity:0;transform:translateY(16px) scale(.5)}25%{opacity:1}100%{opacity:0;transform:translateY(-60px) scale(1)}}`,
     wrap: 'pose',
-    pig: { eyes: 'happy', blush: `<ellipse cx="155" cy="187" rx="18" ry="10" fill="#FF9AA0" opacity=".6"/>` },
+    pig: { eyes: 'happy', blush: cheeks(18, 10, '#FF9AA0', '.6') },
     under: `<circle cx="170" cy="140" r="150" fill="none" stroke="#FFF4C8" stroke-width="26"/>
     <circle cx="170" cy="140" r="150" fill="none" stroke="#FFE27A" stroke-width="6"/>`,
     over: `<path d="M44 300L44 214M44 300L24 300M44 300L64 300" fill="none" stroke="#5B5F73" stroke-width="6" stroke-linecap="round"/>
@@ -632,7 +642,7 @@ const SPRITES = {
     @keyframes fall{0%{opacity:0;transform:translateY(-40px) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translateY(300px) rotate(180deg)}}
     @keyframes pop{0%{opacity:0;transform:scale(.4)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.3)}}`,
     wrap: 'spin',
-    pig: { eyes: 'happy', blush: `<ellipse cx="155" cy="187" rx="18" ry="10" fill="#FF9AA0" opacity=".6"/>` },
+    pig: { eyes: 'happy', blush: cheeks(18, 10, '#FF9AA0', '.6') },
     under: [[50, ''], [110, 'c2'], [180, 'c3'], [250, ''], [320, 'c2'], [80, 'c3'], [290, 'c3']].map(([x, d]) =>
       `<g class="c ${d}"><circle cx="${x}" cy="-20" r="12" fill="#FFD35A"/><circle cx="${x}" cy="-20" r="7" fill="none" stroke="#E5B33A" stroke-width="3"/></g>`).join('')
       + sparkle(40, 40, 22, '#FFE27A', 'sp') + sparkle(340, 60, 18, '#FFE27A', 'sp'),

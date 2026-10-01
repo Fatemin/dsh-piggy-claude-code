@@ -27,8 +27,8 @@
     <g class="snout"><path fill="#FF8195" d="M108 165C91 161 78 166 74 175C68 186 74 200 90 207C106 214 125 214 135 204C143 196 140 183 129 174C123 170 116 167 108 165Z"/>
     <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
     <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/></g>
-    <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/>
-    <ellipse cx="155" cy="187" rx="22" ry="12" fill="#FF6F6F" opacity=".4"/><ellipse cx="60" cy="160" rx="10" ry="8" fill="#FF6F6F" opacity=".3"/>
+    <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/><ellipse class="blush" cx="60" cy="170" rx="9" ry="5.3" fill="#FFAFAC" opacity=".75"/>
+    <ellipse cx="155" cy="187" rx="22" ry="12" fill="#FF6F6F" opacity=".4"/><ellipse cx="60" cy="170" rx="16.5" ry="9" fill="#FF6F6F" opacity=".4"/>
     <path d="M70 104L178 116L174 136L66 124Z" fill="#9FD3E6"/>
     <path d="M90 110v10M112 112v10M134 115v10M156 117v10" fill="none" stroke="#7FBFD6" stroke-width="4" stroke-linecap="round"/>
     <path d="M78 214L36 238" fill="none" stroke="#F4F6F8" stroke-width="11" stroke-linecap="round"/>
