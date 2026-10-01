@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git -C \"${CLAUDE_PROJECT_DIR:-$PWD}\" rev-parse --path-format=absolute --git-common-dir)/../scripts/harness/claude-test-consent.mjs\" || exit 2",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git -C \"${CLAUDE_PROJECT_DIR:-$PWD}\" rev-parse --path-format=absolute --git-common-dir)/../scripts/harness/claude-test-consent.mjs\" || exit 2",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git -C \"${CLAUDE_PROJECT_DIR:-$PWD}\" rev-parse --path-format=absolute --git-common-dir)/../scripts/harness/claude-test-consent.mjs\" || exit 2",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
