@@ -1,48 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="饿了">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="饿了">
   <title>饿了</title>
-  <!-- 眼巴巴往斜上方瞟，嘴角耷拉，口水往下滴；脑袋里飘着一根胡萝卜，肚子咕咕叫。 -->
+  <!-- 抬头盯着想象中的胡萝卜，口水往下滴，肚子咕咕叫。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
-    .look{animation:look 2.4s ease-in-out infinite;transform-origin:40px 60px}
+    .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
+    .ear2{animation:flick 5.2s ease-in-out infinite;transform-origin:205px 108px}
+    @keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.1)}}
+    @keyframes wag{50%{transform:rotate(14deg)}}
+    @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
+    .look{animation:look 2.4s ease-in-out infinite;transform-origin:190px 298px}
     .drool{animation:drip 2.4s ease-in infinite;transform-box:fill-box;transform-origin:50% 0}
     .think{animation:dream 2.4s ease-in-out infinite}
     .growl{animation:growl 1.2s ease-in-out infinite}
-    @keyframes look{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
-    @keyframes drip{0%,30%{transform:scaleY(.3);opacity:1}80%{transform:scaleY(1.4);opacity:1}100%{transform:scaleY(1.4) translateY(6px);opacity:0}}
-    @keyframes dream{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+    @keyframes look{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(-4deg)}}
+    @keyframes drip{0%,30%{transform:scaleY(.3);opacity:1}80%{transform:scaleY(1.4);opacity:1}100%{transform:scaleY(1.4) translateY(10px);opacity:0}}
+    @keyframes dream{50%{transform:translateY(-6px)}}
     @keyframes growl{0%,100%{opacity:0}30%,60%{opacity:1}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
-  <g stroke-linecap="round" stroke-linejoin="round">
-    <!-- 想吃的胡萝卜 -->
-    <g class="think">
-      <circle cx="54" cy="24" r="2.2" fill="#E9E1D6"/>
-      <circle cx="62" cy="17" r="3.2" fill="#E9E1D6"/>
-      <ellipse cx="82" cy="14" rx="15" ry="11" fill="#F3EDE4"/>
-      <path d="M76 20L88 9" fill="none" stroke="#F49A4A" stroke-width="5.5"/>
-      <path d="M88 9L92 4M88 9L94 9M88 9L90 3" fill="none" stroke="#7DBF6A" stroke-width="2.2"/>
-    </g>
-    <rect x="45" y="84" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
-    <rect x="92" y="82" width="11" height="27" rx="5.5" fill="#FF9FA5"/>
-    <path d="M106 54c5 0 8-4 6-7" fill="none" stroke="#FFD1AF" stroke-width="4.5"/>
-    <path d="M22 66C20 44 38 32 62 32S108 38 110 62 98 98 70 99 24 92 22 66Z" fill="#FFD1AF"/>
-    <ellipse cx="68" cy="98" rx="7" ry="4.5" fill="#FF9FA5"/>
-    <path class="growl" d="M82 78q3-3 6 0t6 0M84 86q3-3 6 0t6 0" fill="none" stroke="#F0B48E" stroke-width="2"/>
-    <g class="look">
-      <path d="M38 34C28 31 21 40 25 48" fill="none" stroke="#E95892" stroke-width="5.5"/>
-      <path d="M57 38C55 50 59 55 63 55C68 55 70 48 69 40" fill="none" stroke="#E95892" stroke-width="5.5"/>
-      <!-- 大眼睛，眼珠挤在右上角 -->
-      <ellipse cx="31" cy="58" rx="5" ry="5.6" fill="#fff"/>
-      <ellipse cx="50" cy="61" rx="5" ry="5.6" fill="#fff"/>
-      <ellipse cx="33" cy="55.6" rx="3" ry="3.4" fill="#373A32"/>
-      <ellipse cx="52" cy="58.6" rx="3" ry="3.4" fill="#373A32"/>
-      <path d="M26 50L35 48.5M45 52.5L54 52" fill="none" stroke="#D99A7A" stroke-width="2"/>
-      <path d="M26 65c-8 0-13 4.5-13 9.5S18 84 27 84s13-4 13-9.5S34 65 26 65Z" fill="#FF8195"/>
-      <ellipse cx="22" cy="74.5" rx="2.1" ry="3.1" fill="#373A32"/>
-      <ellipse cx="30.5" cy="75" rx="2.1" ry="3.1" fill="#373A32"/>
-      <path d="M39 84Q43 81 47 84" fill="none" stroke="#C2566B" stroke-width="2.4"/>
-      <path class="drool" d="M41 84c-1.6 3-2.4 5-2.4 6.4a2.4 2.4 0 0 0 4.8 0c0-1.4-.8-3.4-2.4-6.4Z" fill="#9FD8F0"/>
-    </g>
-    <rect x="29" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
-    <rect x="77" y="84" width="13" height="30" rx="6.5" fill="#FFD1AF"/>
+  <g class="think"><circle cx="150" cy="40" r="7" fill="#EAE3D8"/><circle cx="176" cy="16" r="11" fill="#EAE3D8"/>
+    <ellipse cx="250" cy="-6" rx="56" ry="34" fill="#F3EDE4"/>
+    <path d="M226 14L268-22" fill="none" stroke="#F49A4A" stroke-width="16" stroke-linecap="round"/>
+    <path d="M268-22L276-34M268-22L284-24M268-22L272-36" fill="none" stroke="#7DBF6A" stroke-width="6" stroke-linecap="round"/></g>
+  <g class="look">
+  <g class="pig" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#FF9FA5" d="M214 210C213 221 210 232 211 246C212 256 224 257 233 254C244 251 246 240 247 225L248 211Z"/>
+    <path class="tail" d="M294 62C298 47 305 40 315 45C327 50 341 64 329 72C319 80 309 67 316 51C322 39 330 31 339 35" fill="none" stroke="#FFD1AF" stroke-width="11"/>
+    
+    <path fill="#FFD1AF" d="M110 70C155 46 192 37 231 41C259 43 279 48 298 64C320 83 332 105 332 128C333 146 326 163 319 180C312 197 309 223 308 241C308 254 301 260 289 260C277 260 270 255 269 244L267 230C266 222 261 219 253 220C231 227 213 235 192 240L191 282C191 292 185 298 173 298C159 298 152 293 152 284L151 248C140 248 131 247 123 245L122 271C121 282 116 287 104 287C93 287 88 283 87 273L84 232C63 224 52 210 48 192C42 170 48 148 62 126C69 115 75 106 80 94C87 79 96 68 110 70Z"/>
+    <path fill="#FFD1AF" d="M63 107C64 97 75 81 84 68C90 58 102 58 108 66L115 87L90 113Z"/>
+    <path class="ear1" d="M97 65C88 63 83 75 78 82C71 91 65 101 64 106C68 116 86 109 93 98" fill="none" stroke="#E95892" stroke-width="10"/>
+    <path class="ear2" d="M187 104C174 110 184 129 193 139C201 147 213 150 220 139C225 131 224 119 222 112" fill="none" stroke="#E95892" stroke-width="11"/>
+    <path class="eye" fill="#373A32" d="M91 130C84 129 79 136 80 144C80 151 85 155 92 154C99 153 103 147 102 140C102 134 98 130 91 130Z"/><path class="eye" fill="#373A32" d="M166 145C159 144 154 150 154 157C153 164 158 170 165 170C171 170 176 164 176 157C176 151 173 146 166 145Z"/>
+    <path fill="#FF8195" d="M108 165C91 161 78 166 74 175C68 186 74 200 90 207C106 214 125 214 135 204C143 196 140 183 129 174C123 170 116 167 108 165Z"/>
+    <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
+    <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/>
+    <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/>
+    
+    <g class="drool"><path transform="translate(112 212) scale(1.3)" d="M0 0C-4 7-6 11-6 14a6 6 0 0 0 12 0c0-3-2-7-6-14Z" fill="#9FD8F0"/></g>
   </g>
+  </g>
+  <path class="growl" d="M250 178q7-7 14 0t14 0M256 196q7-7 14 0t14 0" fill="none" stroke="#E8A882" stroke-width="5" stroke-linecap="round"/>
 </svg>

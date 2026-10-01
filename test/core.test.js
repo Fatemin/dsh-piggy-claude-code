@@ -196,7 +196,7 @@ test('an elder pig can switch between the elder and the original drawing', () =>
   assert.equal(lifeStageFor(pig, T0).art, 'stage-elder', 'elder by default')
   assert.equal(setLook(pig, 'original', T0).ok, true)
   assert.equal(lifeStageFor(pig, T0).key, 'elder', 'still an elder pig')
-  assert.equal(lifeStageFor(pig, T0).art, 'stage-middle', 'wearing the original drawing')
+  assert.equal(lifeStageFor(pig, T0).art, 'stage-young', 'wearing the original drawing')
   assert.equal(setLook(pig, 'nonsense', T0).ok, false)
   assert.equal(migrate(JSON.parse(JSON.stringify(pig))).look, 'original', 'the choice is saved')
   assert.equal(setLook(pig, 'elder', T0).ok, true)

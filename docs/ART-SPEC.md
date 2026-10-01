@@ -2,7 +2,7 @@
 
 > **2026-10-02 更新：** 这份需求单已经按 `sample/` 的参考图整体重画，旧的
 > `piglet.svg` / `elder.svg` 已删除。现在的文件和命名以 `assets/` 为准
-> （`stage-*` / `mood-*` / `away-*` / `react-*` / `soul`，22 张，viewBox 128，
+> （`stage-*` / `mood-*` / `away-*` / `react-*` / `soul`，本体统一用原来的 Noto 🐖，由 `tools/build-sprites.mjs` 生成，
 > 每张用内嵌 CSS 自己动），总览见 `tools/sprites.html`。下面保留原始需求作参考。
 
 **目标**：把现在用 emoji 表示的一切，换成手绘 SVG。

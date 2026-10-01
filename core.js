@@ -209,14 +209,14 @@ export const canChooseLook = state =>
 /**
  * Which stage the pig is at right now: a box, a pig of some weight, or a grave.
  * [dsh-piggy-claude-code mod] Weight decides the stage and the size; an elder
- * pig whose owner chose the original look keeps the middle-aged drawing.
+ * pig whose owner chose the original look wears the plain pig, no beard or cane.
  */
 export function lifeStageFor(state, nowMs) {
   if (state === null) return LIFE_STAGES[0]
   if (state.dead === true) return GRAVE
   if (state.hatched !== true) return LIFE_STAGES[0]
   const stage = stageForWeight(state.weightG)
-  const art = stage.key === 'elder' && state.look === 'original' ? 'stage-middle' : stage.art
+  const art = stage.key === 'elder' && state.look === 'original' ? 'stage-young' : stage.art
   return { ...stage, art, size: sizeForWeight(state.weightG) }
 }
 

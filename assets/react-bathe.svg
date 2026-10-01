@@ -1,45 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="洗澡">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="洗澡">
   <title>洗澡</title>
-  <!-- 泡在小木盆里，闭眼享受，头顶一堆泡沫，耳朵往后；泡泡一个个往上冒。 -->
+  <!-- 泡在小木盆里闭眼享受，头顶一堆泡沫，泡泡往上冒。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
-    .soak{animation:soak 1.6s ease-in-out infinite}
-    .foam{animation:foam 1.6s ease-in-out infinite;transform-origin:52px 40px}
-    .b1{animation:rise 2s ease-out infinite}
-    .b2{animation:rise 2s ease-out -.7s infinite}
-    .b3{animation:rise 2s ease-out -1.4s infinite}
+    .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
+    .ear2{animation:flick 5.2s ease-in-out infinite;transform-origin:205px 108px}
+    @keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.1)}}
+    @keyframes wag{50%{transform:rotate(14deg)}}
+    @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
+    .soak{animation:soak 1.6s ease-in-out infinite;transform-origin:190px 298px}
+    .foam{animation:foam 1.6s ease-in-out infinite;transform-origin:150px 80px}
+    .b1{animation:rise 2s ease-out infinite}.b2{animation:rise 2s ease-out -.7s infinite}.b3{animation:rise 2s ease-out -1.4s infinite}
     .ripple{animation:ripple 1.6s ease-in-out infinite}
-    @keyframes soak{50%{transform:translateY(2px) rotate(-1.5deg)}}
+    @keyframes soak{50%{transform:translateY(4px) rotate(-1deg)}}
     @keyframes foam{50%{transform:scale(1.06,.94)}}
-    @keyframes rise{0%{opacity:0;transform:translateY(6px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
-    @keyframes ripple{50%{transform:translateX(3px)}}
+    @keyframes rise{0%{opacity:0;transform:translateY(10px)}20%{opacity:1}100%{opacity:0;transform:translateY(-80px)}}
+    @keyframes ripple{50%{transform:translateX(8px)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
-  <g stroke-linecap="round" stroke-linejoin="round">
-    <g class="soak">
-      <path d="M22 72C20 50 38 38 62 38S108 44 110 68 98 104 70 104 24 98 22 72Z" fill="#FFD1AF"/>
-      <!-- 耳朵往后贴 -->
-      <path d="M40 42C32 36 24 38 22 46" fill="none" stroke="#E95892" stroke-width="5.5"/>
-      <path d="M62 44C68 52 76 52 80 46" fill="none" stroke="#E95892" stroke-width="5.5"/>
-      <!-- 头顶泡沫 -->
-      <g class="foam">
-        <circle cx="40" cy="38" r="9" fill="#FFFFFF"/>
-        <circle cx="52" cy="32" r="11" fill="#FFFFFF"/>
-        <circle cx="64" cy="38" r="8" fill="#FFFFFF"/>
-        <circle cx="50" cy="42" r="8" fill="#FFFFFF"/>
-        <circle cx="48" cy="28" r="2.4" fill="#DDF1FB"/>
-      </g>
-      <path d="M26 64Q30 68 34 64M45 67Q49 71 53 67" fill="none" stroke="#373A32" stroke-width="2.8"/>
-      <ellipse cx="54" cy="77" rx="6" ry="3.4" fill="#FF9AA0"/>
-      <path d="M26 69c-8 0-13 4.5-13 9.5S18 88 27 88s13-4 13-9.5S34 69 26 69Z" fill="#FF8195"/>
-      <ellipse cx="22" cy="78.5" rx="2.1" ry="3.1" fill="#373A32"/>
-      <ellipse cx="30.5" cy="79" rx="2.1" ry="3.1" fill="#373A32"/>
-    </g>
-    <!-- 木盆和水 -->
-    <path d="M8 86H120L112 116C111 119 108 121 105 121H23C20 121 17 119 16 116Z" fill="#C69C6D"/>
-    <path d="M10 92H118M13 102H115M15 112H113" fill="none" stroke="#B0875A" stroke-width="2"/>
-    <path class="ripple" d="M6 86C14 82 22 90 30 86S46 82 54 86 70 90 78 86 94 82 102 86 118 90 122 86V90H6Z" fill="#AEDCF2"/>
-    <circle class="b1" cx="96" cy="78" r="5" fill="none" stroke="#9FD3E6" stroke-width="2"/>
-    <circle class="b2" cx="108" cy="74" r="3.6" fill="none" stroke="#9FD3E6" stroke-width="2"/>
-    <circle class="b3" cx="86" cy="80" r="2.8" fill="none" stroke="#9FD3E6" stroke-width="2"/>
+  
+  <g class="soak">
+  <g class="pig" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#FF9FA5" d="M214 210C213 221 210 232 211 246C212 256 224 257 233 254C244 251 246 240 247 225L248 211Z"/>
+    <path class="tail" d="M294 62C298 47 305 40 315 45C327 50 341 64 329 72C319 80 309 67 316 51C322 39 330 31 339 35" fill="none" stroke="#FFD1AF" stroke-width="11"/>
+    
+    <path fill="#FFD1AF" d="M110 70C155 46 192 37 231 41C259 43 279 48 298 64C320 83 332 105 332 128C333 146 326 163 319 180C312 197 309 223 308 241C308 254 301 260 289 260C277 260 270 255 269 244L267 230C266 222 261 219 253 220C231 227 213 235 192 240L191 282C191 292 185 298 173 298C159 298 152 293 152 284L151 248C140 248 131 247 123 245L122 271C121 282 116 287 104 287C93 287 88 283 87 273L84 232C63 224 52 210 48 192C42 170 48 148 62 126C69 115 75 106 80 94C87 79 96 68 110 70Z"/>
+    <path fill="#FFD1AF" d="M63 107C64 97 75 81 84 68C90 58 102 58 108 66L115 87L90 113Z"/>
+    <path class="ear1" d="M97 65C88 63 83 75 78 82C71 91 65 101 64 106C68 116 86 109 93 98" fill="none" stroke="#E95892" stroke-width="10"/>
+    <path class="ear2" d="M187 104C174 110 184 129 193 139C201 147 213 150 220 139C225 131 224 119 222 112" fill="none" stroke="#E95892" stroke-width="11"/>
+    <path d="M80 141Q91 152 102 141M154 156Q165 167 176 156" fill="none" stroke="#373A32" stroke-width="7"/>
+    <path fill="#FF8195" d="M108 165C91 161 78 166 74 175C68 186 74 200 90 207C106 214 125 214 135 204C143 196 140 183 129 174C123 170 116 167 108 165Z"/>
+    <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
+    <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/>
+    <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/>
+    
+    <g class="foam" fill="#FFFFFF"><circle cx="110" cy="72" r="24"/><circle cx="146" cy="56" r="30"/><circle cx="186" cy="68" r="22"/><circle cx="140" cy="84" r="20"/><circle cx="136" cy="44" r="6" fill="#DDF1FB"/></g>
   </g>
+  </g>
+  <path d="M34 208H348L330 290C329 296 323 300 316 300H66C59 300 53 296 52 290Z" fill="#C69C6D"/>
+    <path d="M40 232H342M46 256H336M50 280H332" fill="none" stroke="#B0875A" stroke-width="5"/>
+    <path class="ripple" d="M28 208C48 198 68 216 88 208S128 198 148 208 188 216 208 208 248 198 268 208 308 216 328 208 352 202 360 208V218H28Z" fill="#AEDCF2"/>
+    <circle class="b1" cx="292" cy="190" r="13" fill="none" stroke="#9FD3E6" stroke-width="5"/>
+    <circle class="b2" cx="326" cy="180" r="9" fill="none" stroke="#9FD3E6" stroke-width="5"/>
+    <circle class="b3" cx="262" cy="196" r="7" fill="none" stroke="#9FD3E6" stroke-width="5"/>
 </svg>
