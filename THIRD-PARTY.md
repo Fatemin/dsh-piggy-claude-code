@@ -41,7 +41,8 @@ Claude Code 插件、命令行与网页面板只依赖 Node.js 内置模块；ma
 
 ### 美术
 
-- `assets/` 下的 SVG 形象（`stage-*`、`mood-*`、`away-*`、`react-*`、`soul`）是本项目**重新绘制的原创矢量图**，取代了上游的 `piglet.svg` / `elder.svg`。绘制时参考了一组风格示意图，但没有拷贝任何图片的像素或路径；参考图不随本项目分发。
+- `assets/` 下的猪形象（`stage-*`、`mood-*`、`away-*`、`react-*`、`soul`）的本体取自 [Noto Emoji](https://github.com/googlefonts/noto-emoji) 的 🐖（emoji 图像以 **Apache License 2.0** 发布，© Google LLC）。本项目用 `tools/build-sprites.mjs` 在其路径上**加了动画、表情变化和配饰**生成这些文件，猪本身的形状和颜色未改。许可证全文见 [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt)。
+- `sample/` 里的风格参考图不随本项目分发。
 - 界面里的其它图形一律用系统 emoji 字体渲染，不附带图形文件。
 
 ### 商标
@@ -89,7 +90,8 @@ The Claude Code plugin, CLI and web panel use only Node.js built-in modules; the
 
 ### Art
 
-- The SVG sprites under `assets/` (`stage-*`, `mood-*`, `away-*`, `react-*`, `soul`) are **original vector drawings made for this project**, replacing upstream's `piglet.svg` / `elder.svg`. A set of style reference images was consulted while drawing, but no pixels or paths were copied from any image; the reference images are not distributed with this project.
+- The pig in the sprites under `assets/` (`stage-*`, `mood-*`, `away-*`, `react-*`, `soul`) is the 🐖 from [Noto Emoji](https://github.com/googlefonts/noto-emoji) (emoji images released under the **Apache License 2.0**, © Google LLC). This project **adds animation, expression changes and props** on top of its paths via `tools/build-sprites.mjs`; the pig's own shape and colours are unchanged. The full license text is in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
+- The style reference images in `sample/` are not distributed with this project.
 - All other graphics in the UI are rendered with the system emoji font; no image files are bundled for them.
 
 ### Trademarks
@@ -137,7 +139,8 @@ Claude Code プラグイン、CLI、Web パネルは Node.js の組み込みモ�
 
 ### アート
 
-- `assets/` 以下の SVG（`stage-*`、`mood-*`、`away-*`、`react-*`、`soul`）は本プロジェクトのために**新たに描いたオリジナルのベクター画像**で、上流の `piglet.svg` / `elder.svg` を置き換えたものです。描く際に画風の参考画像を見ていますが、どの画像からもピクセルやパスはコピーしておらず、参考画像は本プロジェクトに含めていません。
+- `assets/` 以下のブタの画像（`stage-*`、`mood-*`、`away-*`、`react-*`、`soul`）の本体は [Noto Emoji](https://github.com/googlefonts/noto-emoji) の 🐖（絵文字画像は **Apache License 2.0**、© Google LLC）です。本プロジェクトでは `tools/build-sprites.mjs` によりそのパスに**アニメーション、表情の変化、小物を追加**して生成しており、ブタ自体の形と色は変えていません。ライセンス全文は [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt) にあります。
+- `sample/` の画風参考画像は本プロジェクトに含めていません。
 - UI のその他の図柄はすべてシステムの絵文字フォントで描画しており、画像ファイルは同梱していません。
 
 ### 商標

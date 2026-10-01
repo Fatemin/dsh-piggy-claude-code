@@ -18,6 +18,7 @@ for (const file of ['config.js', 'host.js', 'lock.js', 'server.js', 'status.js']
   cpSync(join(ROOT, 'lib', file), join(OUT, 'lib', file))
 }
 cpSync(join(ROOT, 'assets'), join(OUT, 'assets'), { recursive: true })
+cpSync(join(ROOT, 'LICENSES'), join(OUT, 'LICENSES'), { recursive: true })
 cpSync(join(ROOT, 'locales'), join(OUT, 'locales'), { recursive: true })
 cpSync(join(ROOT, 'web'), join(OUT, 'web'), { recursive: true })
 writeFileSync(join(OUT, 'package.json'), JSON.stringify({ type: 'module', private: true }, null, 2) + '\n')
