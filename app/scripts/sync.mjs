@@ -11,7 +11,7 @@ const OUT = join(APP, 'pig')
 
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(join(OUT, 'lib'), { recursive: true })
-for (const file of ['index.js', 'core.js', 'data.js', 'render.js', 'store.js', 'client.js', 'i18n.js', 'world.js', 'LICENSE']) {
+for (const file of ['index.js', 'core.js', 'data.js', 'render.js', 'store.js', 'client.js', 'i18n.js', 'world.js', 'LICENSE', 'THIRD-PARTY.md']) {
   cpSync(join(ROOT, file), join(OUT, file))
 }
 for (const file of ['config.js', 'host.js', 'lock.js', 'server.js', 'status.js']) {

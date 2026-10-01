@@ -1,0 +1,271 @@
+# Piggy Piggy Companion 🐖
+
+[简体中文](README.md) · [English](README.en.md) · **日本語**
+
+**Claude Code** とデスクトップに住むブタ。あなたの**実際の作業**を食べて育ち、学校に通い、アルバイトをし、世界を旅して、病気にもなります。遊び方は QQ ペット（QQ 宠物 怀旧服 v1.2.4）を再現しています。
+
+> [!NOTE]
+> **このプロジェクトはフォークです。ゼロから書いたものではありません。**
+>
+> 主な出典は [**CLICGGER-TYPES/dsh-piggy**](https://github.com/CLICGGER-TYPES/dsh-piggy)（MIT、© dsh-pig contributors）——[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) の中に住むブタです。ゲーム本体（状態機械、数値、6 アイコンのパネル、病気の進行、学習 / アルバイト / ショップ）はすべて上流由来で、上流のオリジナル README は [README.dsh.md](README.dsh.md)（中国語）として残してあります。
+>
+> その上に、私自身のアイデアで二次開発を行いました。Claude Code への移植、デスクトップペット化、そして多くのゲームバランスの変更です（「[上流との違い](#上流との違い)」を参照）。上流の著作権表示とライセンスは [LICENSE](LICENSE) にそのまま残し、第三者に関する表示は [THIRD-PARTY.md](THIRD-PARTY.md) にまとめています。
+>
+> これは非公式の個人プロジェクトであり、上流の作者、DeepSeek、Anthropic、Tencent とは一切関係ありません。
+
+## 特徴
+
+- **トークン消費ゼロ**：hooks と statusLine だけを使用。hook は何も出力しないので、モデルはブタの存在を知りません（`claude plugin details` の常駐コストは ~0）
+- **作業を遅くしない**：すべての hook は `async`、何が起きても必ず `exit 0`
+- **上流に寄り添った改変**：Claude Code アダプターは新しいディレクトリにまとめ、ゲーム内容の変更はルートの数ファイルだけ。すべて `[dsh-piggy-claude-code mod]` の印付きなので、上流の更新を取り込むときに比較しやすい
+- **3 言語対応**：中文 / 日本語 / English をいつでも切り替え
+
+ブタの見方は 4 通り：
+
+| | 内容 | プラットフォーム |
+|---|---|---|
+| ステータスライン | Claude Code 下部に 1 行：`🐖 ブーちゃん · 🍚79 ❤️73 🫧90 💚5/5 · 🪙500 · 😊` | 全プラットフォーム |
+| Web パネル | 上流の 6 アイコンパネル（アニメーション付き手描き SVG 一式）をブラウザで | 全プラットフォーム |
+| デスクトップのブタ | 透明・最前面のデスクトップペット＋メニューバーアイコン。ブタ以外の場所はクリックが下に抜ける | macOS |
+| 単体アプリ | Claude Code 不要、インストールするだけで飼える | Windows · macOS |
+
+## 上流との違い
+
+### 追加したもの
+
+| | |
+|---|---|
+| Claude Code プラグイン | 5 つの hook が、あなたの質問・応答・ツール呼び出しをブタのごはんに変える。`lib/host.js` が上流の必要とする DSH ホストのインターフェースを模倣するので、上流プラグインはまだ DSH の中にいると思っている |
+| ステータスライン | ブタの状態を 1 行で。既存の statusLine の後ろに付け足せる |
+| CLI | 上流の `/pig` スラッシュコマンドの代わりに、ターミナルの `pig` コマンド（モデルを経由せず、トークンも使わない） |
+| デスクトップのブタ | macOS ネイティブ（SwiftPM）。透明・最前面・クリック透過・ログイン時に起動 |
+| 単体アプリ | Electron 版。Windows と macOS のインストーラー |
+| 多言語化 | 中文 / 日本語 / English。gettext 方式、辞書は `locales/` |
+| アート | 描き直した 22 枚のアニメーション付き SVG：成長段階・気分・外出・お世話への反応ごとに 1 枚 |
+
+### ゲーム内容の変更
+
+| | 上流 | 本プロジェクト |
+|---|---|---|
+| 何で育つか | 年齢：1 / 3 / 7 日目に段階が変わる | **体重**：20 kg で青年、50 kg で中年、**80 kg で老年** |
+| 体の大きさ | 段階ごとに固定（40–62 px） | **体重に応じて連続的に大きくなる**：誕生時 40 px、**120 kg で 200 px**（上限） |
+| 見た目 | 段ボール → 子ブタ → 青年 → 中年 → 老年 | 段階ごとに 1 枚。気分（空腹 / 汚れ / 眠い / ごきげん / さみしい / 病気）、外出（仕事 / 学校 / 旅行）、お世話への反応（食べる / お風呂 / 遊ぶ / なでる / 拒否 / 回復）にもそれぞれのポーズとアニメーション。`tools/sprites.html` で一覧できる。80 kg からは老年ブタで、**「老年 / オリジナル」を切り替え可能**（オリジナル = 中年の姿） |
+| 体重の増え方 | イベントや食事ごとに固定で数グラム | **実際に食べた満腹度だけ**：1 ポイントあたり約 98 g、80 kg 以降は約 50 g。満腹で食べさせても太らない |
+| 成長にかかる時間 | — | 普通にお世話すると、約 1 週間で 80 kg、約 2 週間で 120 kg |
+| 寿命 | 14 日目に老衰で死ぬ | **老衰では死なない**。病気を放置して健康が 0 になれば死ぬが、よみがえりの薬で生き返る |
+| 名前 | コマンドでしか変えられない | 最初の命名は無料。以降の改名には**名前変更カード**（ショップの「アイテム」、1000 🪙） |
+| 旅行 | 郊外 / 名山 / 海 / 海外の 4 段階 | **7 地域 21 か所**。運賃と所要時間はパソコンのタイムゾーンから計算。お土産と現地の名物を持ち帰り、**地域をコンプリート**するとステータスボーナスとパッシブ効果 |
+| 学校 | 小学校 → 大学 → 大学院、1 度に 1 科目 | **博士課程**を追加（12 時間、学費 2400、ステータス +7）。**大学は 2 科目、大学院と博士は 3 科目まで同時受講** |
+| 言語 | 中国語のみ | **中文 / 日本語 / English** |
+
+変更は `data.js`、`core.js`、`index.js`、`store.js`、`client.js`、`world.js` に集中しており、すべて `[dsh-piggy-claude-code mod]` の印付きです。
+
+<details>
+<summary><b>旅行の地域と報酬</b></summary>
+
+運賃は 100 🪙 + タイムゾーン 1 つごとに 200 🪙、所要時間は 1 時間 + タイムゾーン 1 つごとに 1 時間。毎回お土産を 1 つ持ち帰り、60% の確率で消耗品も（その半分は旅行でしか手に入らない現地の名物）。
+
+| 地域 | 行き先 | コンプリート報酬 | パッシブ効果 |
+|---|---|---|---|
+| 🐉 中国 | 北京 · 成都 · 西安 | ちから +3、体重 +5 kg | 🍚 ごはん大王：食べ物で太る量 +10% |
+| 🗾 東アジア | 東京 · ソウル · ウランバートル | かしこさ +2、みりょく +2 | 📚 勉強の鬼：授業時間 -20% |
+| 🛺 南・東南アジア | バンコク · シンガポール · ニューデリー | みりょく +2 | 🧘 のほほん系：気分の下がり方 25% 減 |
+| 🏰 ヨーロッパ | パリ · ローマ · ロンドン | かしこさ +4 | 🖼 ミュージアムパス：旅行帰りの気分 +50% |
+| 🗽 アメリカ大陸 | ニューヨーク · メキシコシティ · リオデジャネイロ | ちから +2、みりょく +2 | ✈️ マイル上級会員：運賃 -20% |
+| 🐫 中東・アフリカ | ドバイ · カイロ · ナイロビ | みりょく +1、ちから +1 | 💰 成金：バイト収入 +15% |
+| 🐧 オセアニア・南極 | シドニー · オークランド · 南極観測基地 | ちから +2 | 🧣 寒さに強い体：病気になりにくい |
+| 🌍 全地域 | — | 3 ステータスすべて +3、称号「世界一周トラベラー」 | — |
+
+各行き先にお土産が 2 つあり、まだ持っていないものが優先されます。数値はすべて [`world.js`](world.js) にあります。
+
+</details>
+
+<details>
+<summary><b>多言語</b></summary>
+
+言語はセーブデータに紐づきます。パネル、ステータスライン、トレイ / メニューバー、ターミナルのコマンドはすべて同じブタの言語を使います。
+
+- 新しいブタは `PIG_LANG` を使用。デスクトップのブタと単体アプリはシステムの言語を渡します。どちらもなければ中国語
+- この機能より前の古いセーブは中国語のまま、勝手に変わりません
+- 翻訳は中国語の原文をキーにしています（gettext 方式）。辞書は `locales/`、用語集は [`locales/GLOSSARY.md`](locales/GLOSSARY.md)。翻訳がない場合は中国語にフォールバック
+- 切り替え前に書かれた思い出やお知らせは元の言語のまま残ります
+
+</details>
+
+## 必要なもの
+
+- Claude Code（`PostToolUseFailure` / `StopFailure` hook があるバージョン。2.1.285 で検証済み）
+- Node.js ≥ 20
+- デスクトップのブタには、さらに macOS 13+ と Swift 6 ツールチェーン（Xcode または Command Line Tools）
+
+## インストール
+
+**1. プラグイン（ブタにごはんをあげる hooks）**
+
+```bash
+claude plugin marketplace add Fatemin/piggy-piggy-companion
+```
+
+```bash
+claude plugin install dsh-piggy@dsh-piggy-claude-code
+```
+
+Claude Code を再起動すると有効になります。
+
+**2. クローン（CLI、ステータスライン、パネル、デスクトップのブタで使用）**
+
+```bash
+git clone https://github.com/Fatemin/piggy-piggy-companion.git ~/piggy-piggy-companion
+```
+
+**3. ブタをかえす**
+
+```bash
+node ~/piggy-piggy-companion/bin/pig.js hatch
+```
+
+（パネルやデスクトップのブタで段ボールを 3 回つついても OK。）
+
+## ステータスライン
+
+`~/.claude/settings.json` に：
+
+```json
+"statusLine": { "type": "command", "command": "sh ~/piggy-piggy-companion/bin/statusline.sh" }
+```
+
+すでに自分の statusLine がある場合は、そのコマンドを引数に渡すと、ブタがその後ろに付きます：
+
+```json
+"statusLine": { "type": "command", "command": "sh ~/piggy-piggy-companion/bin/statusline.sh ~/.claude/my-statusline" }
+```
+
+ステータスラインは読み取り専用で、セーブデータには書き込みません。
+
+## Web パネル
+
+```bash
+node ~/piggy-piggy-companion/bin/pig.js serve
+```
+
+<http://127.0.0.1:41717/> を開き、ブタを右クリックでメニュー、左クリックでなでなで。
+
+## デスクトップのブタ（macOS）
+
+```bash
+~/piggy-piggy-companion/desktop/build.command
+```
+
+```bash
+~/piggy-piggy-companion/desktop/.build/release/DshPiggyDesk
+```
+
+- ブタを**右クリック**でメニューの開閉、**左クリック**でなでる、**ドラッグ**でウィンドウごと移動（位置は記憶）
+- ブタ以外の透明な部分のクリックは、**下のウィンドウにそのまま抜けます**
+- メニューバーのブタ：ステータス 1 行、表示 / 非表示、右下に戻す、ブラウザでパネルを開く、終了
+- パネルサーバーを自分で起動し（起動済みなら再利用）、終了時に一緒に止めます。アプリが異常終了しても、サーバーは 2 秒以内に保存して終了します
+
+ログイン時に起動（LaunchAgent）：`desktop/install-autostart.command`、解除は `desktop/uninstall-autostart.command`。
+
+> `swift build` が `Invalid manifest` やリンクエラーで失敗する場合は、`brew install swift` してからビルドしてください。`build.command` は Homebrew のツールチェーンを自動的に優先します。
+
+セルフチェック：`PIGGY_DEBUG_SNAPSHOT=<ディレクトリ>` を付けて起動すると、ウィンドウの描画（閉 / 開）とクリック透過の判定をそのディレクトリに書き出します。画面収録の権限は不要です。
+
+## 単体アプリ（Windows + macOS）
+
+`app/` は Electron 版のデスクトップのブタです。Claude Code とはつながず、ダブルクリックで使えます。ブタのロジックとパネルは上と同じコードです（`app/scripts/sync.mjs` がルートのランタイムをコピー）。
+
+- Mac：ユニバーサル `.dmg`（Intel + Apple シリコン）、Windows：ワンクリックの `Setup.exe`（x64、管理者権限不要）
+- 右クリックでメニュー、左クリックでなでる、ドラッグで移動、ブタ以外はクリック透過。トレイ / メニューバーのアイコンで非表示、位置リセット、ログイン時に起動、終了
+- セーブはシステムのアプリデータフォルダ（Mac `~/Library/Application Support/DSH Piggy/`、Windows `%APPDATA%\DSH Piggy\`）にあり、Claude Code 版とは別です
+
+```bash
+cd app && npm install
+```
+
+```bash
+npm run dist:mac
+```
+
+```bash
+npm run dist:win
+```
+
+成果物は `app/dist/` に出力されます。署名なしのため、Mac では初回起動時に「システム設定 → プライバシーとセキュリティ」で「このまま開く」を、Windows では SmartScreen で「詳細情報 → 実行」をクリックしてください。パソコンに不慣れな方向けの説明は [`app/share-readme.txt`](app/share-readme.txt)（中国語）。開発中は `npm start` で直接起動できます。
+
+## コマンド
+
+```
+pig                                  ステータスカード
+pig hatch | feed | bathe | play | pet
+pig study <科目> <小学|大学|研究生>    pig work <odd|site|office>    pig trip <suburb|mountain|sea|abroad>
+pig shop | buy <アイテム> | use <アイテム> | calloff | weigh | name <名前>
+pig look 老年 | 原版                  80 kg 以降：老年 / オリジナルの姿
+pig lang zh | ja | en                 言語の切り替え
+pig serve                            パネルサーバー
+pig status-line                      1 行ステータス
+```
+
+（`pig` = `node ~/piggy-piggy-companion/bin/pig.js`。お好みで alias を。）あえて Claude Code のスラッシュコマンドにはしていません——そうすると毎回モデルを経由してトークンを使うからです。
+
+## 仕組み
+
+| DSH | Claude Code |
+|---|---|
+| `agent/inbox/claimed` | `UserPromptSubmit` → `message` |
+| `agent/turn-stopping` | `Stop` → `turn` |
+| `tools/result`（成功 / 失敗） | `PostToolUse` / `PostToolUseFailure` → `tool` / `toolError` |
+| `agent/error` | `StopFailure` → `agentError` |
+| `ctx.webServer` + クライアントのマウント | `pig serve` + `web/index.html`（ブラウザ）/ `web/desk.html`（デスクトップのブタ） |
+| `/pig` スラッシュコマンド | ターミナルの `pig` |
+
+| パス | 内容 | 出典 |
+|---|---|---|
+| `.claude-plugin/` · `hooks/` | プラグインマニフェスト、marketplace、5 つの hook | 本プロジェクト |
+| `bin/` | `pig.js`（CLI / サーバー）、`pig-hook.js`（hook の入口）、`statusline.sh`、`pig-node.sh` | 本プロジェクト |
+| `lib/` | ホストの模倣、セーブのロック、パネルサーバー、ステータスライン | 本プロジェクト |
+| `web/` | ブラウザパネルとデスクトップのブタのシェルページ | 本プロジェクト |
+| `desktop/` | macOS のデスクトップのブタ（SwiftPM） | 本プロジェクト |
+| `app/` | 単体デスクトップペット（Electron） | 本プロジェクト |
+| `locales/` · `i18n.js` · `world.js` | 多言語化、旅行の世界 | 本プロジェクト |
+| `assets/` | 手描き SVG | 本プロジェクトで描き直し |
+| その他のルートファイル | ゲーム本体 | 上流 dsh-piggy（変更箇所には印あり） |
+
+## セーブデータ
+
+既定は `~/.claude/pig/state.json`、`PIG_STATE` で変更可能。パネルのポートは既定 `41717`、`PIG_PORT` で変更可能。
+
+Claude Code は 1 時間に数百回ツールを呼ぶこともあり、上流が数値設計で想定した量をはるかに超えます。そのため **受動的なごはんには制限があり、全セッション合わせて最大 30 分に 1 口**です（`PIG_FEED_EVERY_MIN` で調整、`0` = 無効）。
+
+hook はそれぞれ独立した短命のプロセスで、複数のセッションが同時に動くこともあるため：
+
+1. パネルサーバー（`pig serve` またはデスクトップのブタ）が動いている間は、サーバーがロックを持つ**唯一の書き手**で、hook は通知するだけ
+2. サーバーが動いていなければ、hook がロックを取って 読む → 食べさせる → **すぐに保存**
+3. 1 秒以内にロックが取れなければ、その 1 口は捨てる——1 口食べ損ねても平気だが、Claude Code を止めるのはダメ
+
+ロックは pid 付きのディレクトリで、持ち主のプロセスが死ねば自動的に引き継がれます。
+
+## セキュリティ
+
+パネルサーバーは `127.0.0.1` のみにバインドし、`Host` を検証（DNS リバインディング対策）、`Origin` がある場合は自分自身であることを要求し、POST は `application/json` 必須です。ただし同じマシン上の他のプロセスからはアクセスできます。
+
+## テスト
+
+```bash
+node --test test/*.test.js
+```
+
+上流のテストとアダプターのテスト（`test/cc.test.js`）を含みます。
+
+## 既知の制限
+
+- `StopFailure` は接続済みだが、エンドツーエンドでは未検証（API エラーを意図的に起こすのが難しいため）
+- ネイティブのデスクトップのブタは macOS のみ（Windows では単体アプリを使用）
+- 期限切れロックの引き継ぎには、2 つのプロセスが同時に気づいた場合にごく小さな競合の余地がある
+
+## ライセンスとクレジット
+
+- コードは **MIT** で公開しています。[LICENSE](LICENSE) を参照。上流 dsh-piggy の著作権表示（© dsh-pig contributors）はそのまま残しています。
+- ゲーム本体、数値体系、パネルのデザインは [CLICGGER-TYPES/dsh-piggy](https://github.com/CLICGGER-TYPES/dsh-piggy) に由来します。原作者に感謝します。
+- 参考資料、フォント、ランタイム依存、商標に関する表示は [THIRD-PARTY.md](THIRD-PARTY.md) を参照。
+- QQ ペット（QQ 宠物）/ QQ は Tencent の商標です。本プロジェクトは独立した非公式のオマージュ作品であり、Tencent とは無関係で、その許可も受けていません。
