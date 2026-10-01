@@ -240,7 +240,7 @@ window.__ModuleLoader__.load({
         '饱食 {n}': 'おなか {n}', '心情 {n}': 'きげん {n}', '清洁 {n}': 'きれいさ {n}',
         '治：{list}': '治る：{list}', '死后用来复活': 'いってしまった子を呼びもどす',
         '没有效果': 'こうかなし', '收入随机 {min}–{max} 🪙': '報酬ランダム {min}–{max} 🪙',
-        '固定 15 分钟': '15分固定', '高阶': '上級', '需要 {list}': '{list} が必要',
+        '高阶': '上級', '需要 {list}': '{list} が必要',
         '这份工作要求：{list}': 'このしごとには {list} が必要だよ',
         '刮彩票': 'スクラッチくじ', '{price} 🪙 一张 · 每 {n} 分钟一次': '1枚 {price} 🪙 · {n}分に1回',
         '刮一张': 'けずる', '{time} 后再来': 'あと {time}',
@@ -389,7 +389,7 @@ window.__ModuleLoader__.load({
         '饱食 {n}': 'Fullness {n}', '心情 {n}': 'Mood {n}', '清洁 {n}': 'Clean {n}',
         '治：{list}': 'Cures: {list}', '死后用来复活': 'Brings a lost pig back',
         '没有效果': 'No effect', '收入随机 {min}–{max} 🪙': 'random pay {min}–{max} 🪙',
-        '固定 15 分钟': 'always 15 min', '高阶': 'Pro', '需要 {list}': 'Needs {list}',
+        '高阶': 'Pro', '需要 {list}': 'Needs {list}',
         '这份工作要求：{list}': 'This job needs {list}',
         '刮彩票': 'Scratch cards', '{price} 🪙 一张 · 每 {n} 分钟一次': '{price} 🪙 each · one every {n} min',
         '刮一张': 'Scratch', '{time} 后再来': 'again in {time}',
@@ -3087,7 +3087,6 @@ window.__ModuleLoader__.load({
             var grow = el('div', 'dp-grow')
             var name = el('div', null, job.label)
             if (job.tier === 'pro') name.appendChild(el('span', 'dp-tag', '⭐ ' + T('高阶')))
-            if (job.fixed) name.appendChild(el('span', 'dp-tag', T('固定 15 分钟')))
             grow.appendChild(name)
             var line = formatDuration(job.minutes) + ' · ' + (job.random !== null
               ? T('收入随机 {min}–{max} 🪙', { min: job.random[0], max: job.random[1] })
