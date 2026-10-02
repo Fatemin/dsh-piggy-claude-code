@@ -17,8 +17,15 @@ export default {
     '{n} 天': '{n}日',
     // --- host ---------------------------------------------------------------
     '[dsh-pig] 路由注册失败，猪只能用命令访问': '[dsh-pig] ルートを登録できませんでした。コマンドからだけ使えます',
-    '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
-      '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <バイト>|trip <行き先>|shop|buy|use|weigh|look <おじいブタ|オリジナル>|lang <zh|ja|en>|about]',
+    '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|wear [装饰]|lang <zh|ja|en>|about]':
+      '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <バイト>|trip <行き先>|shop|buy|use|weigh|wear [アイテム]|lang <zh|ja|en>|about]',
+    // [ST0004] /pig wear
+    '👗 跟着阶段穿了': '👗 成長に合わせて着るようにした',
+    '👗 全脱了，光溜溜的': '👗 ぜんぶぬいだ。すっぽんぽん',
+    '衣柜里没有「{name}」。/{cmd} wear 看看有什么。': 'クローゼットに「{name}」はないよ。/{cmd} wear で見てみて。',
+    '🔒 {item}还没解锁：{hint}': '🔒 {item}はまだ使えない：{hint}',
+    '👗 戴上了{item}': '👗 {item}を身につけた',
+    '👗 摘下了{item}': '👗 {item}をはずした',
     '😴 {name} 去睡觉了。睡着时只会变饿，心情和清洁会慢慢恢复。': '😴 {name}はおやすみ中。ねている間はおなかがへるだけで、きげんときれいさは少しずつもどります。',
     '☀️ {name} 醒了。': '☀️ {name}がおきた。',
     '{name} 已经在睡了。': '{name}はもうねています。',
@@ -89,8 +96,15 @@ export default {
     '{n} 天': '{n} days',
     // --- host ---------------------------------------------------------------
     '[dsh-pig] 路由注册失败，猪只能用命令访问': '[dsh-pig] Could not register the routes; the pig is command-only',
-    '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
-      '[hatch|feed|bathe|play|pet|sleep|wake|study <subject>|work <job>|trip <place>|shop|buy|use|weigh|look <elder|original>|lang <zh|ja|en>|about]',
+    '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|wear [装饰]|lang <zh|ja|en>|about]':
+      '[hatch|feed|bathe|play|pet|sleep|wake|study <subject>|work <job>|trip <place>|shop|buy|use|weigh|wear [item]|lang <zh|ja|en>|about]',
+    // [ST0004] /pig wear
+    '👗 跟着阶段穿了': '👗 Dressed to match its stage again',
+    '👗 全脱了，光溜溜的': '👗 Took everything off',
+    '衣柜里没有「{name}」。/{cmd} wear 看看有什么。': 'There is no "{name}" in the wardrobe. /{cmd} wear shows what there is.',
+    '🔒 {item}还没解锁：{hint}': '🔒 {item} is locked: {hint}',
+    '👗 戴上了{item}': '👗 Put on the {item}',
+    '👗 摘下了{item}': '👗 Took off the {item}',
     '😴 {name} 去睡觉了。睡着时只会变饿，心情和清洁会慢慢恢复。': '😴 {name} went to bed. Asleep it only gets hungrier; mood and cleanliness slowly come back.',
     '☀️ {name} 醒了。': '☀️ {name} is awake.',
     '{name} 已经在睡了。': '{name} is already asleep.',

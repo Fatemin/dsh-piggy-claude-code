@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="老年猪">
   <title>老年猪</title>
-  <!-- 同一只猪：灰眉毛、白胡子，拄一根小拐杖，偶尔点头打盹。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+  <!-- 行为资产（姿势）：同一只猪：拄一根小拐杖，偶尔点头打盹（白眉白胡子是装饰 wear-whiskers）。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
     .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
@@ -27,9 +27,7 @@
     <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
     <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/></g>
     <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/><ellipse class="blush" cx="60" cy="170" rx="9" ry="5.3" fill="#FFAFAC" opacity=".75"/>
-    <path d="M77 122Q89 111 104 121M151 137Q164 127 179 138" fill="none" stroke="#ADADA5" stroke-width="8"/>
-    <path d="M107 207C98 203 96 213 84 212C88 220 98 223 107 216C114 225 127 226 134 219C120 220 119 208 107 207Z" fill="#F8F4E8"/>
-    <path d="M105 228Q116 233 128 230Q127 241 119 247L116 240L110 244Q107 236 105 228Z" fill="#F8F4E8"/>
+    <g class="wear" data-occupies=""></g>
   </g>
   </g>
   <path class="cane" d="M40 298V226C40 206 66 206 66 226" fill="none" stroke="#A8764C" stroke-width="10"/>

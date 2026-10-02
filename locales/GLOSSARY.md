@@ -26,6 +26,7 @@ The pig is referred to as "it" in English and by name or 「この子」 in Japa
 | 拆开纸盒 | 箱をあける | Open the box |
 | 小猪 · 青年猪 · 中年猪 · 老年猪 | こブタ · わかブタ · おとなブタ · おじいブタ | Piglet · Young pig · Grown pig · Elder pig |
 | 原版 (the original look) | オリジナル | Original |
+| 衣柜 · 装饰 · 穿戴 · 跟着阶段 | クローゼット · アイテム · おしゃれ · 成長に合わせる | Wardrobe · item · wearing · match the stage |
 | 墓碑 · 灵魂 | おはか · たましい | Grave · Soul |
 | 还魂丹 | よみがえりの薬 | Revival pill |
 | 领养 | 新しい子をむかえる | Adopt |

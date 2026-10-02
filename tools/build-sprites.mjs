@@ -5,11 +5,19 @@
  * The pig is the project's original drawing — the Noto Emoji 🐖 traced into
  * flat paths (it used to live in assets/piglet.svg). No stage or behaviour
  * redraws it: a sprite only moves it (CSS animation inside the SVG), closes
- * its eyes, and adds things around it — a hat, a desk, a tub, tears.
+ * its eyes, and adds things around it — a desk, a tub, tears.
+ *
+ * [ST0004] Two kinds of asset, never mixed (docs/contracts/art-assets.md):
+ *   pose (行为资产)        <pose>.svg — what the pig is doing; the game picks it.
+ *                          It carries one empty wear slot, `<g class="wear"
+ *                          data-occupies="…">`, naming the slots its own gear
+ *                          already covers (the trip's straw hat, the lab goggles).
+ *   decoration (装饰资产)  wear-<key>.svg — something the pig wears; its owner
+ *                          picks it. The art route pours the worn decorations
+ *                          into the pose's slot, so one drawing fits every pose.
  *
  * stage-box.svg and stage-grave.svg have no pig in them and are hand-written;
- * this script leaves them alone. Every pose is also written once per life
- * stage that dresses up (<pose>--piglet / --middle / --elder.svg).
+ * this script leaves them alone.
  *
  *   node tools/build-sprites.mjs
  */
@@ -53,7 +61,7 @@ const cheeks = (rx, ry, fill, opacity, cls = '') => {
     + `<ellipse${c} cx="60" cy="170" rx="${+(rx * .75).toFixed(1)}" ry="${+(ry * .75).toFixed(1)}" fill="${fill}" opacity="${opacity}"/>`
 }
 
-function pig({ eyes = 'open', face = '', back = '', blush = '', look = '' } = {}) {
+function pig({ eyes = 'open', face = '', back = '', blush = '', wear = '' } = {}) {
   const eyeMarkup = eyes === 'open'
     ? `<path class="eye" fill="${C.eye}" d="${P.eye1}"/><path class="eye" fill="${C.eye}" d="${P.eye2}"/>`
     : `<path d="${SHUT[eyes]}" fill="none" stroke="${C.eye}" stroke-width="7"/>`
@@ -71,7 +79,7 @@ function pig({ eyes = 'open', face = '', back = '', blush = '', look = '' } = {}
     <path fill="${C.eye}" d="${P.nostril2}"/></g>
     ${cheeks(12, 7, C.blush, '.75', 'blush')}
     ${blush}
-    ${look}
+    ${wear}
     ${face}
   </g>`
 }
@@ -95,29 +103,66 @@ const drop = (x, y, s, fill, cls) =>
   `<g class="${cls}"><path transform="translate(${x} ${y}) scale(${s})" d="M0 0C-4 7-6 11-6 14a6 6 0 0 0 12 0c0-3-2-7-6-14Z" fill="${fill}"/></g>`
 
 // ---------------------------------------------------------------------------
-// What each life stage wears. The stage sprites wear it standing still, and
-// every pose is built once more per stage wearing it too (<pose>--<stage>.svg),
-// so a piglet keeps its bow and an old pig its beard while it eats or works.
-// A pose with its own headwear (`hat: true`) drops the bow and the cap.
+// [ST0004] Decorations (装饰资产): each one is drawn once, on the pig's own
+// coordinates, so it sits right in every pose. Keys and slots must match
+// data.js WEARABLES. Classes and keyframes start with `w-<key>` so they can never
+// collide with a pose's own. Poses reuse a few of these as their own gear.
 // ---------------------------------------------------------------------------
-const LOOK = {
-  bow: `<g transform="translate(86 50) rotate(-18)"><path d="M0 0L-22-12C-28-3-28 7-22 14Z" fill="#FF6F9A"/><path d="M0 0L22-12C28-3 28 7 22 14Z" fill="#FF6F9A"/><circle r="7" fill="#E9507F"/></g>`,
-  cap: `<path d="M118 62C124 34 166 22 200 34L204 52C176 46 146 52 118 62Z" fill="#8B6B4E"/><path d="M98 70Q116 56 140 58" fill="none" stroke="#6E5239" stroke-width="10"/>`,
-  elder: `<path d="M77 122Q89 111 104 121M151 137Q164 127 179 138" fill="none" stroke="#ADADA5" stroke-width="8"/>
+const glasses = stroke => `<g fill="none" stroke="${stroke}" stroke-width="5"><circle cx="91" cy="142" r="20"/><circle cx="165" cy="157" r="20"/><path d="M111 145L145 152M71 138L58 132"/></g>`
+const WEAR = {
+  bow: {
+    slot: 'head', title: '蝴蝶结', note: '小猪耳朵上的粉色蝴蝶结。',
+    svg: `<g transform="translate(86 50) rotate(-18)"><path d="M0 0L-22-12C-28-3-28 7-22 14Z" fill="#FF6F9A"/><path d="M0 0L22-12C28-3 28 7 22 14Z" fill="#FF6F9A"/><circle r="7" fill="#E9507F"/></g>`,
+  },
+  flatcap: {
+    slot: 'head', title: '鸭舌帽', note: '中年猪的棕色鸭舌帽。',
+    svg: `<path d="M118 62C124 34 166 22 200 34L204 52C176 46 146 52 118 62Z" fill="#8B6B4E"/><path d="M98 70Q116 56 140 58" fill="none" stroke="#6E5239" stroke-width="10"/>`,
+  },
+  mortarboard: {
+    slot: 'head', title: '学士帽', note: '拿到毕业证才有的学位帽，流苏轻轻晃。',
+    css: `.w-mortarboard-tassel{animation:w-mortarboard-swing 1.8s ease-in-out infinite;transform-origin:236px 52px}
+    @keyframes w-mortarboard-swing{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}`,
+    svg: `<path d="M126 58C124 76 200 82 208 62L206 48L130 52Z" fill="#3A3A48"/>
+    <path d="M94 50L168 26L242 46L168 70Z" fill="#2E2E3A"/><circle cx="168" cy="48" r="5" fill="#F5C24C"/>
+    <path d="M168 48L236 52" fill="none" stroke="#F5C24C" stroke-width="3"/>
+    <g class="w-mortarboard-tassel"><path d="M236 52V84" fill="none" stroke="#F5C24C" stroke-width="4"/><rect x="230" y="82" width="12" height="16" rx="3" fill="#F5C24C"/></g>`,
+  },
+  strawhat: {
+    slot: 'head', title: '草帽', note: '旅行时戴的草帽，系一圈红带子。',
+    svg: `<ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
+    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/>`,
+  },
+  glasses: {
+    slot: 'eyes', title: '圆眼镜', note: '上课戴的棕框圆眼镜。',
+    svg: glasses('#7A5A3A'),
+  },
+  sunglasses: {
+    slot: 'eyes', title: '墨镜', note: '从中东·非洲晒回来的墨镜。',
+    svg: `<path d="M72 134h40v10a16 16 0 0 1-40 0ZM146 148h40v10a16 16 0 0 1-40 0Z" fill="#2E2E3A"/><path d="M112 138L146 152M72 136L58 130" fill="none" stroke="#2E2E3A" stroke-width="5"/>`,
+  },
+  scarf: {
+    slot: 'neck', title: '红领巾', note: '上小学系的红领巾。',
+    svg: `<path d="M128 212L198 226L152 262Z" fill="#E5534B"/>
+    <path d="M156 222L138 252M156 222L174 254" fill="none" stroke="#E5534B" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="156" cy="222" r="9" fill="#C9433C"/>`,
+  },
+  whiskers: {
+    slot: 'face', title: '白眉白胡子', note: '老年猪的灰眉毛和白胡子。',
+    svg: `<path d="M77 122Q89 111 104 121M151 137Q164 127 179 138" fill="none" stroke="#ADADA5" stroke-width="8"/>
     <path d="M107 207C98 203 96 213 84 212C88 220 98 223 107 216C114 225 127 226 134 219C120 220 119 208 107 207Z" fill="#F8F4E8"/>
     <path d="M105 228Q116 233 128 230Q127 241 119 247L116 240L110 244Q107 236 105 228Z" fill="#F8F4E8"/>`,
+  },
 }
-const STAGE_LOOKS = {
-  piglet: { title: '小猪', head: LOOK.bow },
-  middle: { title: '中年猪', head: LOOK.cap },
-  elder: { title: '老年猪', face: LOOK.elder },
+/** A decoration as it goes into a pose's wear slot: its own style, then its shapes. */
+const wearMarkup = key => {
+  const w = WEAR[key]
+  return `<g class="w-${key}" data-wear="${key}" data-slot="${w.slot}">${w.css ? `<style>${w.css}</style>` : ''}
+    ${w.svg}</g>`
 }
 
 // The little work desk most indoor poses stand at.
 const DESK = `<rect x="28" y="252" width="170" height="12" rx="6" fill="#C69C6D"/>
     <rect x="38" y="264" width="12" height="36" rx="6" fill="#B0875A"/><rect x="176" y="264" width="12" height="36" rx="6" fill="#B0875A"/>`
-const glasses = stroke => `<g fill="none" stroke="${stroke}" stroke-width="5"><circle cx="91" cy="142" r="20"/><circle cx="165" cy="157" r="20"/><path d="M111 145L145 152M71 138L58 132"/></g>`
-
 // On the road: straw hat, backpack, the road sliding back under the feet.
 const TRIP_CSS = `.walk{animation:walk .5s ease-in-out infinite;transform-origin:190px 298px}
     .road{animation:road .8s linear infinite}
@@ -127,12 +172,11 @@ const TRIP_CSS = `.walk{animation:walk .5s ease-in-out infinite;transform-origin
 const TRIP_GEAR = `<path d="M236 58Q206 110 226 168" fill="none" stroke="#4E7FB0" stroke-width="9"/>
     <rect x="238" y="34" width="84" height="92" rx="26" fill="#6FA8DC" transform="rotate(8 280 80)"/>
     <rect x="248" y="86" width="64" height="32" rx="13" fill="#5A93C8" transform="rotate(8 280 80)"/>
-    <ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
-    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/>`
+    ${WEAR.strawhat.svg}`
 const TRIP_ROAD = `<g class="road"><path d="M-60 300H0M60 300H120M180 300H240M300 300H360M420 300H480" fill="none" stroke="#D9CBB3" stroke-width="7" stroke-linecap="round"/></g>`
 /** A trip to one region: the walking pig, plus that region's scenery. */
-const trip = (title, note, { css = '', under = '', over = '', gear = '', back = '' }) => ({
-  title, note, hat: true,
+const trip = (title, note, { css = '', under = '', over = '', gear = '', back = '', wears = ['head'] }) => ({
+  title, note, wears,
   css: `${TRIP_CSS}
     ${css}`,
   wrap: 'walk',
@@ -148,33 +192,30 @@ const trip = (title, note, { css = '', under = '', over = '', gear = '', back = 
 const SPRITES = {
   // ---- stages: the same pig, only accessories ----
   'stage-piglet': {
-    title: '小猪', note: '刚出纸盒：耳朵上系个小蝴蝶结，走两步颠一下。',
+    title: '小猪', note: '刚出纸盒：走两步颠一下（蝴蝶结是装饰 wear-bow）。',
     css: `.hop{animation:hop 1.4s ease-in-out infinite;transform-origin:190px 298px}
     @keyframes hop{0%,100%{transform:translateY(0) scale(1,1)}45%{transform:translateY(-10px) scale(.98,1.02)}70%{transform:translateY(0) scale(1.03,.97)}}`,
-    wrap: 'hop', looks: false,
-    pig: { face: LOOK.bow },
+    wrap: 'hop',
   },
   'stage-young': {
     title: '青年猪', note: '原版那只猪：呼吸、眨眼、甩尾巴。',
     css: `.breathe{animation:breathe 2.6s ease-in-out infinite;transform-origin:190px 298px}
     @keyframes breathe{50%{transform:scale(1.015,.975)}}`,
-    wrap: 'breathe', looks: false,
+    wrap: 'breathe',
   },
   'stage-middle': {
-    title: '中年猪', note: '同一只猪，戴一顶鸭舌帽，呼吸慢一点。',
+    title: '中年猪', note: '同一只猪，呼吸慢一点（鸭舌帽是装饰 wear-flatcap）。',
     css: `.breathe{animation:breathe 3.2s ease-in-out infinite;transform-origin:190px 298px}
     @keyframes breathe{50%{transform:scale(1.02,.97)}}`,
-    wrap: 'breathe', looks: false,
-    pig: { face: LOOK.cap },
+    wrap: 'breathe',
   },
   'stage-elder': {
-    title: '老年猪', note: '同一只猪：灰眉毛、白胡子，拄一根小拐杖，偶尔点头打盹。',
+    title: '老年猪', note: '同一只猪：拄一根小拐杖，偶尔点头打盹（白眉白胡子是装饰 wear-whiskers）。',
     css: `.nod{animation:nod 6s ease-in-out infinite;transform-origin:190px 298px}
     .cane{animation:tap 4s ease-in-out infinite;transform-origin:44px 298px}
     @keyframes nod{0%,60%,100%{transform:rotate(0)}72%{transform:rotate(-3deg) translateY(3px)}84%{transform:rotate(0)}}
     @keyframes tap{50%{transform:rotate(-3deg)}}`,
-    wrap: 'nod', looks: false,
-    pig: { face: LOOK.elder },
+    wrap: 'nod',
     over: `<path class="cane" d="M40 298V226C40 206 66 206 66 226" fill="none" stroke="#A8764C" stroke-width="10"/>`,
   },
   'soul': {
@@ -187,7 +228,7 @@ const SPRITES = {
     @keyframes float{0%,100%{transform:translateY(6px)}50%{transform:translateY(-12px)}}
     @keyframes glow{50%{opacity:.5}}
     @keyframes twinkle{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}`,
-    wrap: 'float ghost', looks: false,
+    wrap: 'float ghost', dress: false,
     pig: { eyes: 'closed' },
     over: `<g class="float"><ellipse class="halo" cx="160" cy="16" rx="52" ry="13" fill="none" stroke="#F5D76E" stroke-width="10"/></g>
     ${sparkle(52, 40, 18, '#FFE27A', 'sp')}${sparkle(344, 180, 14, '#FFE27A', 'sp2')}`,
@@ -275,7 +316,7 @@ const SPRITES = {
     @keyframes z{0%{opacity:0;transform:translate(0,14px)}30%{opacity:1}100%{opacity:0;transform:translate(24px,-36px)}}
     @keyframes glow{50%{opacity:.65}}
     @keyframes twinkle{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}`,
-    wrap: 'breathe', hat: true,
+    wrap: 'breathe', wears: ['head'],
     pig: {
       eyes: 'closed',
       face: `<path d="M110 72C120 30 170 4 222 12C250 16 266 34 270 58C252 46 236 42 214 46Z" fill="#7E9BD8"/>
@@ -442,7 +483,7 @@ const SPRITES = {
     @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes drip{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(30px)}}
     @keyframes slide{0%,20%{opacity:0;transform:translateY(0)}40%{opacity:1}100%{opacity:0;transform:translateY(28px)}}`,
-    wrap: 'droop', hat: true,
+    wrap: 'droop', wears: ['head'],
     pig: {
       eyes: 'closed',
       blush: cheeks(20, 11, '#B9C6E8', '.45'),
@@ -486,8 +527,8 @@ const SPRITES = {
     @keyframes tilt{0%,100%{transform:rotate(0)}35%{transform:rotate(-3deg)}70%{transform:rotate(-1deg)}}
     @keyframes idea{0%,40%,100%{opacity:0;transform:scale(.6)}55%,85%{opacity:1;transform:scale(1)}}
     @keyframes flip{0%,70%,100%{transform:scaleX(1)}80%{transform:scaleX(-1)}90%{transform:scaleX(1)}}`,
-    wrap: 'tilt',
-    pig: { face: `<g fill="none" stroke="#7A5A3A" stroke-width="5"><circle cx="91" cy="142" r="20"/><circle cx="165" cy="157" r="20"/><path d="M111 145L145 152M71 138L58 132"/></g>` },
+    wrap: 'tilt', wears: ['eyes'],
+    pig: { face: WEAR.glasses.svg },
     under: `<g class="idea"><circle cx="230" cy="-4" r="22" fill="#FFE27A"/><rect x="220" y="16" width="20" height="12" rx="4" fill="#C9C3B8"/>
     <path d="M230-38v-10M262-22l8-8M198-22l-8-8" fill="none" stroke="#FFD35A" stroke-width="5" stroke-linecap="round"/></g>`,
     over: `<path d="M36 278L104 266V300L36 300Z" fill="#FFFDF6"/>
@@ -499,7 +540,7 @@ const SPRITES = {
   'away-trip': {
     title: '旅行', note: '戴草帽、背小包往前走，一颠一颠，脚下的路往后退。',
     css: TRIP_CSS,
-    wrap: 'walk', hat: true,
+    wrap: 'walk', wears: ['head'],
     pig: { face: TRIP_GEAR },
     under: TRIP_ROAD,
   },
@@ -532,7 +573,7 @@ const SPRITES = {
     @keyframes foam{50%{transform:scale(1.06,.94)}}
     @keyframes rise{0%{opacity:0;transform:translateY(10px)}20%{opacity:1}100%{opacity:0;transform:translateY(-80px)}}
     @keyframes ripple{50%{transform:translateX(8px)}}`,
-    wrap: 'soak', hat: true,
+    wrap: 'soak', wears: ['head'],
     pig: { eyes: 'closed', face: `<g class="foam" fill="#FFFFFF"><circle cx="110" cy="72" r="24"/><circle cx="146" cy="56" r="30"/><circle cx="186" cy="68" r="22"/><circle cx="140" cy="84" r="20"/><circle cx="136" cy="44" r="6" fill="#DDF1FB"/></g>` },
     over: `<path d="M34 208H348L330 290C329 296 323 300 316 300H66C59 300 53 296 52 290Z" fill="#C69C6D"/>
     <path d="M40 232H342M46 256H336M50 280H332" fill="none" stroke="#B0875A" stroke-width="5"/>
@@ -609,7 +650,7 @@ const SPRITES = {
     @keyframes type{50%{transform:translateY(3px) rotate(.6deg)}}
     @keyframes fire{0%,100%{fill:#D9DDF2;transform:scale(1)}30%{fill:#7C8CF0;transform:scale(1.25)}}
     @keyframes keys{50%{opacity:0}}`,
-    wrap: 'type',
+    wrap: 'type', wears: ['eyes'],
     pig: { face: `<g fill="none" stroke="#5B5F73" stroke-width="5"><circle cx="91" cy="142" r="20"/><circle cx="165" cy="157" r="20"/><path d="M111 145L145 152M71 138L58 132"/></g>` },
     under: `<g stroke="#C9CEE8" stroke-width="3">
     <path d="M190 -14L240 -24M190 -14L240 6M190 -14L240 36M190 22L240 -24M190 22L240 6M190 22L240 36M240 -24L290 -6M240 6L290 -6M240 36L290 -6M240 -24L290 24M240 6L290 24M240 36L290 24"/></g>
@@ -656,7 +697,7 @@ const SPRITES = {
     @keyframes live{50%{opacity:.2}}
     @keyframes wave{0%{opacity:0;transform:translateX(0)}40%{opacity:1}100%{opacity:0;transform:translateX(-16px)}}
     @keyframes chat{0%{opacity:0;transform:translateY(30px)}15%,80%{opacity:1}100%{opacity:0;transform:translateY(-40px)}}`,
-    wrap: 'bob', hat: true,
+    wrap: 'bob', wears: ['head'],
     pig: { face: `<path d="M62 128C62 50 200 34 222 110" fill="none" stroke="#5B5F73" stroke-width="12" stroke-linecap="round"/>
     <ellipse cx="64" cy="132" rx="15" ry="22" fill="#8E7CC3"/><ellipse cx="220" cy="116" rx="15" ry="22" fill="#8E7CC3"/>
     <path d="M58 150Q44 196 64 212" fill="none" stroke="#5B5F73" stroke-width="5" stroke-linecap="round"/>
@@ -678,7 +719,7 @@ const SPRITES = {
     @keyframes squat{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.94)}}
     @keyframes lift{0%,100%{transform:translateY(0)}50%{transform:translateY(-70px)}}
     @keyframes fling{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(26px,-30px)}}`,
-    wrap: 'squat',
+    wrap: 'squat', wears: ['neck'],
     pig: { face: `<path d="M64 112L196 128L194 146L60 130Z" fill="#E5534B"/><path d="M64 120L195 136" fill="none" stroke="#FFFFFF" stroke-width="4"/>
     <path d="M120 214Q150 240 190 226" fill="none" stroke="#5B5F73" stroke-width="4"/><rect x="138" y="228" width="22" height="14" rx="6" fill="#F5C24C"/>
     ${drop(220, 70, 1.3, '#9FD8F0', 's1')}${drop(60, 100, 1.1, '#9FD8F0', 's2')}` },
@@ -806,7 +847,7 @@ const SPRITES = {
     @keyframes stamp{0%,30%,100%{transform:translateY(-22px)}45%,55%{transform:translateY(0)}}
     @keyframes mark{0%,45%{opacity:0}50%,95%{opacity:1}}
     @keyframes spin{to{transform:rotate(360deg)}}`,
-    wrap: 'sit',
+    wrap: 'sit', wears: ['neck'],
     pig: { face: `<path d="M120 212h20l-4 10h-12Z" fill="#3E5C99"/><path d="M125 222h10l6 30-11 11-11-11Z" fill="#4A6FB5"/>
     <path d="M128 232l8 6M126 244l10 7" fill="none" stroke="#7FA0D8" stroke-width="3" stroke-linecap="round"/>` },
     under: `<circle cx="306" cy="-2" r="30" fill="#FFFFFF"/><circle cx="306" cy="-2" r="30" fill="none" stroke="#8B6B4E" stroke-width="6"/>
@@ -849,7 +890,7 @@ const SPRITES = {
     @keyframes sway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.5deg)}}
     @keyframes sweep{0%,100%{transform:rotate(6deg)}50%{transform:rotate(-8deg)}}
     @keyframes dust{0%{opacity:0;transform:translate(0,0) scale(.6)}30%{opacity:.9}100%{opacity:0;transform:translate(-20px,-26px) scale(1.3)}}`,
-    wrap: 'sway', hat: true,
+    wrap: 'sway', wears: ['head'],
     pig: { face: `<path d="M104 76C128 40 192 30 218 50L208 72C180 58 138 62 114 90Z" fill="#6FA8DC"/>
     <circle cx="140" cy="62" r="4" fill="#FFFFFF"/><circle cx="170" cy="52" r="4" fill="#FFFFFF"/><circle cx="196" cy="56" r="4" fill="#FFFFFF"/>
     <path d="M214 60L238 52L232 72Z" fill="#5A93C8"/>` },
@@ -869,7 +910,7 @@ const SPRITES = {
     @keyframes shake{0%,100%{transform:translateY(-8px) rotate(-6deg)}50%{transform:translateY(8px) rotate(6deg)}}
     @keyframes pearl{50%{transform:translateY(-4px)}}
     @keyframes pop{0%{opacity:0;transform:scale(.4)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.2)}}`,
-    wrap: 'bop', hat: true,
+    wrap: 'bop', wears: ['head'],
     pig: { face: `<path d="M116 66C124 38 176 30 206 44L202 60C176 52 146 54 120 72Z" fill="#7DBF6A"/>
     <path d="M120 68C100 60 78 66 64 80C84 84 106 80 122 74Z" fill="#5FA84E"/>` },
     over: `<rect x="24" y="246" width="210" height="14" rx="6" fill="#F3EDE4"/><rect x="32" y="258" width="194" height="42" rx="4" fill="#FFC2D1"/>
@@ -892,7 +933,7 @@ const SPRITES = {
     @keyframes spin{to{transform:rotate(-360deg)}}
     @keyframes road{to{transform:translateX(60px)}}
     @keyframes wind{0%{opacity:0;transform:translateX(0)}30%{opacity:1}100%{opacity:0;transform:translateX(30px)}}`,
-    wrap: 'ride', hat: true,
+    wrap: 'ride', wears: ['head'],
     pig: { face: `<rect x="212" y="-4" width="104" height="78" rx="10" fill="#FFC83D"/><path d="M212 18H316" fill="none" stroke="#E5A92A" stroke-width="5"/>
     <circle cx="264" cy="44" r="12" fill="#FFFFFF"/><path d="M258 44l5 5 8-9" fill="none" stroke="#E5A92A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M228 70Q208 110 222 160" fill="none" stroke="#E5A92A" stroke-width="9"/>
@@ -917,7 +958,7 @@ const SPRITES = {
     @keyframes wobble{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(2deg)}}
     @keyframes fling{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(-24px,-26px)}}
     @keyframes puff{0%,40%{opacity:0;transform:scale(.6)}60%{opacity:.8}100%{opacity:0;transform:scale(1.3) translateY(-8px)}}`,
-    wrap: 'haul', hat: true,
+    wrap: 'haul', wears: ['head'],
     pig: { face: `<g class="bricks"><rect x="212" y="36" width="58" height="28" rx="3" fill="#C8553D"/><rect x="272" y="40" width="54" height="26" rx="3" fill="#B84A35"/>
     <rect x="236" y="8" width="58" height="28" rx="3" fill="#D2654C"/>
     <path d="M220 50h12M246 22h12M282 54h12" fill="none" stroke="#E58A72" stroke-width="4" stroke-linecap="round"/></g>
@@ -938,7 +979,7 @@ const SPRITES = {
     @keyframes belt{0%{opacity:0;transform:translateX(0)}10%,85%{opacity:1}100%{opacity:0;transform:translateX(-150px)}}
     @keyframes beam{0%,50%,70%,100%{opacity:0}55%,65%{opacity:1}}
     @keyframes roll{to{transform:rotate(-360deg)}}`,
-    wrap: 'scan',
+    wrap: 'scan', wears: ['neck'],
     pig: { face: `<path d="M118 212Q150 240 192 226" fill="none" stroke="#4A6FB5" stroke-width="4"/>
     <rect x="140" y="228" width="26" height="32" rx="4" fill="#FFFFFF"/><rect x="144" y="232" width="18" height="10" rx="2" fill="#6FA8DC"/>
     <path d="M145 248h16M145 254h10" fill="none" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>` },
@@ -960,13 +1001,11 @@ const SPRITES = {
     @keyframes recite{0%,100%{transform:rotate(0)}50%{transform:rotate(-2deg) translateY(-2px)}}
     @keyframes note{0%{opacity:0;transform:translate(0,0)}25%{opacity:1}100%{opacity:0;transform:translate(-14px,-56px)}}
     @keyframes bounce{50%{transform:translateY(-6px)}}`,
-    wrap: 'recite',
+    wrap: 'recite', wears: ['neck'],
     pig: { face: `<path d="M236 58Q206 110 226 168" fill="none" stroke="#E5A92A" stroke-width="8"/>
     <rect x="244" y="40" width="70" height="80" rx="22" fill="#FFC83D" transform="rotate(8 280 80)"/>
     <rect x="254" y="84" width="52" height="26" rx="10" fill="#F5B52A" transform="rotate(8 280 80)"/>
-    <path d="M128 212L198 226L152 262Z" fill="#E5534B"/>
-    <path d="M156 222L138 252M156 222L174 254" fill="none" stroke="#E5534B" stroke-width="10" stroke-linecap="round"/>
-    <circle cx="156" cy="222" r="9" fill="#C9433C"/>` },
+    ${WEAR.scarf.svg}` },
     over: `<g class="n1"><circle cx="48" cy="200" r="7" fill="#8C9BC4"/><path d="M54 200V176l10 4" fill="none" stroke="#8C9BC4" stroke-width="4" stroke-linecap="round"/></g>
     <g class="n2"><circle cx="40" cy="176" r="6" fill="#FF9FB0"/><path d="M45 176V156l9 4" fill="none" stroke="#FF9FB0" stroke-width="4" stroke-linecap="round"/></g>
     <rect x="28" y="266" width="34" height="34" rx="4" fill="#FF7A93"/><circle cx="45" cy="283" r="9" fill="#FFFFFF"/>
@@ -1003,7 +1042,7 @@ const SPRITES = {
     @keyframes bub{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-60px)}}
     @keyframes poof{0%,80%{opacity:0;transform:scale(.4)}86%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.4) translateY(-10px)}}
     @keyframes slosh{50%{transform:scaleY(1.06)}}`,
-    wrap: 'tilt',
+    wrap: 'tilt', wears: ['eyes'],
     pig: { face: `<path d="M58 132C80 112 196 118 228 152" fill="none" stroke="#5B5F73" stroke-width="6"/>
     <ellipse cx="91" cy="142" rx="24" ry="19" fill="#BFE6F6" opacity=".55"/><ellipse cx="91" cy="142" rx="24" ry="19" fill="none" stroke="#5B8DB8" stroke-width="5"/>
     <ellipse cx="165" cy="157" rx="24" ry="19" fill="#BFE6F6" opacity=".55"/><ellipse cx="165" cy="157" rx="24" ry="19" fill="none" stroke="#5B8DB8" stroke-width="5"/>
@@ -1028,7 +1067,7 @@ const SPRITES = {
     @keyframes steam{0%,100%{opacity:0;transform:translateY(6px)}50%{opacity:.9;transform:translateY(-6px)}}
     @keyframes tw{0%,100%{opacity:.2;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
     @keyframes glow{0%,100%{opacity:.55}50%{opacity:.8}}`,
-    wrap: 'doze',
+    wrap: 'doze', wears: ['eyes'],
     pig: { face: `${glasses('#7A5A3A')}
     <path d="M80 166Q91 172 102 166M154 181Q165 187 176 181" fill="none" stroke="#B9A7CF" stroke-width="5" stroke-linecap="round"/>` },
     under: `<path d="M330 -30a28 28 0 1 0 18 50 24 24 0 1 1-18-50Z" fill="#FFE27A"/>
@@ -1053,7 +1092,7 @@ const SPRITES = {
     @keyframes toss{0%,25%,85%,100%{transform:translateY(0) rotate(0)}55%{transform:translateY(-70px) rotate(-200deg)}}
     @keyframes swing{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(12deg)}}
     @keyframes fall{0%{opacity:0;transform:translateY(-30px) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translateY(260px) rotate(240deg)}}`,
-    wrap: 'hop', hat: true,
+    wrap: 'hop', wears: ['head'],
     pig: { eyes: 'happy', blush: cheeks(18, 10, '#FF9AA0', '.6'), face: `<g class="cap">
     <path d="M126 58C124 76 200 82 208 62L206 48L130 52Z" fill="#3A3A48"/>
     <path d="M94 50L168 26L242 46L168 70Z" fill="#2E2E3A"/><circle cx="168" cy="48" r="5" fill="#F5C24C"/>
@@ -1127,7 +1166,7 @@ const SPRITES = {
     <path d="M262 44L304 0L346 44Z" fill="#E9C98A"/><path d="M304 0L346 44H316Z" fill="#D9B06C"/>
     <g class="rays"><path d="M56 -38V-30M56 22V30M22 -4H30M82 -4H90M32 -28l6 6M74 14l6 6M80 -28l-6 6M32 20l6-6" fill="none" stroke="#FFD35A" stroke-width="5" stroke-linecap="round"/></g>
     <circle cx="56" cy="-4" r="20" fill="#FFD35A"/>`,
-    gear: `<path d="M72 134h40v10a16 16 0 0 1-40 0ZM146 148h40v10a16 16 0 0 1-40 0Z" fill="#2E2E3A"/><path d="M112 138L146 152M72 136L58 130" fill="none" stroke="#2E2E3A" stroke-width="5"/>`,
+    gear: WEAR.sunglasses.svg, wears: ['head', 'eyes'],
     over: `<path class="heat" d="M30 280q6-8 0-16t0-16M46 284q6-8 0-16t0-16" fill="none" stroke="#F2D488" stroke-width="4" stroke-linecap="round"/>`,
   }),
   'away-trip-oceania': trip('旅行 · 大洋洲·南极', '远处是歌剧院的白贝壳顶，雪花飘着，一只小企鹅摇摇摆摆跟在后面。', {
@@ -1145,22 +1184,43 @@ const SPRITES = {
   }),
 }
 
-function render(s, look = null) {
-  // The stage's look sits under the pose's own face props; headwear replaces the bow and cap.
-  const dress = look === null ? '' : (s.hat ? '' : look.head ?? '') + (look.face ?? '')
-  const title = look === null ? s.title : `${s.title} · ${look.title}`
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEWBOX}" width="128" height="128" role="img" aria-label="${title}">
-  <title>${title}</title>
-  <!-- ${s.note} 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+const SLOT_ORDER = ['face', 'neck', 'eyes', 'head']
+
+function render(s) {
+  // The empty wear slot: the art route fills it with the decorations worn,
+  // skipping the slots this pose's own gear already covers.
+  const occupies = SLOT_ORDER.filter(slot => (s.wears ?? []).includes(slot))
+  const wear = s.dress === false ? '' : `<g class="wear" data-occupies="${occupies.join(' ')}"></g>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEWBOX}" width="128" height="128" role="img" aria-label="${s.title}">
+  <title>${s.title}</title>
+  <!-- 行为资产（姿势）：${s.note} 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>${BASE_CSS}
     ${s.css}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
   ${s.under ?? ''}
   <g class="${s.wrap}">
-  ${pig({ ...s.pig, look: dress })}
+  ${pig({ ...s.pig, wear })}
   </g>
   ${s.over ?? ''}
+</svg>
+`
+}
+
+/**
+ * A decoration on its own: a faint outline of the pig shows where it sits, and
+ * the part between the wear markers is what the art route pours into a pose.
+ */
+function renderWear(key) {
+  const w = WEAR[key]
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEWBOX}" width="128" height="128" role="img" aria-label="${w.title}">
+  <title>${w.title}</title>
+  <!-- 装饰资产（${w.slot}）：${w.note} 画在猪本体的坐标上，任何姿势都戴得上；由 tools/build-sprites.mjs 生成，别手改。 -->
+  <style>@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>
+  <g opacity=".18"><path fill="${C.far}" d="${P.farLeg}"/><path fill="${C.body}" d="${P.body}"/><path fill="${C.snout}" d="${P.snout}"/></g>
+  <!-- wear:begin -->
+  ${wearMarkup(key)}
+  <!-- wear:end -->
 </svg>
 `
 }
@@ -1172,10 +1232,9 @@ let count = 0
 for (const [name, s] of Object.entries(SPRITES)) {
   write(name, render(s))
   count += 1
-  if (s.looks === false) continue
-  for (const [stage, look] of Object.entries(STAGE_LOOKS)) {
-    write(`${name}--${stage}`, render(s, look))
-    count += 1
-  }
+}
+for (const key of Object.keys(WEAR)) {
+  write(`wear-${key}`, renderWear(key))
+  count += 1
 }
 console.log(`wrote ${count} sprites to assets/`)

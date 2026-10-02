@@ -40,8 +40,10 @@ import {
   regionProgress,
   traitView,
   tripQuote,
+  outfitIsAuto,
+  wardrobeView,
 } from './core.js'
-import { DOCTOR_GRADUATION, PARALLEL_COURSES, RENAME_CARD, illnessAt } from './data.js'
+import { DOCTOR_GRADUATION, PARALLEL_COURSES, RENAME_CARD, WEAR_SLOTS, illnessAt, lifeStageByKey, schoolStageByKey } from './data.js'
 import { langOf, tr } from './i18n.js'
 import { FARE, REGIONS, SOUVENIRS, WORLD_BONUS } from './world.js'
 
@@ -205,6 +207,14 @@ function collectionLines(lang, state) {
   if (diplomas.length > 0) {
     lines.push(tr(lang, '📜 毕业证  {list}', {
       list: diplomas.map(diploma => `${diploma.emoji}${tr(lang, diploma.label)}${diploma.count > 1 ? ` ×${diploma.count}` : ''}`).join(' · '),
+    }))
+  }
+  // [ST0004] what it is wearing, and whether that is the stage's own look.
+  const worn = wardrobeView(state).filter(item => item.worn)
+  if (state.dead !== true) {
+    lines.push(tr(lang, '👗 穿戴  {list}', {
+      list: [worn.length === 0 ? tr(lang, '什么也没穿') : worn.map(item => `${item.emoji}${tr(lang, item.label)}`).join(' · '),
+        outfitIsAuto(state) ? tr(lang, '（跟着阶段）') : ''].join(''),
     }))
   }
   if (state.doctorDone === true || state.worldDone === true) {
@@ -601,11 +611,47 @@ export function renderAbout(commandName, state = null) {
     tr(lang, '/{cmd} work <odd|site|office> · trip [目的地] · calloff', { cmd }),
     tr(lang, '/{cmd} shop · buy <物品> · use <物品>', { cmd }),
     tr(lang, '/{cmd} weigh · name <名字> · about', { cmd }),
+    tr(lang, '/{cmd} wear [装饰|自动|不穿]', { cmd }),
     tr(lang, '      第一次起名免费，之后每次改名用一张{card}（{price} 金币）', { card: tr(lang, RENAME_CARD.label), price: RENAME_CARD.price }),
     RULE,
     tr(lang, '它不调用模型、不注入上下文、不花一个 token。'),
     tr(lang, '存档在 $DSH_HOME/dsh-pig/state.json。'),
   ].join('\n')
+}
+
+/** [ST0004] Where a decoration sits, in words. */
+export const WEAR_SLOT_LABEL = Object.freeze({ face: '脸上', neck: '脖子', eyes: '眼睛', head: '头上' })
+
+/** [ST0004] How a decoration is earned, from its `unlock` rule. */
+export function wearHint(lang, unlock) {
+  switch (unlock?.kind) {
+    case 'always': return tr(lang, '一出纸盒就有')
+    case 'stage': return tr(lang, '长成{stage}后解锁', { stage: tr(lang, lifeStageByKey(unlock.stage)?.label ?? unlock.stage) })
+    case 'lessons': return unlock.stage === null
+      ? tr(lang, '上过一节课后解锁')
+      : tr(lang, '上过{school}后解锁', { school: tr(lang, schoolStageByKey(unlock.stage)?.label ?? unlock.stage) })
+    case 'diploma': return tr(lang, '拿到任意一张毕业证后解锁')
+    case 'trip': return tr(lang, '旅行回来后解锁')
+    case 'region': return tr(lang, '从{region}带回纪念品后解锁', { region: tr(lang, REGIONS.find(region => region.key === unlock.region)?.label ?? unlock.region) })
+    default: return ''
+  }
+}
+
+/** [ST0004] `/pig wear`: the whole wardrobe, slot by slot. */
+export function renderWardrobe(commandName, state) {
+  const lang = langOf(state)
+  const cmd = commandName
+  const items = wardrobeView(state)
+  const lines = [tr(lang, '👗 衣柜{auto}', { auto: outfitIsAuto(state) ? tr(lang, '（现在跟着阶段穿）') : '' }), RULE]
+  for (const slot of WEAR_SLOTS.slice().reverse()) {
+    const row = items.filter(item => item.slot === slot).map(item => {
+      const mark = item.worn ? '✅' : item.unlocked ? '　' : '🔒'
+      return `${mark}${item.emoji}${tr(lang, item.label)}${item.unlocked ? '' : tr(lang, '（{hint}）', { hint: wearHint(lang, item.unlock) })}`
+    })
+    lines.push(`${tr(lang, WEAR_SLOT_LABEL[slot])}  ${row.join('  ')}`)
+  }
+  lines.push(RULE, tr(lang, '穿 / 脱：/{cmd} wear <装饰>（再说一次就脱下）', { cmd }), tr(lang, '跟着阶段穿：/{cmd} wear 自动 · 全脱：/{cmd} wear 不穿', { cmd }))
+  return lines.join('\n')
 }
 
 /** The empty-house prompt. */

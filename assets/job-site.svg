@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="搬砖">
   <title>搬砖</title>
-  <!-- 戴安全帽，背上码着三块砖，一步一顿地扛，汗珠往外甩。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+  <!-- 行为资产（姿势）：戴安全帽，背上码着三块砖，一步一顿地扛，汗珠往外甩。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>
     .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
@@ -31,6 +31,7 @@
     <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
     <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/></g>
     <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/><ellipse class="blush" cx="60" cy="170" rx="9" ry="5.3" fill="#FFAFAC" opacity=".75"/>
+    <g class="wear" data-occupies="head"></g>
     <g class="bricks"><rect x="212" y="36" width="58" height="28" rx="3" fill="#C8553D"/><rect x="272" y="40" width="54" height="26" rx="3" fill="#B84A35"/>
     <rect x="236" y="8" width="58" height="28" rx="3" fill="#D2654C"/>
     <path d="M220 50h12M246 22h12M282 54h12" fill="none" stroke="#E58A72" stroke-width="4" stroke-linecap="round"/></g>

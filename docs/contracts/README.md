@@ -11,8 +11,10 @@
 |---|---|---|---|
 | `HOST.SNAPSHOT.V1` | `GET /dsh-pig/state` 快照、`POST /dsh-pig/act` 操作表与回执、`client.js` 的 `normalize()` 容错 | [host-snapshot.md](host-snapshot.md) | `CURRENT` |
 | `GAME.RULES.V1` | `data.js` / `world.js` 数值表与 `core.js` 结算规则（打工、学习、旅行、疾病、商店） | [game-rules.md](game-rules.md) | `CURRENT` |
-| `STORE.SAVE.V5` | 存档 `state.json` 的形状、`STATE_VERSION`、`migrate()` 与写盘方式 | [save-format.md](save-format.md) | `CURRENT` |
+| `STORE.SAVE.V6` | 存档 `state.json` 的形状、`STATE_VERSION`、`migrate()` 与写盘方式 | [save-format.md](save-format.md) | `CURRENT` |
+| `STORE.SAVE.V5` | 存档 v5（ST0004 前）；被 V6 取代 | [save-format-v5.md](save-format-v5.md) | `RETIRED` |
 | `I18N.TERMS.V1` | 中文源串为键的三语文案、占位符、术语表与三语 README | [i18n.md](i18n.md) | `CURRENT` |
+| `ART.ASSETS.V1` | 美术资产两分：行为资产（姿势，游戏选）与装饰资产（装扮，玩家选）的文件接口、部位、解锁与合成路由 | [art-assets.md](art-assets.md) | `CURRENT` |
 
 ## 状态标签
 
@@ -35,6 +37,9 @@ data.js / world.js 数值表 ──GAME.RULES──▶ core.js 结算 ──▶ 
                                     ▼
                          client.js normalize() ──▶ 面板渲染
 所有面向玩家的文字 ──I18N.TERMS──▶ locales/*.js（中文源串为键）
+
+assets/<pose>.svg（行为资产，游戏状态选）─┐
+assets/wear-<key>.svg（装饰资产，玩家选）─┴─ART.ASSETS──▶ /dsh-pig/art/<pose>.svg?wear=… ──▶ 面板精灵
 ```
 
 一个改动同时碰到多份契约时，逐份更新；不要把一份契约的规则抄进另一份，用链接引用。

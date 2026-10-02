@@ -981,9 +981,9 @@ test('a drawn pig wears its mood pose; fine and grave keep the stage drawing', a
   assert.equal(findByClass(hostOf(grave.dom), 'dp-pig-img').src, '/dsh-pig/art/stage-grave.svg', 'a grave stays a grave')
 })
 
-// [ST0001] every job, school stage and trip region has a pose, and a stage that
-// dresses up (bow, cap, beard) wears it in every pose.
-test('away poses follow the job, the school stage and the region; dressed stages keep their look', async () => {
+// [ST0001] every job, school stage and trip region has a pose. [ST0004] What the
+// pig wears rides along on every pose's URL, so the art route can dress it.
+test('away poses follow the job, the school stage and the region; the outfit goes along', async () => {
   const young = { key: 'young', label: '青年猪', emoji: '🐖', size: 48, art: 'stage-young' }
   const piglet = { key: 'piglet', label: '小猪', emoji: '🐖', size: 40, art: 'stage-piglet' }
   const elder = { key: 'elder', label: '老年猪', emoji: '🐖', size: 56, art: 'stage-elder' }
@@ -1006,27 +1006,32 @@ test('away poses follow the job, the school stage and the region; dressed stages
   assert.equal(await srcFor({ activity: away('trip', 'mars', { region: 'mars' }), pig: { ...PIG, stage: young, mood: 'traveling' } }),
     '/dsh-pig/art/away-trip.svg', 'an unknown region falls back to the plain road')
 
-  assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'hungry', moodLevel: 1 } }), '/dsh-pig/art/mood-hungry-1--piglet.svg', 'a piglet keeps its bow')
-  assert.equal(await srcFor({ activity: away('trip', 'paris', { region: 'europe' }), pig: { ...PIG, stage: elder, mood: 'traveling' } }),
-    '/dsh-pig/art/away-trip-europe--elder.svg', 'an old pig keeps its beard on the road')
-  assert.equal(await srcFor({ pig: { ...PIG, stage: { ...elder, art: 'stage-young' }, mood: 'happy' } }),
-    '/dsh-pig/art/mood-happy.svg', 'an elder in the original look stays undressed')
-  assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'fine' } }), '/dsh-pig/art/stage-piglet.svg', 'fine still shows the stage itself')
+  const wearing = (...worn) => ({ auto: false, worn })
+  assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'hungry', moodLevel: 1, outfit: wearing('bow') } }),
+    '/dsh-pig/art/mood-hungry-1.svg?wear=bow', 'a piglet keeps its bow')
+  assert.equal(await srcFor({ activity: away('trip', 'paris', { region: 'europe' }), pig: { ...PIG, stage: elder, mood: 'traveling', outfit: wearing('whiskers', 'glasses') } }),
+    '/dsh-pig/art/away-trip-europe.svg?wear=whiskers,glasses', 'an old pig keeps its beard and glasses on the road')
+  assert.equal(await srcFor({ pig: { ...PIG, stage: elder, mood: 'happy', outfit: wearing() } }),
+    '/dsh-pig/art/mood-happy.svg', 'nothing worn: the plain pose')
+  assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'fine', outfit: wearing('bow') } }), '/dsh-pig/art/stage-piglet.svg?wear=bow', 'fine still shows the stage itself')
+  assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'fine', outfit: wearing('bow', '../x', 'a,b') } }),
+    '/dsh-pig/art/stage-piglet.svg?wear=bow', 'only plain keys reach the URL')
+  assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'fine' } }), '/dsh-pig/art/stage-piglet.svg', 'an older host: nothing worn')
 })
 
-test('graduating as a doctor plays the graduation pose in the stage look', async () => {
+test('graduating as a doctor plays the graduation pose in the outfit', async () => {
   const stage = { key: 'middle', label: '中年猪', emoji: '🐖', size: 62, art: 'stage-middle' }
   const { registration, dom } = await loadClient({
-    status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'fine' }, pending: [{ kind: 'doctor', text: '猪猪 博士毕业了！🎓', at: 222 }] },
+    status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'fine', outfit: { auto: true, worn: ['flatcap'] } }, pending: [{ kind: 'doctor', text: '猪猪 博士毕业了！🎓', at: 222 }] },
   })
   const later = []
   window.setTimeout = fn => { later.push(fn); return later.length }
   registration.factory(() => {}).apply({})
   await settle()
   const img = () => findByClass(hostOf(dom), 'dp-pig-img')
-  assert.equal(img().src, '/dsh-pig/art/react-graduate--middle.svg', 'cap tossed, still wearing the stage look')
+  assert.equal(img().src, '/dsh-pig/art/react-graduate.svg?wear=flatcap', 'cap tossed; the pose itself keeps the flat cap off')
   for (const fn of later.splice(0)) fn()
-  assert.equal(img().src, '/dsh-pig/art/stage-middle.svg', 'then back to the stage drawing')
+  assert.equal(img().src, '/dsh-pig/art/stage-middle.svg?wear=flatcap', 'then back to the stage drawing')
 })
 
 test('any diploma is a graduation too', async () => {
@@ -1369,6 +1374,41 @@ test('durations and counts read naturally in each language', async () => {
   assert.equal(tr('en', '{n} 天', { n: 3 }), '3 days')
   assert.equal(tr('ja', '{n} 天', { n: 3 }), '3日')
   assert.equal(tr('zh', '{n} 天', { n: 3 }), '3 天')
+})
+
+// [ST0004] the wardrobe: worn things pressed, locked ones disabled, a click posts the change.
+test('the wardrobe sits on the status tab and posts what to put on or take off', async () => {
+  const item = (key, emoji, fields) => ({ key, slot: 'head', label: key, emoji, unlocked: true, worn: false, hint: '', ...fields })
+  const wardrobe = [item('bow', '🎀', { worn: true }), item('flatcap', '🧢'), item('mortarboard', '🎓', { unlocked: false, hint: '拿到任意一张毕业证后解锁' })]
+  const pig = { ...PIG, stage: { ...PIG.stage, art: 'stage-middle' }, mood: 'fine' }
+  const { registration, dom, net } = await loadClient({
+    status: { ...SNAPSHOT, pig: { ...pig, outfit: { auto: true, worn: ['bow'] }, wardrobe } },
+    actResult: { ...SNAPSHOT, ok: true, pig: { ...pig, outfit: { auto: false, worn: ['flatcap'] }, wardrobe } },
+  })
+  const later = []
+  window.setTimeout = fn => { later.push(fn); return later.length }
+  registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(dom)
+
+  assert.ok(contentOf(dom).allText().includes('👗 衣柜'))
+  const bow = findByAttr(contentOf(dom), 'data-wear', 'bow')
+  const cap = findByAttr(contentOf(dom), 'data-wear', 'flatcap')
+  const board = findByAttr(contentOf(dom), 'data-wear', 'mortarboard')
+  assert.equal(bow.attributes['aria-pressed'], 'true', 'worn')
+  assert.equal(cap.attributes['aria-pressed'], 'false')
+  assert.equal(board.attributes['data-locked'], 'true', 'locked')
+  assert.equal(board.disabled, true)
+  assert.match(board.attributes.title, /毕业证/, 'says how to earn it')
+  assert.equal(findByAttr(contentOf(dom), 'data-wear-auto', 'true').attributes['aria-pressed'], 'true', 'following the stage')
+
+  cap.fire('click')
+  await settle()
+  await settle()
+  const post = net.calls.find(call => call.method === 'POST')
+  assert.deepEqual(JSON.parse(post.body), { action: 'wear', item: 'flatcap', on: true })
+  for (const fn of later.splice(0)) fn()
+  assert.equal(findByClass(hostOf(dom), 'dp-pig-img').src, '/dsh-pig/art/stage-middle.svg?wear=flatcap', 'the pig is the preview')
 })
 
 test('the language switcher sits on the status tab and posts the choice', async () => {

@@ -49,7 +49,8 @@ Four ways to see your pig:
 |---|---|---|
 | What makes it grow | Age: new stage on day 1 / 3 / 7 | **Weight**: young at 20 kg, middle-aged at 50 kg, **elder at 80 kg** |
 | Size | Fixed per stage (40–62 px) | **Grows continuously with weight**: 40 px at birth, **200 px at 120 kg** (cap) |
-| Looks | Box → piglet → young → middle-aged → elder | One sprite per stage, plus its own pose and animation for each mood (hungry / dirty / sleepy / happy / lonely / sick), outing (work / school / trip) and care reaction (eat / bathe / play / pet / refuse / cured) — see `tools/sprites.html`. From 80 kg the elder look **can be switched back to "original"** (the middle-aged look) |
+| Looks | Box → piglet → young → middle-aged → elder | One sprite per stage, plus its own pose and animation for each mood (hungry / dirty / sleepy / happy / lonely / sick), outing (work / school / trip) and care reaction (eat / bathe / play / pet / refuse / cured) — see `tools/sprites.html` |
+| Dress-up | — | **Wardrobe**: bow, flat cap, mortarboard, straw hat, round glasses, sunglasses, red scarf, white brows & beard, **mixed freely** across four slots (head / eyes / neck / face) and worn in every pose. Unlocked by progress (growing up, lessons, diplomas, trips, the Middle East & Africa); until you open the wardrobe it matches the stage (piglet bow, grown-pig flat cap, elder beard). Poses with their own gear (the trip's straw hat, the site helmet, lab goggles…) cover that slot for a while |
 | Where weight comes from | A fixed few grams per event and per meal | **Only from fullness actually eaten**: ~98 g per point, ~50 g after 80 kg. Feeding a full pig adds nothing |
 | Time to grow up | — | With normal care: about 1 week to 80 kg, about 2 weeks to 120 kg |
 | Sleep | — | **Put the pig to bed** (panel button or `pig sleep`); in the standalone desktop app **it also sleeps when the computer does**. Asleep it only gets hungrier, mood and cleanliness slowly come back (about +9 / +6 an hour) and it falls ill half as easily; feeding, bathing, playing, petting or sending it out wakes it |
@@ -215,7 +216,7 @@ pig                                  status card
 pig hatch | feed | bathe | play | pet | sleep | wake
 pig study <subject> <小学|大学|研究生>  pig work <odd|site|office>    pig trip <suburb|mountain|sea|abroad>
 pig shop | buy <item> | use <item> | calloff | weigh | name <name>
-pig look 老年 | 原版                  after 80 kg: elder / original look
+pig wear [item|auto|none]            wardrobe: list / put on or take off / match stage / nothing
 pig lang zh | ja | en                 switch language
 pig serve                            panel server
 pig status-line                      one-line status

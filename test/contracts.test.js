@@ -8,7 +8,7 @@
  * Run: node --test test/contracts.test.js
  */
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -18,8 +18,9 @@ import { apply, snapshot } from '../index.js'
 import { STATE_VERSION, migrate } from '../core.js'
 import {
   ALL_ITEMS, DIPLOMAS, ILLNESS_CHAINS, ILLNESS_STAGE_HOURS, JOBS, KIND_ORDER, SCHOOL_STAGES, SELF_HEAL_CHANCE,
-  SHOP, STAGE_HEALTH, SUBJECTS, TRAITS, TRAIT_ORDER, medicineForStage,
+  SHOP, STAGE_HEALTH, SUBJECTS, TRAITS, TRAIT_ORDER, WEARABLES, WEAR_SLOTS, medicineForStage,
 } from '../data.js'
+import { poseOccupies, wearFragment } from '../art.js'
 import { PLACES, REGIONS } from '../world.js'
 import { createStore } from '../store.js'
 import { extractBlocks } from '../scripts/harness/contracts.mjs'
@@ -143,19 +144,20 @@ test('GAME.RULES.V1: items and places invariants', () => {
 })
 
 // ---------------------------------------------------------------------------
-// STORE.SAVE.V5
+// STORE.SAVE.V6
 // ---------------------------------------------------------------------------
 
 const save = blocks('save-format.md')
 
-test('STORE.SAVE.V5: version and state keys', () => {
+test('STORE.SAVE.V6: version and state keys', () => {
   assert.equal(STATE_VERSION, save['state-version'])
   assert.deepEqual(sorted(Object.keys(migrate({}))), sorted(save['state-keys']))
 })
 
-test('STORE.SAVE.V5: migrate is total and idempotent', () => {
+test('STORE.SAVE.V6: migrate is total and idempotent', () => {
   for (const notASave of [null, undefined, [], 'pig', 42]) assert.equal(migrate(notASave), null)
-  for (const raw of [{}, { coins: 10, version: 1 }, { dead: true }, { hatched: true, xp: 300, traits: { intel: 4 } }]) {
+  for (const raw of [{}, { coins: 10, version: 1 }, { dead: true }, { hatched: true, xp: 300, traits: { intel: 4 } },
+    { version: 5, hatched: true, look: 'original' }, { hatched: true, outfit: ['strawhat', 'bow', 'nope'] }]) {
     const once = migrate(raw)
     assert.deepEqual(migrate(JSON.parse(JSON.stringify(once))), once)
   }
@@ -184,8 +186,61 @@ test('I18N.TERMS.V1: every module has ja and en with the same keys and placehold
 
 test('I18N.TERMS.V1: every player-facing table label is translated', async () => {
   const data = (await import('../locales/data.js')).default
-  const labels = [...JOBS, ...SUBJECTS, ...SCHOOL_STAGES, ...DIPLOMAS, ...SHOP, ...PLACES, ...REGIONS].map(entry => entry.label)
+  const labels = [...JOBS, ...SUBJECTS, ...SCHOOL_STAGES, ...DIPLOMAS, ...SHOP, ...PLACES, ...REGIONS, ...WEARABLES].map(entry => entry.label)
   for (const lang of ['ja', 'en']) {
     assert.deepEqual(labels.filter(label => !Object.hasOwn(data[lang], label)), [], `untranslated in ${lang}`)
+  }
+})
+
+// ---------------------------------------------------------------------------
+// ART.ASSETS.V1 — behaviour assets (poses) and decoration assets (wear)
+// ---------------------------------------------------------------------------
+
+const art = blocks('art-assets.md')
+const ASSETS = join(ROOT, 'assets')
+const svgs = readdirSync(ASSETS).filter(name => name.endsWith('.svg')).map(name => name.slice(0, -4)).sort()
+const asset = name => readFileSync(join(ASSETS, `${name}.svg`), 'utf8')
+const wearFiles = svgs.filter(name => name.startsWith('wear-'))
+const poseFiles = svgs.filter(name => !name.startsWith('wear-'))
+
+test('ART.ASSETS.V1: slots and decoration keys match data.js', () => {
+  assert.deepEqual([...WEAR_SLOTS], art['wear-slots'])
+  assert.deepEqual(Object.fromEntries(WEARABLES.map(item => [item.key, item.slot])), art['wear-keys'])
+  for (const item of WEARABLES) {
+    assert.deepEqual(sorted(Object.keys(item)), ['emoji', 'key', 'label', 'slot', 'unlock'], `${item.key}: cosmetic fields only`)
+  }
+})
+
+test('ART.ASSETS.V1: every file is one kind; no pose x decoration combinations', () => {
+  for (const name of svgs) assert.doesNotMatch(name, /--/, `${name}: combinations are composed at run time`)
+  assert.deepEqual(wearFiles, sorted(WEARABLES.map(item => `wear-${item.key}`)), 'one decoration file per wardrobe key')
+})
+
+test('ART.ASSETS.V1: every pose has exactly one wear slot, declaring what its own gear covers', () => {
+  const occupied = {}
+  for (const name of poseFiles) {
+    const svg = asset(name)
+    const slots = svg.match(/<g class="wear" /g) ?? []
+    assert.doesNotMatch(svg, /data-wear=/, `${name}: a pose never carries a decoration`)
+    if (art['undressable-poses'].includes(name)) {
+      assert.equal(slots.length, 0, `${name}: nothing to dress`)
+      continue
+    }
+    assert.equal(slots.length, 1, `${name}: one wear slot`)
+    const covers = poseOccupies(svg)
+    for (const slot of covers) assert.ok(WEAR_SLOTS.includes(slot), `${name}: slot ${slot}`)
+    if (covers.length > 0) occupied[name] = covers
+  }
+  assert.deepEqual(occupied, art['pose-occupies'])
+})
+
+test('ART.ASSETS.V1: every decoration is one namespaced fragment in its slot', () => {
+  for (const item of WEARABLES) {
+    const fragment = wearFragment(asset(`wear-${item.key}`))
+    assert.ok(fragment, `wear-${item.key}: has a fragment`)
+    assert.match(fragment, new RegExp(`^<g class="w-${item.key}" data-wear="${item.key}" data-slot="${item.slot}">`), item.key)
+    assert.equal((fragment.match(/data-wear=/g) ?? []).length, 1, `${item.key}: one decoration`)
+    for (const [, cls] of fragment.matchAll(/class="([^"]+)"/g)) assert.match(cls, new RegExp(`^w-${item.key}`), `${item.key}: class ${cls}`)
+    for (const [, frames] of fragment.matchAll(/@keyframes ([\w-]+)/g)) assert.match(frames, new RegExp(`^w-${item.key}`), `${item.key}: keyframes ${frames}`)
   }
 })

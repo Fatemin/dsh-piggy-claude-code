@@ -23,6 +23,8 @@ import {
   act as coreAct,
   buy as coreBuy,
   setLook as coreSetLook,
+  wear as coreWear,
+  wearAuto as coreWearAuto,
   goToSleep as coreGoToSleep,
   wakeUp as coreWakeUp,
   setLang as coreSetLang,
@@ -184,6 +186,10 @@ export function createStore(filePath = defaultStatePath(), options = {}) {
 
     /** [dsh-piggy-claude-code mod] Elder look: 'elder' or 'original'. */
     setLook: look => mutate(live => coreSetLook(live, look, now())),
+
+    /** [ST0004] Put a decoration on (`on`) or take it off; `wearAuto` follows the stage again. */
+    wear: (key, on) => mutate(live => coreWear(live, key, on, now())),
+    wearAuto: () => mutate(live => coreWearAuto(live, now())),
 
     /** [mod] Name the pig: free while it has a default name, then a 更名卡 each time. */
     renamePig: name => mutate(live => coreRenamePig(live, name, now())),

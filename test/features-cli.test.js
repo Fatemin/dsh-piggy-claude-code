@@ -190,3 +190,31 @@ for (const lang of ['zh', 'en']) {
     })
   })
 }
+
+// [ST0004] the wardrobe through the slash command.
+for (const lang of ['zh', 'en']) {
+  test(`${lang}: /pig wear lists, toggles, refuses what is locked and goes back to the stage look`, () => {
+    withPig(lang, ({ store, run, t }) => {
+      const list = run('wear')
+      assert.equal(list.kind, 'success')
+      assert.ok(list.text.includes(t('👗 衣柜{auto}', { auto: t('（现在跟着阶段穿）') })), list.text)
+      assert.ok(list.text.includes(`✅🎀${t('蝴蝶结')}`), 'the piglet wears its bow')
+      assert.ok(list.text.includes(`🔒🎓${t('学士帽')}`), 'the mortarboard is locked')
+
+      assert.equal(run('wear bow').text, t('👗 摘下了{item}', { item: `🎀${t('蝴蝶结')}` }))
+      assert.deepEqual(store.state.outfit, [], 'dressed by hand: nothing on')
+      assert.equal(run(`wear ${t('蝴蝶结')}`).text, t('👗 戴上了{item}', { item: `🎀${t('蝴蝶结')}` }), 'by its name too')
+      assert.deepEqual(store.state.outfit, ['bow'])
+
+      const locked = run('wear mortarboard')
+      assert.ok(locked.text.startsWith('🔒'), locked.text)
+      assert.ok(locked.text.includes(t('拿到任意一张毕业证后解锁')), locked.text)
+      assert.equal(run('wear cape').kind, 'error')
+
+      assert.equal(run('wear none').text, t('👗 全脱了，光溜溜的'))
+      assert.deepEqual(store.state.outfit, [])
+      assert.equal(run('wear auto').text, t('👗 跟着阶段穿了'))
+      assert.equal(store.state.outfit, null)
+    })
+  })
+}

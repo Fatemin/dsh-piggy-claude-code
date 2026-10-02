@@ -18,7 +18,7 @@
 <body>
 <h1>🐖 dsh-pig · 形象与动画</h1>
 <div class="sub">每张 SVG 自带动画（内嵌 CSS），放进 &lt;img&gt; 就会动。风格取自 <code>sample/</code>。</div>
-<div class="sub">阶段：<span id="looks"></span>（除「生命阶段」外，每个姿势按阶段各有一张 <code>&lt;姿势&gt;--&lt;阶段&gt;.svg</code>，戴着那个阶段的配饰）</div>
+<div class="sub">两类资产（<code>docs/contracts/art-assets.md</code>）：<b>行为资产</b> = 下面各组姿势，由游戏状态选；<b>装饰资产</b> = 最后一组 <code>wear-*.svg</code>，由玩家在衣柜里搭配。穿戴在运行时由美术路由 <code>/dsh-pig/art/&lt;姿势&gt;.svg?wear=…</code> 合成，这里不重复出图。</div>
 <div id="root"></div>
 <script>
 var groups = [
@@ -35,27 +35,17 @@ var groups = [
   ['旅行 · 地区', [['away-trip-china','中国'],['away-trip-eastasia','东亚'],['away-trip-southasia','南亚·东南亚'],['away-trip-europe','欧洲'],['away-trip-americas','美洲'],['away-trip-mideast','中东·非洲'],['away-trip-oceania','大洋洲·南极']]],
   ['刮彩票', [['lottery-scratch','刮'],['lottery-jackpot','一等奖'],['lottery-win','中奖'],['lottery-lose','谢谢参与']]],
   ['互动反应', [['react-eat','喂食'],['react-bathe','洗澡'],['react-play','玩耍'],['react-pet','摸摸'],['react-refuse','拒绝'],['react-cure','病愈']]],
+  ['装饰资产 · 衣柜', [['wear-bow','蝴蝶结'],['wear-flatcap','鸭舌帽'],['wear-mortarboard','学士帽'],['wear-strawhat','草帽'],['wear-glasses','圆眼镜'],['wear-sunglasses','墨镜'],['wear-scarf','红领巾'],['wear-whiskers','白眉白胡子']]],
 ]
 var root = document.getElementById('root')
 if (location.hash === '#big') document.body.classList.add('big')
 var bust = '?v=' + Date.now()
-// ?look=piglet|middle|elder dresses every pose for that stage.
-var look = (location.search.match(/look=(piglet|middle|elder)/) || [])[1] || ''
-var looks = document.getElementById('looks')
-;[['', '青年猪'], ['piglet', '小猪'], ['middle', '中年猪'], ['elder', '老年猪']].forEach(function (l) {
-  var a = document.createElement('a')
-  a.href = (l[0] ? '?look=' + l[0] : '?') + location.hash
-  a.textContent = l[1]
-  a.style.marginRight = '10px'
-  if (l[0] === look) a.style.fontWeight = '700'
-  looks.appendChild(a)
-})
 groups.forEach(function (g) {
   var h = document.createElement('h2'); h.textContent = g[0]; root.appendChild(h)
   var row = document.createElement('div'); row.className = 'row'
   g[1].forEach(function (it) {
     var c = document.createElement('div'); c.className = 'cell'
-    var name = it[0] + (look && g[0] !== '生命阶段' ? '--' + look : '')
+    var name = it[0]
     c.innerHTML = '<img src="../assets/' + name + '.svg' + bust + '"><div class="cap">' + it[1] + '</div><div class="meta">' + name + '.svg</div>'
     row.appendChild(c)
   })

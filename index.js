@@ -46,6 +46,9 @@ import {
   regionProgress,
   tripQuote,
   canChooseLook,
+  outfitIsAuto,
+  wardrobeView,
+  wornFor,
   langOf,
   hasSoul,
   LIFE_STAGES,
@@ -57,7 +60,7 @@ import {
   growthPercent,
   lotteryWaitSeconds,
 } from './core.js'
-import { ALL_ITEMS, ILLNESS_CHAINS, KIND_LABEL, KIND_ORDER, LOTTERY, PARALLEL_COURSES, RENAME_CARD, jobByKey, jobMissing, traitBonus } from './data.js'
+import { ALL_ITEMS, ILLNESS_CHAINS, KIND_LABEL, KIND_ORDER, LOTTERY, PARALLEL_COURSES, RENAME_CARD, WEARABLES, jobByKey, jobMissing, traitBonus } from './data.js'
 import { FARE, PLACES, REGIONS, WORLD_BONUS, souvenirByKey, placeByKey, systemTimeZone, systemUtcOffset } from './world.js'
 import {
   renderAbout,
@@ -74,8 +77,11 @@ import {
   renderWeigh,
   renderWorkRefusal,
   renderWorkReport,
+  renderWardrobe,
+  wearHint,
 } from './render.js'
 import { createStore } from './store.js'
+import { dress, parseWear } from './art.js'
 import { LANGS, LANG_NAMES, tr } from './i18n.js'
 
 export const name = 'dsh-piggy'
@@ -140,8 +146,12 @@ const OPERATIONS = {
   trip: (store, body) => store.startTrip(str(body.trip)),
   rename: (store, body) => store.renamePig(str(body.name)),
   calloff: store => store.callOffActivity(),
-  // [dsh-piggy-claude-code mod] switch an elder pig's drawing.
+  // [dsh-piggy-claude-code mod] switch an elder pig's drawing. [ST0004] Kept
+  // for old panels; it only puts the beard on or takes it off.
   look: (store, body) => store.setLook(str(body.look)),
+  // [ST0004] the wardrobe: `{item, on}` puts a decoration on or takes it off,
+  // `{auto: true}` goes back to the stage's own look.
+  wear: (store, body) => (body.auto === true ? store.wearAuto() : store.wear(str(body.item), body.on === true)),
   lang: (store, body) => store.setLang(str(body.lang)),
   buy: (store, body) => store.buy(str(body.item)),
   use: (store, body) => store.useItem(str(body.item)),
@@ -200,13 +210,17 @@ export function apply(ctx, config = {}) {
         path: ART_ROUTE,
         handler: (req, res) => {
           if (req.method !== 'GET') return sendJson(res, 405, { error: 'method not allowed; use GET' }, { allow: 'GET' })
-          const raw = String(req.url ?? '').split('?')[0]
+          const [raw, query = ''] = String(req.url ?? '').split('?')
           const name = raw.startsWith(ART_ROUTE + '/') ? raw.slice(ART_ROUTE.length + 1) : ''
           // Only the files this package ships: a fixed, boring name pattern, so
           // nothing from the request can ever walk out of ./assets.
           if (!/^[a-z][a-z0-9-]{0,31}\.svg$/.test(name)) return sendJson(res, 404, { error: 'not found' })
           try {
-            const svg = readFileSync(new URL('./assets/' + name, import.meta.url))
+            const asset = file => readFileSync(new URL('./assets/' + file, import.meta.url), 'utf8')
+            // [ST0004] `?wear=bow,glasses` dresses the pose; only wardrobe keys
+            // get through, so the decoration files are as fixed as the poses.
+            const wears = parseWear(new URLSearchParams(query).get('wear'))
+            const svg = wears.length === 0 ? asset(name) : dress(asset(name), wears.map(key => ({ key, svg: asset(`wear-${key}.svg`) })))
             res.writeHead(200, { 'content-type': 'image/svg+xml; charset=utf-8', 'cache-control': 'no-cache' })
             res.end(svg)
           } catch {
@@ -262,7 +276,7 @@ export function apply(ctx, config = {}) {
     commandCtx.commands.register({
       name: commandName,
       description: 'your pig 🐖: status · study · work · shop · travel · bag',
-      input: { hint: tr(langOf(store.state), '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]') },
+      input: { hint: tr(langOf(store.state), '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|wear [装饰]|lang <zh|ja|en>|about]') },
       handler: invocation => {
         try {
           return dispatch(store, commandName, String(invocation.rawInput ?? ''))
@@ -377,7 +391,12 @@ export function snapshot(store, options = {}) {
       // [dsh-piggy-claude-code mod] growth follows weight; elder look is switchable.
       kgToNextStage: kgToNextStage(state, nowMs) === null ? null : Number(kgToNextStage(state, nowMs).toFixed(1)),
       canChooseLook: canChooseLook(state),
-      look: state.look === 'original' ? 'original' : 'elder',
+      // [ST0004] the old elder switch, now read off the wardrobe: 'elder' while the beard is on.
+      look: wornFor(state).includes('whiskers') ? 'elder' : 'original',
+      // [ST0004] what it wears (drawing order; the panel puts it on the sprite
+      // URL) and whether that is still the stage's own look.
+      outfit: { auto: outfitIsAuto(state), worn: wornFor(state) },
+      wardrobe: wardrobeView(state).map(({ unlock, ...item }) => ({ ...item, label: tr(lang, item.label), hint: wearHint(lang, unlock) })),
       // [mod] naming, travel perks, doctorate.
       renameFree: hasDefaultName(state),
       renameCards: state.inventory?.[RENAME_CARD.key] ?? 0,
@@ -848,6 +867,10 @@ export function dispatch(store, commandName, rawInput) {
       }
       return { kind: 'success', text: wanted === 'original' ? tr(lang, '🐖 换回原版小猪的样子了') : tr(lang, '🐖 换成老年猪的样子了') }
     }
+    case 'wear': {
+      if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
+      return wearReply(store, state, argument, cmd)
+    }
     case 'name': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
       return renameReply(store, state, argument, cmd)
@@ -859,10 +882,40 @@ export function dispatch(store, commandName, rawInput) {
       return {
         kind: 'error',
         text: tr(lang, '不认识「{sub}」。可用：/{cmd} · {list}', {
-          sub, cmd, list: 'hatch · feed · bathe · play · pet · sleep · wake · study · work · trip · shop · buy · use · weigh · name · about',
+          sub, cmd, list: 'hatch · feed · bathe · play · pet · sleep · wake · study · work · trip · shop · buy · use · weigh · wear · name · about',
         }),
       }
   }
+}
+
+/**
+ * [ST0004] `/pig wear`: no argument lists the wardrobe; a decoration's name
+ * puts it on, or takes it off when it is already on; 自动 follows the stage
+ * again and 不穿 takes everything off.
+ */
+function wearReply(store, state, argument, cmd) {
+  const lang = langOf(state)
+  const wanted = argument.trim()
+  if (wanted === '') return { kind: 'success', text: renderWardrobe(cmd, state) }
+  const reply = (result, text) => {
+    if (result.ok) return { kind: 'success', text }
+    const why = result.reason === 'dead' ? tr(lang, '{name} 已经走了…', { name: state.name })
+      : result.reason === 'unhatched' ? tr(lang, '还没拆开') : tr(lang, '现在换不了样子')
+    return { kind: 'error', text: `🐖 ${why}` }
+  }
+  if (/^(自动|auto|オート|自動)$/i.test(wanted)) return reply(store.wearAuto(), tr(lang, '👗 跟着阶段穿了'))
+  if (/^(不穿|全脱|none|off|なし)$/i.test(wanted)) {
+    let result = { ok: true }
+    for (const key of wornFor(state)) result = store.wear(key, false)
+    return reply(result, tr(lang, '👗 全脱了，光溜溜的'))
+  }
+  const item = findByName(WEARABLES, wanted)
+  if (item === undefined) return { kind: 'error', text: tr(lang, '衣柜里没有「{name}」。/{cmd} wear 看看有什么。', { name: wanted, cmd }) }
+  const label = `${item.emoji}${tr(lang, item.label)}`
+  const unlocked = wardrobeView(state).find(entry => entry.key === item.key)?.unlocked === true
+  if (!unlocked) return { kind: 'success', text: tr(lang, '🔒 {item}还没解锁：{hint}', { item: label, hint: wearHint(lang, item.unlock) }) }
+  const on = !wornFor(state).includes(item.key)
+  return reply(store.wear(item.key, on), on ? tr(lang, '👗 戴上了{item}', { item: label }) : tr(lang, '👗 摘下了{item}', { item: label }))
 }
 
 /**

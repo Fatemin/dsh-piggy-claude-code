@@ -36,9 +36,8 @@ window.__ModuleLoader__.load({
       china: 'away-trip-china', eastasia: 'away-trip-eastasia', southasia: 'away-trip-southasia', europe: 'away-trip-europe',
       americas: 'away-trip-americas', mideast: 'away-trip-mideast', oceania: 'away-trip-oceania',
     }
-    // A stage that dresses up wears it in every pose: <pose>--<look>.svg. Keyed by
-    // the stage's drawing, so an elder in the original look stays undressed.
-    var STAGE_LOOK = { 'stage-piglet': 'piglet', 'stage-middle': 'middle', 'stage-elder': 'elder' }
+    // [ST0004] What the pig wears goes on every pose's URL (`?wear=bow,glasses`);
+    // the art route pours those decorations into the pose (ART.ASSETS.V1).
     // One-shot poses for the care buttons and verdicts.
     var REACT_ART = {
       feed: 'react-eat', bathe: 'react-bathe', play: 'react-play', pet: 'react-pet',
@@ -148,7 +147,8 @@ window.__ModuleLoader__.load({
         '饱食': 'おなか', '心情': 'きげん', '清洁': 'きれいさ', '健康': '健康',
         '智力': 'かしこさ', '魅力': 'みりょく', '武力': 'ちから', '体重': '体重', '年龄': '年齢',
         '再长 {kg} kg 就长成下一阶段了': 'あと {kg} kg で次の姿に育つよ',
-        '老年猪': 'おじいブタ', '原版': 'オリジナル',
+        // [ST0004] the wardrobe
+        '衣柜': 'クローゼット', '跟着阶段': '成長に合わせる', '还没解锁：{hint}': 'まだ使えない：{hint}',
         '不在家': 'おでかけ中', '{n}s': '{n}秒', '语言': '言語',
         // care item picker
         '喂点什么？': 'なにを食べさせる？', '用哪个洗澡？': 'どれでおふろにする？',
@@ -307,7 +307,8 @@ window.__ModuleLoader__.load({
         '饱食': 'Fullness', '心情': 'Mood', '清洁': 'Cleanliness', '健康': 'Health',
         '智力': 'Smarts', '魅力': 'Charm', '武力': 'Strength', '体重': 'Weight', '年龄': 'Age',
         '再长 {kg} kg 就长成下一阶段了': '{kg} kg more to grow into the next stage',
-        '老年猪': 'Elder pig', '原版': 'Original',
+        // [ST0004] the wardrobe
+        '衣柜': 'Wardrobe', '跟着阶段': 'Match the stage', '还没解锁：{hint}': 'Locked: {hint}',
         '不在家': 'out', '{n}s': '{n}s', '语言': 'Language',
         // care item picker
         '喂点什么？': 'What should it eat?', '用哪个洗澡？': 'Bathe with what?',
@@ -545,8 +546,21 @@ window.__ModuleLoader__.load({
           daysToNextStage: typeof pig.daysToNextStage === 'number' ? pig.daysToNextStage : null,
           // [dsh-piggy-claude-code mod] growth by weight, switchable elder look.
           kgToNextStage: typeof pig.kgToNextStage === 'number' ? pig.kgToNextStage : null,
-          canChooseLook: pig.canChooseLook === true,
-          look: pig.look === 'original' ? 'original' : 'elder',
+          // [ST0004] an older host has no wardrobe: nothing worn, nothing to pick.
+          outfit: {
+            auto: obj(pig.outfit).auto !== false,
+            worn: (Array.isArray(obj(pig.outfit).worn) ? obj(pig.outfit).worn : []).filter(function (key) {
+              return typeof key === 'string' && /^[a-z]+$/.test(key)
+            }),
+          },
+          wardrobe: (Array.isArray(pig.wardrobe) ? pig.wardrobe : []).map(obj).filter(function (item) {
+            return typeof item.key === 'string' && /^[a-z]+$/.test(item.key)
+          }).map(function (item) {
+            return {
+              key: item.key, slot: str(item.slot, 'head'), label: str(item.label, item.key), emoji: str(item.emoji, '👗'),
+              unlocked: item.unlocked === true, worn: item.worn === true, hint: str(item.hint, ''),
+            }
+          }),
           soul: pig.soul === true,
           mood: str(pig.mood, 'fine'),
           moodLevel: num(pig.moodLevel, 0),
@@ -1242,10 +1256,16 @@ window.__ModuleLoader__.load({
       '.dp-count{margin-left:2px;font-size:9px;font-weight:700;color:var(--ac-text-2);',
       'background:var(--ac-bg-content);border-radius:var(--ac-pill);padding:0 5px}',
       '.dp-btn[data-open-picker="true"]{background:var(--ac-active);border-color:#9db0d6}',
-      '.dp-looks .dp-btn[aria-pressed="true"],',
+      '.dp-wear .dp-btn[aria-pressed="true"],',
+      '.dp-wear-head .dp-mini[aria-pressed="true"],',
       '.dp-langs .dp-btn[aria-pressed="true"]{background:var(--ac-active);border-color:#9db0d6}',
       // [dsh-piggy-claude-code mod] the language switcher: one pill per language.
       '.dp-langs{grid-template-columns:repeat(3,1fr);margin-top:4px}',
+      // [ST0004] the wardrobe: four pills a row, locked ones dashed and greyed.
+      '.dp-wear-head{align-items:center;margin-top:10px}',
+      '.dp-wear{grid-template-columns:repeat(4,1fr);margin-top:6px}',
+      '.dp-wear .dp-btn{padding:6px 2px;font-size:10px;flex-direction:column;gap:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.dp-wear .dp-btn[data-locked="true"]{border-style:dashed;color:var(--ac-text-disabled);background:var(--ac-bg-disabled);cursor:not-allowed}',
       '.dp-langs .dp-btn{padding:6px 4px}',
       '.dp-seg button[data-locked="true"]{color:var(--ac-text-disabled);',
       'border-style:dashed;background:var(--ac-bg-disabled)}',
@@ -2212,7 +2232,7 @@ window.__ModuleLoader__.load({
       /** The sprite the pig settles back to after a reaction; null = emoji. */
       var baseArt = null
       /** '--piglet' / '--middle' / '--elder' while the stage dresses every pose, else ''. */
-      var lookSuffix = ''
+      var wearQuery = ''
 
       /** Show a drawn sprite by name, or fall back to the emoji. */
       function showArt(art, emoji) {
@@ -2220,7 +2240,7 @@ window.__ModuleLoader__.load({
         if (baseArt !== null) {
           // Mid-reaction the reaction pose stays up; the timer restores baseArt.
           if (pig.getAttribute('data-react-art') === null) {
-            var src = ART_URL + baseArt + '.svg'
+            var src = ART_URL + baseArt + '.svg' + wearQuery
             if (pigArt.getAttribute('src') !== src) pigArt.src = src
           }
           pigArt.hidden = false
@@ -2242,8 +2262,7 @@ window.__ModuleLoader__.load({
         // holds it long enough for one loop to read.
         var pose = pigArt.hidden ? undefined : REACT_ART[kind]
         if (pose !== undefined) {
-          pose += lookSuffix
-          pigArt.src = ART_URL + pose + '.svg'
+          pigArt.src = ART_URL + pose + '.svg' + wearQuery
           pig.setAttribute('data-react-art', pose)
           ms = Math.max(ms || 900, 1600)
         } else {
@@ -2254,7 +2273,7 @@ window.__ModuleLoader__.load({
           pig.removeAttribute('data-react')
           if (pig.getAttribute('data-react-art') !== null) {
             pig.removeAttribute('data-react-art')
-            if (baseArt !== null) pigArt.src = ART_URL + baseArt + '.svg'
+            if (baseArt !== null) pigArt.src = ART_URL + baseArt + '.svg' + wearQuery
           }
           reactTimer = null
         }, ms || 900)
@@ -2515,7 +2534,7 @@ window.__ModuleLoader__.load({
         age.appendChild(el('b', null, p.ageLabel + ' · ' + p.stage.label))
         content.appendChild(age)
         growthNote()
-        lookChoices()
+        wardrobe()
 
         content.appendChild(careGrid())
         if (picker !== null && (view.care[picker] ?? []).length > 0) content.appendChild(pickerPanel(picker))
@@ -2533,7 +2552,7 @@ window.__ModuleLoader__.load({
         nameRow()
         if (p.stage.line !== '') content.appendChild(el('div', 'dp-note', p.stage.line))
         growthNote()
-        lookChoices()
+        wardrobe()
         if (p.memories.length > 0) {
           content.appendChild(el('div', 'dp-memo', p.memories.slice(-12).join('\n')))
         }
@@ -2548,21 +2567,41 @@ window.__ModuleLoader__.load({
         }
       }
 
-      function lookChoices() {
+      /**
+       * [ST0004] The wardrobe: every decoration as a pill, worn ones pressed,
+       * locked ones dashed with how to earn them. One per slot — putting on a
+       * hat takes the other hat off. The pig above is the preview.
+       */
+      function wardrobe() {
         var p = view.pig
-        if (!p.canChooseLook) return
-        var looks = el('div', 'dp-actions dp-looks')
-        var LOOK_CHOICES = [['elder', '👴 ' + T('老年猪')], ['original', '🐷 ' + T('原版')]]
-        for (var li = 0; li < LOOK_CHOICES.length; li += 1) {
-          (function (key, label) {
-            var pick = button('dp-btn', { 'data-look': key, 'aria-pressed': String(p.look === key) }, function () {
-              if (p.look !== key) send('look', { look: key })
+        if (p.wardrobe.length === 0 || view.dead) return
+        var head = el('div', 'dp-row dp-wear-head')
+        head.appendChild(el('span', null, '👗 ' + T('衣柜')))
+        var auto = button('dp-mini', { 'data-wear-auto': 'true', 'aria-pressed': String(p.outfit.auto) }, function () {
+          if (!p.outfit.auto) send('wear', { auto: true })
+        })
+        auto.textContent = T('跟着阶段')
+        head.appendChild(auto)
+        content.appendChild(head)
+        var grid = el('div', 'dp-actions dp-wear')
+        for (var wi = 0; wi < p.wardrobe.length; wi += 1) {
+          (function (item) {
+            var pick = button('dp-btn', {
+              'data-wear': item.key, 'data-slot': item.slot, 'aria-pressed': String(item.worn),
+              title: item.unlocked ? item.label : T('还没解锁：{hint}', { hint: item.hint }),
+            }, function () {
+              if (item.unlocked) send('wear', { item: item.key, on: !item.worn })
             })
-            pick.appendChild(el('span', null, label))
-            looks.appendChild(pick)
-          })(LOOK_CHOICES[li][0], LOOK_CHOICES[li][1])
+            if (!item.unlocked) {
+              pick.disabled = true
+              pick.setAttribute('data-locked', 'true')
+            }
+            pick.appendChild(el('span', null, item.unlocked ? item.emoji : '🔒'))
+            pick.appendChild(el('span', null, item.label))
+            grid.appendChild(pick)
+          })(p.wardrobe[wi])
         }
-        content.appendChild(looks)
+        content.appendChild(grid)
       }
 
       /** Wherever the care buttons live: the status tab, or the big panel's left column. */
@@ -3805,7 +3844,7 @@ window.__ModuleLoader__.load({
         }
 
         if (view.hatched !== true) {
-          lookSuffix = ''
+          wearQuery = ''
           showArt(view.boxStage.art, view.boxStage.emoji)
           pig.setAttribute('data-mood', 'box')
           // Size comes from the host so the box and the pig can never drift.
@@ -3839,8 +3878,8 @@ window.__ModuleLoader__.load({
           if (pose !== undefined && view.pig.mood === 'traveling' && view.activity !== null && view.activity.kind === 'trip') {
             if (TRIP_ART[view.activity.region] !== undefined) pose = TRIP_ART[view.activity.region]
           }
-          lookSuffix = STAGE_LOOK[stage.art] !== undefined ? '--' + STAGE_LOOK[stage.art] : ''
-          if (pose !== undefined) pose += lookSuffix
+          // A grave or a soul wears nothing; the host already sends none for them.
+          wearQuery = stage.key !== 'grave' && view.pig.outfit.worn.length > 0 ? '?wear=' + view.pig.outfit.worn.join(',') : ''
           showArt(pose !== undefined ? pose : stage.art, stage.emoji)
           // Literally grows up: the stage carries its own size.
           host.style.setProperty('--pig-size', stage.size + 'px')
