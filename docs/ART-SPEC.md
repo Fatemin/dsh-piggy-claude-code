@@ -4,6 +4,12 @@
 > `piglet.svg` / `elder.svg` 已删除。现在的文件和命名以 `assets/` 为准
 > （`stage-*` / `mood-*` / `away-*` / `react-*` / `soul`，本体统一用原来的 Noto 🐖，由 `tools/build-sprites.mjs` 生成，
 > 每张用内嵌 CSS 自己动），总览见 `tools/sprites.html`。下面保留原始需求作参考。
+>
+> **ST0001 补齐：** 每个工作（`job-<art>`，含 9 个普通工作）、每个学段（`study-primary/college/graduate/doctor`）、
+> 博士毕业（`react-graduate`）、每个旅行地区（`away-trip-<region>`）都有自己的外出形象；
+> 小猪的蝴蝶结、中年猪的鸭舌帽、老年猪的白眉白胡子贯穿所有姿势——每个姿势另外生成
+> `<姿势>--piglet/--middle/--elder.svg`，自带头饰的姿势（草帽、头盔、学位帽…）不再叠阶段帽子。
+> 总览页 `tools/sprites.html?look=elder` 可切换阶段查看。
 
 **目标**：把现在用 emoji 表示的一切，换成手绘 SVG。
 **每一项都对应代码里真实存在的状态**（文件、尺寸、触发条件都是从源码里对出来的）。

@@ -279,6 +279,28 @@ test('an away pig reports how far through its activity it is', async () => {
   }
 })
 
+// [ST0001] the panel draws the pig at that school stage / in that region.
+test('an away pig says which school stage it is at, or which region it is in', async () => {
+  for (const [activity, field, want] of [
+    [{ kind: 'study', key: 'chinese', keys: ['chinese'], stage: 'doctor', label: '语文', emoji: '📖' }, 'stage', 'doctor'],
+    [{ kind: 'trip', key: 'shanghai', label: '上海', emoji: '🌃', cost: 100 }, 'region', 'china'],
+  ]) {
+    const app = boot(nowMs => {
+      const pig = hatchEgg(nowMs - 30 * MIN)
+      pig.activity = { ...activity, startedAt: nowMs - 10 * MIN, endsAt: nowMs + 50 * MIN }
+      pig.lastSeenAt = nowMs - 10 * MIN
+      return pig
+    })
+    try {
+      const snap = await app.get()
+      assert.equal(snap.activity.kind, activity.kind)
+      assert.equal(snap.activity[field], want, `${activity.kind} carries its ${field}`)
+    } finally {
+      app.cleanup()
+    }
+  }
+})
+
 test('care is refused while working, and the refusal is honest', async () => {
   const app = boot(nowMs => {
     const pig = hatchEgg(nowMs)

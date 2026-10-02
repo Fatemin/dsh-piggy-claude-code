@@ -956,6 +956,54 @@ test('a drawn pig wears its mood pose; fine and grave keep the stage drawing', a
   assert.equal(findByClass(hostOf(grave.dom), 'dp-pig-img').src, '/dsh-pig/art/stage-grave.svg', 'a grave stays a grave')
 })
 
+// [ST0001] every job, school stage and trip region has a pose, and a stage that
+// dresses up (bow, cap, beard) wears it in every pose.
+test('away poses follow the job, the school stage and the region; dressed stages keep their look', async () => {
+  const young = { key: 'young', label: '青年猪', emoji: '🐖', size: 48, art: 'stage-young' }
+  const piglet = { key: 'piglet', label: '小猪', emoji: '🐖', size: 40, art: 'stage-piglet' }
+  const elder = { key: 'elder', label: '老年猪', emoji: '🐖', size: 56, art: 'stage-elder' }
+  const srcFor = async (status) => {
+    const client = await loadClient({ status: { ...SNAPSHOT, ...status } })
+    client.registration.factory(() => {}).apply({})
+    await settle()
+    return findByClass(hostOf(client.dom), 'dp-pig-img').src
+  }
+  const away = (kind, key, extra) => ({ kind, key, label: key, emoji: '🐖', secondsLeft: 60, progress: 10, ...extra })
+
+  assert.equal(await srcFor({ jobs: [{ key: 'tea', label: '奶茶店员', emoji: '🧋', art: 'tea' }],
+    activity: away('work', 'tea'), pig: { ...PIG, stage: young, mood: 'working' } }), '/dsh-pig/art/job-tea.svg', 'an everyday job has its own pose')
+  assert.equal(await srcFor({ activity: away('study', 'math', { stage: 'doctor' }), pig: { ...PIG, stage: young, mood: 'studying' } }),
+    '/dsh-pig/art/study-doctor.svg', 'a doctorate looks like a doctorate')
+  assert.equal(await srcFor({ activity: away('study', 'math'), pig: { ...PIG, stage: young, mood: 'studying' } }),
+    '/dsh-pig/art/away-study.svg', 'no stage from the host: the generic desk')
+  assert.equal(await srcFor({ activity: away('trip', 'shanghai', { region: 'china' }), pig: { ...PIG, stage: young, mood: 'traveling' } }),
+    '/dsh-pig/art/away-trip-china.svg', 'a trip shows its region')
+  assert.equal(await srcFor({ activity: away('trip', 'mars', { region: 'mars' }), pig: { ...PIG, stage: young, mood: 'traveling' } }),
+    '/dsh-pig/art/away-trip.svg', 'an unknown region falls back to the plain road')
+
+  assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'hungry', moodLevel: 1 } }), '/dsh-pig/art/mood-hungry-1--piglet.svg', 'a piglet keeps its bow')
+  assert.equal(await srcFor({ activity: away('trip', 'paris', { region: 'europe' }), pig: { ...PIG, stage: elder, mood: 'traveling' } }),
+    '/dsh-pig/art/away-trip-europe--elder.svg', 'an old pig keeps its beard on the road')
+  assert.equal(await srcFor({ pig: { ...PIG, stage: { ...elder, art: 'stage-young' }, mood: 'happy' } }),
+    '/dsh-pig/art/mood-happy.svg', 'an elder in the original look stays undressed')
+  assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'fine' } }), '/dsh-pig/art/stage-piglet.svg', 'fine still shows the stage itself')
+})
+
+test('graduating as a doctor plays the graduation pose in the stage look', async () => {
+  const stage = { key: 'middle', label: '中年猪', emoji: '🐖', size: 62, art: 'stage-middle' }
+  const { registration, dom } = await loadClient({
+    status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'fine' }, pending: [{ kind: 'doctor', text: '猪猪 博士毕业了！🎓', at: 222 }] },
+  })
+  const later = []
+  window.setTimeout = fn => { later.push(fn); return later.length }
+  registration.factory(() => {}).apply({})
+  await settle()
+  const img = () => findByClass(hostOf(dom), 'dp-pig-img')
+  assert.equal(img().src, '/dsh-pig/art/react-graduate--middle.svg', 'cap tossed, still wearing the stage look')
+  for (const fn of later.splice(0)) fn()
+  assert.equal(img().src, '/dsh-pig/art/stage-middle.svg', 'then back to the stage drawing')
+})
+
 test('being away shows what the pig is doing and how far along it is', async () => {
   const cases = [
     ['work', 'working', '💻'],

@@ -10,6 +10,7 @@ import { PLACES, REGIONS, SOUVENIRS, SPECIALTIES, WORLD_BONUS, fareFor, zonesBet
 import { ALL_ITEMS, PARALLEL_COURSES, RENAME_CARD } from '../data.js'
 import { hasDefaultName, perksOf, regionProgress, renamePig, tripQuote } from '../core.js'
 import assert from 'node:assert/strict'
+import { existsSync } from 'node:fs'
 import { test } from 'node:test'
 
 import {
@@ -882,6 +883,23 @@ test('study is refused when broke, away, sick or dead', () => {
 // ===========================================================================
 
 // [dsh-piggy-claude-code mod] the travel world: priced by time zones from home.
+// [ST0001] every job, school stage and region has a pose, in every stage look.
+test('every job, school stage and trip region has its sprite, dressed for every stage', () => {
+  const poses = [
+    ...JOBS.map(job => `job-${job.art}`),
+    ...SCHOOL_STAGES.map(stage => `study-${stage.key}`),
+    ...REGIONS.map(region => `away-trip-${region.key}`),
+    'react-graduate',
+  ]
+  assert.ok(JOBS.every(job => typeof job.art === 'string' && job.art !== ''), 'every job names its art')
+  for (const pose of poses) {
+    for (const name of [pose, `${pose}--piglet`, `${pose}--middle`, `${pose}--elder`]) {
+      assert.ok(existsSync(new URL(`../assets/${name}.svg`, import.meta.url)), `assets/${name}.svg`)
+      assert.match(`${name}.svg`, /^[a-z][a-z0-9-]{0,31}\.svg$/, 'the art route serves it')
+    }
+  }
+})
+
 test('the travel world is well formed', () => {
   assert.equal(REGIONS.length, 7)
   for (const region of REGIONS) {

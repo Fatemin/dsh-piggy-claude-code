@@ -8,7 +8,8 @@
  * its eyes, and adds things around it — a hat, a desk, a tub, tears.
  *
  * stage-box.svg and stage-grave.svg have no pig in them and are hand-written;
- * this script leaves them alone.
+ * this script leaves them alone. Every pose is also written once per life
+ * stage that dresses up (<pose>--piglet / --middle / --elder.svg).
  *
  *   node tools/build-sprites.mjs
  */
@@ -52,7 +53,7 @@ const cheeks = (rx, ry, fill, opacity, cls = '') => {
     + `<ellipse${c} cx="60" cy="170" rx="${+(rx * .75).toFixed(1)}" ry="${+(ry * .75).toFixed(1)}" fill="${fill}" opacity="${opacity}"/>`
 }
 
-function pig({ eyes = 'open', face = '', back = '', blush = '' } = {}) {
+function pig({ eyes = 'open', face = '', back = '', blush = '', look = '' } = {}) {
   const eyeMarkup = eyes === 'open'
     ? `<path class="eye" fill="${C.eye}" d="${P.eye1}"/><path class="eye" fill="${C.eye}" d="${P.eye2}"/>`
     : `<path d="${SHUT[eyes]}" fill="none" stroke="${C.eye}" stroke-width="7"/>`
@@ -70,6 +71,7 @@ function pig({ eyes = 'open', face = '', back = '', blush = '' } = {}) {
     <path fill="${C.eye}" d="${P.nostril2}"/></g>
     ${cheeks(12, 7, C.blush, '.75', 'blush')}
     ${blush}
+    ${look}
     ${face}
   </g>`
 }
@@ -93,6 +95,53 @@ const drop = (x, y, s, fill, cls) =>
   `<g class="${cls}"><path transform="translate(${x} ${y}) scale(${s})" d="M0 0C-4 7-6 11-6 14a6 6 0 0 0 12 0c0-3-2-7-6-14Z" fill="${fill}"/></g>`
 
 // ---------------------------------------------------------------------------
+// What each life stage wears. The stage sprites wear it standing still, and
+// every pose is built once more per stage wearing it too (<pose>--<stage>.svg),
+// so a piglet keeps its bow and an old pig its beard while it eats or works.
+// A pose with its own headwear (`hat: true`) drops the bow and the cap.
+// ---------------------------------------------------------------------------
+const LOOK = {
+  bow: `<g transform="translate(86 50) rotate(-18)"><path d="M0 0L-22-12C-28-3-28 7-22 14Z" fill="#FF6F9A"/><path d="M0 0L22-12C28-3 28 7 22 14Z" fill="#FF6F9A"/><circle r="7" fill="#E9507F"/></g>`,
+  cap: `<path d="M118 62C124 34 166 22 200 34L204 52C176 46 146 52 118 62Z" fill="#8B6B4E"/><path d="M98 70Q116 56 140 58" fill="none" stroke="#6E5239" stroke-width="10"/>`,
+  elder: `<path d="M77 122Q89 111 104 121M151 137Q164 127 179 138" fill="none" stroke="#ADADA5" stroke-width="8"/>
+    <path d="M107 207C98 203 96 213 84 212C88 220 98 223 107 216C114 225 127 226 134 219C120 220 119 208 107 207Z" fill="#F8F4E8"/>
+    <path d="M105 228Q116 233 128 230Q127 241 119 247L116 240L110 244Q107 236 105 228Z" fill="#F8F4E8"/>`,
+}
+const STAGE_LOOKS = {
+  piglet: { title: '小猪', head: LOOK.bow },
+  middle: { title: '中年猪', head: LOOK.cap },
+  elder: { title: '老年猪', face: LOOK.elder },
+}
+
+// The little work desk most indoor poses stand at.
+const DESK = `<rect x="28" y="252" width="170" height="12" rx="6" fill="#C69C6D"/>
+    <rect x="38" y="264" width="12" height="36" rx="6" fill="#B0875A"/><rect x="176" y="264" width="12" height="36" rx="6" fill="#B0875A"/>`
+const glasses = stroke => `<g fill="none" stroke="${stroke}" stroke-width="5"><circle cx="91" cy="142" r="20"/><circle cx="165" cy="157" r="20"/><path d="M111 145L145 152M71 138L58 132"/></g>`
+
+// On the road: straw hat, backpack, the road sliding back under the feet.
+const TRIP_CSS = `.walk{animation:walk .5s ease-in-out infinite;transform-origin:190px 298px}
+    .road{animation:road .8s linear infinite}
+    .tail{animation-duration:.5s}
+    @keyframes walk{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1.5deg)}}
+    @keyframes road{to{transform:translateX(60px)}}`
+const TRIP_GEAR = `<path d="M236 58Q206 110 226 168" fill="none" stroke="#4E7FB0" stroke-width="9"/>
+    <rect x="238" y="34" width="84" height="92" rx="26" fill="#6FA8DC" transform="rotate(8 280 80)"/>
+    <rect x="248" y="86" width="64" height="32" rx="13" fill="#5A93C8" transform="rotate(8 280 80)"/>
+    <ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
+    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/>`
+const TRIP_ROAD = `<g class="road"><path d="M-60 300H0M60 300H120M180 300H240M300 300H360M420 300H480" fill="none" stroke="#D9CBB3" stroke-width="7" stroke-linecap="round"/></g>`
+/** A trip to one region: the walking pig, plus that region's scenery. */
+const trip = (title, note, { css = '', under = '', over = '', gear = '', back = '' }) => ({
+  title, note, hat: true,
+  css: `${TRIP_CSS}
+    ${css}`,
+  wrap: 'walk',
+  pig: { face: TRIP_GEAR + gear, back },
+  under: under + TRIP_ROAD,
+  over,
+})
+
+// ---------------------------------------------------------------------------
 // Sprites. `css` animates; `under` sits behind the pig, `over` in front;
 // `wrap` names the class on the group holding the pig (+ its own props).
 // ---------------------------------------------------------------------------
@@ -102,21 +151,21 @@ const SPRITES = {
     title: '小猪', note: '刚出纸盒：耳朵上系个小蝴蝶结，走两步颠一下。',
     css: `.hop{animation:hop 1.4s ease-in-out infinite;transform-origin:190px 298px}
     @keyframes hop{0%,100%{transform:translateY(0) scale(1,1)}45%{transform:translateY(-10px) scale(.98,1.02)}70%{transform:translateY(0) scale(1.03,.97)}}`,
-    wrap: 'hop',
-    pig: { face: `<g transform="translate(86 50) rotate(-18)"><path d="M0 0L-22-12C-28-3-28 7-22 14Z" fill="#FF6F9A"/><path d="M0 0L22-12C28-3 28 7 22 14Z" fill="#FF6F9A"/><circle r="7" fill="#E9507F"/></g>` },
+    wrap: 'hop', looks: false,
+    pig: { face: LOOK.bow },
   },
   'stage-young': {
     title: '青年猪', note: '原版那只猪：呼吸、眨眼、甩尾巴。',
     css: `.breathe{animation:breathe 2.6s ease-in-out infinite;transform-origin:190px 298px}
     @keyframes breathe{50%{transform:scale(1.015,.975)}}`,
-    wrap: 'breathe',
+    wrap: 'breathe', looks: false,
   },
   'stage-middle': {
     title: '中年猪', note: '同一只猪，戴一顶鸭舌帽，呼吸慢一点。',
     css: `.breathe{animation:breathe 3.2s ease-in-out infinite;transform-origin:190px 298px}
     @keyframes breathe{50%{transform:scale(1.02,.97)}}`,
-    wrap: 'breathe',
-    pig: { face: `<path d="M118 62C124 34 166 22 200 34L204 52C176 46 146 52 118 62Z" fill="#8B6B4E"/><path d="M98 70Q116 56 140 58" fill="none" stroke="#6E5239" stroke-width="10"/>` },
+    wrap: 'breathe', looks: false,
+    pig: { face: LOOK.cap },
   },
   'stage-elder': {
     title: '老年猪', note: '同一只猪：灰眉毛、白胡子，拄一根小拐杖，偶尔点头打盹。',
@@ -124,10 +173,8 @@ const SPRITES = {
     .cane{animation:tap 4s ease-in-out infinite;transform-origin:44px 298px}
     @keyframes nod{0%,60%,100%{transform:rotate(0)}72%{transform:rotate(-3deg) translateY(3px)}84%{transform:rotate(0)}}
     @keyframes tap{50%{transform:rotate(-3deg)}}`,
-    wrap: 'nod',
-    pig: { face: `<path d="M77 122Q89 111 104 121M151 137Q164 127 179 138" fill="none" stroke="#ADADA5" stroke-width="8"/>
-    <path d="M107 207C98 203 96 213 84 212C88 220 98 223 107 216C114 225 127 226 134 219C120 220 119 208 107 207Z" fill="#F8F4E8"/>
-    <path d="M105 228Q116 233 128 230Q127 241 119 247L116 240L110 244Q107 236 105 228Z" fill="#F8F4E8"/>` },
+    wrap: 'nod', looks: false,
+    pig: { face: LOOK.elder },
     over: `<path class="cane" d="M40 298V226C40 206 66 206 66 226" fill="none" stroke="#A8764C" stroke-width="10"/>`,
   },
   'soul': {
@@ -140,7 +187,7 @@ const SPRITES = {
     @keyframes float{0%,100%{transform:translateY(6px)}50%{transform:translateY(-12px)}}
     @keyframes glow{50%{opacity:.5}}
     @keyframes twinkle{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}`,
-    wrap: 'float ghost',
+    wrap: 'float ghost', looks: false,
     pig: { eyes: 'closed' },
     over: `<g class="float"><ellipse class="halo" cx="160" cy="16" rx="52" ry="13" fill="none" stroke="#F5D76E" stroke-width="10"/></g>
     ${sparkle(52, 40, 18, '#FFE27A', 'sp')}${sparkle(344, 180, 14, '#FFE27A', 'sp2')}`,
@@ -361,7 +408,7 @@ const SPRITES = {
     @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes drip{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(30px)}}
     @keyframes slide{0%,20%{opacity:0;transform:translateY(0)}40%{opacity:1}100%{opacity:0;transform:translateY(28px)}}`,
-    wrap: 'droop',
+    wrap: 'droop', hat: true,
     pig: {
       eyes: 'closed',
       blush: cheeks(20, 11, '#B9C6E8', '.45'),
@@ -417,20 +464,10 @@ const SPRITES = {
   },
   'away-trip': {
     title: '旅行', note: '戴草帽、背小包往前走，一颠一颠，脚下的路往后退。',
-    css: `.walk{animation:walk .5s ease-in-out infinite;transform-origin:190px 298px}
-    .road{animation:road .8s linear infinite}
-    .tail{animation-duration:.5s}
-    @keyframes walk{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1.5deg)}}
-    @keyframes road{to{transform:translateX(60px)}}`,
-    wrap: 'walk',
-    pig: {
-      face: `<path d="M236 58Q206 110 226 168" fill="none" stroke="#4E7FB0" stroke-width="9"/>
-    <rect x="238" y="34" width="84" height="92" rx="26" fill="#6FA8DC" transform="rotate(8 280 80)"/>
-    <rect x="248" y="86" width="64" height="32" rx="13" fill="#5A93C8" transform="rotate(8 280 80)"/>
-    <ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
-    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/>`,
-    },
-    under: `<g class="road"><path d="M-60 300H0M60 300H120M180 300H240M300 300H360M420 300H480" fill="none" stroke="#D9CBB3" stroke-width="7" stroke-linecap="round"/></g>`,
+    css: TRIP_CSS,
+    wrap: 'walk', hat: true,
+    pig: { face: TRIP_GEAR },
+    under: TRIP_ROAD,
   },
 
   // ---- reactions ----
@@ -461,7 +498,7 @@ const SPRITES = {
     @keyframes foam{50%{transform:scale(1.06,.94)}}
     @keyframes rise{0%{opacity:0;transform:translateY(10px)}20%{opacity:1}100%{opacity:0;transform:translateY(-80px)}}
     @keyframes ripple{50%{transform:translateX(8px)}}`,
-    wrap: 'soak',
+    wrap: 'soak', hat: true,
     pig: { eyes: 'closed', face: `<g class="foam" fill="#FFFFFF"><circle cx="110" cy="72" r="24"/><circle cx="146" cy="56" r="30"/><circle cx="186" cy="68" r="22"/><circle cx="140" cy="84" r="20"/><circle cx="136" cy="44" r="6" fill="#DDF1FB"/></g>` },
     over: `<path d="M34 208H348L330 290C329 296 323 300 316 300H66C59 300 53 296 52 290Z" fill="#C69C6D"/>
     <path d="M40 232H342M46 256H336M50 280H332" fill="none" stroke="#B0875A" stroke-width="5"/>
@@ -585,7 +622,7 @@ const SPRITES = {
     @keyframes live{50%{opacity:.2}}
     @keyframes wave{0%{opacity:0;transform:translateX(0)}40%{opacity:1}100%{opacity:0;transform:translateX(-16px)}}
     @keyframes chat{0%{opacity:0;transform:translateY(30px)}15%,80%{opacity:1}100%{opacity:0;transform:translateY(-40px)}}`,
-    wrap: 'bob',
+    wrap: 'bob', hat: true,
     pig: { face: `<path d="M62 128C62 50 200 34 222 110" fill="none" stroke="#5B5F73" stroke-width="12" stroke-linecap="round"/>
     <ellipse cx="64" cy="132" rx="15" ry="22" fill="#8E7CC3"/><ellipse cx="220" cy="116" rx="15" ry="22" fill="#8E7CC3"/>
     <path d="M58 150Q44 196 64 212" fill="none" stroke="#5B5F73" stroke-width="5" stroke-linecap="round"/>
@@ -679,11 +716,407 @@ const SPRITES = {
     <path class="rain2" d="M130 80v14M178 80v14" fill="none" stroke="#8FB6D8" stroke-width="5" stroke-linecap="round"/></g>
     <g transform="rotate(-12 80 286)"><rect x="40" y="272" width="80" height="26" rx="5" fill="#C9CED6"/><path d="M50 284h40" stroke="#AEB4BE" stroke-width="5" stroke-linecap="round"/></g>`,
   },
+
+  // ---- everyday jobs (data.js JOBS, tier 'basic'): job-<art>.svg too ----
+  'job-label': {
+    title: 'AI 数据标注', note: '对着笔记本给图片画框打标签，框一画好就蹦出一张小标签。',
+    css: `.type{animation:type .4s ease-in-out infinite;transform-origin:190px 298px}
+    .box{stroke-dasharray:124;animation:draw 2s ease-in-out infinite}
+    .tag{animation:tag 2s ease-out infinite}.tag2{animation:tag 2s ease-out -1s infinite}
+    .keys{animation:keys .4s steps(2) infinite}
+    @keyframes type{50%{transform:translateY(3px) rotate(.6deg)}}
+    @keyframes draw{0%{stroke-dashoffset:124}45%,100%{stroke-dashoffset:0}}
+    @keyframes tag{0%,45%{opacity:0;transform:translate(0,0)}55%{opacity:1}100%{opacity:0;transform:translate(-4px,-80px)}}
+    @keyframes keys{50%{opacity:0}}`,
+    wrap: 'type',
+    over: `${DESK}
+    <path d="M36 250L46 210H118L110 250Z" fill="#4B5068"/>
+    <path d="M52 244L59 216H110L104 244Z" fill="#E6EEF4"/>
+    <ellipse cx="80" cy="236" rx="12" ry="7" fill="#F2B98A"/><circle cx="92" cy="226" r="6" fill="#F2B98A"/>
+    <path d="M88 220l2-5 3 5M94 220l3-5 2 5" fill="#F2B98A"/>
+    <rect class="box" x="64" y="217" width="38" height="25" fill="none" stroke="#3FBF7F" stroke-width="3"/>
+    <rect x="34" y="246" width="100" height="8" rx="4" fill="#3A3E52"/>
+    <path class="keys" d="M124 236l8-6M130 244l10-2" fill="none" stroke="#9FA9B4" stroke-width="4" stroke-linecap="round"/>
+    <g class="tag"><path d="M30 186H54L64 196L54 206H30Z" fill="#FFD35A"/><circle cx="37" cy="196" r="3" fill="#C69C6D"/></g>
+    <g class="tag2"><path d="M34 186H58L68 196L58 206H34Z" fill="#9FD8F0"/><circle cx="41" cy="196" r="3" fill="#5A93C8"/></g>`,
+  },
+  'job-tutor': {
+    title: '家教', note: '站在小黑板前讲题，粉笔字一笔一笔写出来，桌上的作业一个个打上红勾。',
+    css: `.explain{animation:explain 1s ease-in-out infinite;transform-origin:190px 298px}
+    .chalk{stroke-dasharray:40;animation:write 3s linear infinite}
+    .tick{stroke-dasharray:40;animation:tick 3s ease-out infinite}
+    .wave{animation:wave 1s ease-out infinite}
+    @keyframes explain{0%,100%{transform:rotate(0)}30%{transform:rotate(-2deg)}60%{transform:rotate(.5deg)}}
+    @keyframes write{0%{stroke-dashoffset:40}60%,100%{stroke-dashoffset:0}}
+    @keyframes tick{0%,60%{stroke-dashoffset:40}80%,100%{stroke-dashoffset:0}}
+    @keyframes wave{0%{opacity:0;transform:translateX(0)}40%{opacity:1}100%{opacity:0;transform:translateX(-14px)}}`,
+    wrap: 'explain',
+    under: `<rect x="26" y="-30" width="172" height="82" rx="6" fill="#8B6B4E"/><rect x="34" y="-22" width="156" height="66" rx="3" fill="#2F5D50"/>
+    <g fill="none" stroke="#F4F4EC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path class="chalk" d="M50 -8v22M62 3h16M70 -5v16M88 -8v22M100 0h16M100 8h16M126 -4q8-8 14 0t-14 18h16"/>
+    <path class="chalk" d="M160 30l12-24 12 24Z"/></g>`,
+    over: `<path class="wave" d="M40 200q-8 14 0 28M28 192q-12 22 0 44" fill="none" stroke="#C9B79C" stroke-width="5" stroke-linecap="round"/>
+    <g transform="rotate(-6 70 274)"><rect x="32" y="252" width="76" height="46" rx="4" fill="#FFFDF6"/>
+    <path d="M42 264h28M42 276h22M42 288h26" fill="none" stroke="#D9D2C0" stroke-width="4" stroke-linecap="round"/>
+    <path class="tick" d="M78 268l7 8 14-16" fill="none" stroke="#E5534B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <circle cx="140" cy="284" r="14" fill="#E5534B"/><path d="M140 270q2-8 9-10" fill="none" stroke="#7DBF6A" stroke-width="4" stroke-linecap="round"/>`,
+  },
+  'job-office': {
+    title: '上班', note: '打着领带，一份一份往文件上盖章，墙上的钟走得飞快。',
+    css: `.sit{animation:sit 1.2s ease-in-out infinite;transform-origin:190px 298px}
+    .stamp{animation:stamp 1.2s ease-in infinite}
+    .mark{animation:mark 1.2s steps(1) infinite}
+    .hand{animation:spin 2.4s linear infinite;transform-origin:306px -2px}
+    .hand2{animation:spin 28.8s linear infinite;transform-origin:306px -2px}
+    @keyframes sit{0%,100%{transform:rotate(0)}45%{transform:rotate(1deg) translateY(2px)}}
+    @keyframes stamp{0%,30%,100%{transform:translateY(-22px)}45%,55%{transform:translateY(0)}}
+    @keyframes mark{0%,45%{opacity:0}50%,95%{opacity:1}}
+    @keyframes spin{to{transform:rotate(360deg)}}`,
+    wrap: 'sit',
+    pig: { face: `<path d="M120 212h20l-4 10h-12Z" fill="#3E5C99"/><path d="M125 222h10l6 30-11 11-11-11Z" fill="#4A6FB5"/>
+    <path d="M128 232l8 6M126 244l10 7" fill="none" stroke="#7FA0D8" stroke-width="3" stroke-linecap="round"/>` },
+    under: `<circle cx="306" cy="-2" r="30" fill="#FFFFFF"/><circle cx="306" cy="-2" r="30" fill="none" stroke="#8B6B4E" stroke-width="6"/>
+    <path class="hand2" d="M306 -2V-20" fill="none" stroke="#3A3E52" stroke-width="5" stroke-linecap="round"/>
+    <path class="hand" d="M306 -2V-24" fill="none" stroke="#E5534B" stroke-width="3" stroke-linecap="round"/>`,
+    over: `${DESK}
+    <rect x="34" y="244" width="70" height="8" rx="2" fill="#E6E0D2"/><rect x="38" y="238" width="66" height="7" rx="2" fill="#F3EEDF"/><rect x="34" y="232" width="70" height="7" rx="2" fill="#FFFDF6"/>
+    <rect class="mark" x="50" y="233" width="26" height="5" rx="2" fill="#E5534B"/>
+    <g class="stamp"><rect x="48" y="220" width="30" height="10" rx="3" fill="#8B5A3C"/><rect x="56" y="198" width="14" height="24" rx="6" fill="#A8764C"/><circle cx="63" cy="196" r="9" fill="#A8764C"/></g>
+    <path d="M156 222H186V246C186 250 183 252 179 252H163C159 252 156 250 156 246Z" fill="#FFFFFF"/>
+    <path d="M186 228C198 228 198 244 186 244" fill="none" stroke="#FFFFFF" stroke-width="5"/>`,
+  },
+  'job-stall': {
+    title: '摆地摊', note: '大伞底下铺块布摆满小玩意儿，晃着脑袋吆喝，卖出一件蹦一枚硬币。',
+    css: `.hawk{animation:hawk 1.4s ease-in-out infinite;transform-origin:190px 298px}
+    .shade{animation:shade 3s ease-in-out infinite;transform-origin:200px 300px}
+    .wave{animation:wave .7s ease-out infinite}
+    .coin{animation:coin 1.4s ease-out infinite}.coin2{animation:coin 1.4s ease-out -.7s infinite}
+    @keyframes hawk{0%,100%{transform:rotate(0)}25%{transform:rotate(-2.5deg) translateY(-3px)}50%{transform:rotate(0)}}
+    @keyframes shade{50%{transform:rotate(1deg)}}
+    @keyframes wave{0%{opacity:0;transform:translateX(0)}40%{opacity:1}100%{opacity:0;transform:translateX(-16px)}}
+    @keyframes coin{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-60px)}}`,
+    wrap: 'hawk',
+    under: `<g class="shade"><path d="M200 -20V300" fill="none" stroke="#B0875A" stroke-width="8"/>
+    <path d="M56 30Q200 -70 344 30Z" fill="#FF8FA3"/><path d="M200 -32L128 30H176ZM200 -32L224 30H272Z" fill="#FFFFFF"/>
+    <path d="M56 30a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0a12 12 0 0 0 24 0Z" fill="#FF8FA3"/></g>`,
+    over: `<path class="wave" d="M40 200q-8 14 0 28M28 192q-12 22 0 44" fill="none" stroke="#E8A882" stroke-width="5" stroke-linecap="round"/>
+    <path d="M24 300L36 268H206L196 300Z" fill="#6FA8DC"/><path d="M44 284H196" fill="none" stroke="#9CC7E0" stroke-width="5" stroke-dasharray="10 10"/>
+    <circle cx="60" cy="266" r="12" fill="#B0875A"/><circle cx="51" cy="256" r="5" fill="#B0875A"/><circle cx="69" cy="256" r="5" fill="#B0875A"/>
+    <path d="M98 276C90 262 96 252 102 248V240H114V248C120 252 126 262 118 276Z" fill="#B49CD8"/>
+    <circle cx="150" cy="268" r="11" fill="#FFD35A"/><path d="M139 268h22M150 257v22" fill="none" stroke="#F5A23C" stroke-width="3"/>
+    <g class="coin"><circle cx="80" cy="240" r="9" fill="#FFD35A"/><circle cx="80" cy="240" r="5" fill="none" stroke="#E5B33A" stroke-width="2"/></g>
+    <g class="coin2"><circle cx="130" cy="236" r="9" fill="#FFD35A"/><circle cx="130" cy="236" r="5" fill="none" stroke="#E5B33A" stroke-width="2"/></g>`,
+  },
+  'job-odd': {
+    title: '打零工', note: '包着头巾，拿大扫帚左一下右一下地扫地，扫得尘土一团团飞。',
+    css: `.sway{animation:sway 1s ease-in-out infinite;transform-origin:190px 298px}
+    .broom{animation:sweep 1s ease-in-out infinite;transform-origin:30px 120px}
+    .dust{animation:dust 1s ease-out infinite}.dust2{animation:dust 1s ease-out -.5s infinite}
+    @keyframes sway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.5deg)}}
+    @keyframes sweep{0%,100%{transform:rotate(6deg)}50%{transform:rotate(-8deg)}}
+    @keyframes dust{0%{opacity:0;transform:translate(0,0) scale(.6)}30%{opacity:.9}100%{opacity:0;transform:translate(-20px,-26px) scale(1.3)}}`,
+    wrap: 'sway', hat: true,
+    pig: { face: `<path d="M104 76C128 40 192 30 218 50L208 72C180 58 138 62 114 90Z" fill="#6FA8DC"/>
+    <circle cx="140" cy="62" r="4" fill="#FFFFFF"/><circle cx="170" cy="52" r="4" fill="#FFFFFF"/><circle cx="196" cy="56" r="4" fill="#FFFFFF"/>
+    <path d="M214 60L238 52L232 72Z" fill="#5A93C8"/>` },
+    over: `<g class="broom"><path d="M30 120L92 268" fill="none" stroke="#B0875A" stroke-width="9" stroke-linecap="round"/>
+    <path d="M78 258L112 248L132 296H70Z" fill="#E9C46A"/><path d="M84 274L118 264" fill="none" stroke="#C9A04C" stroke-width="5"/>
+    <path d="M82 296L80 286M96 296L94 284M110 296L110 284M122 296L124 286" fill="none" stroke="#C9A04C" stroke-width="3"/></g>
+    <g class="dust"><circle cx="150" cy="290" r="11" fill="#E6DED0"/><circle cx="164" cy="284" r="8" fill="#E6DED0"/></g>
+    <g class="dust2"><circle cx="60" cy="292" r="9" fill="#E6DED0"/><circle cx="48" cy="286" r="6" fill="#E6DED0"/></g>`,
+  },
+  'job-tea': {
+    title: '奶茶店员', note: '戴着遮阳帽站在柜台后摇雪克杯，杯里的珍珠一颠一颠。',
+    css: `.bop{animation:bop .5s ease-in-out infinite;transform-origin:190px 298px}
+    .shaker{animation:shake .25s ease-in-out infinite;transform-origin:48px 214px}
+    .pearl{animation:pearl .5s ease-in-out infinite}.pearl2{animation:pearl .5s ease-in-out -.25s infinite}
+    .sp{animation:pop 1.5s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes bop{50%{transform:translateY(-3px)}}
+    @keyframes shake{0%,100%{transform:translateY(-8px) rotate(-6deg)}50%{transform:translateY(8px) rotate(6deg)}}
+    @keyframes pearl{50%{transform:translateY(-4px)}}
+    @keyframes pop{0%{opacity:0;transform:scale(.4)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.2)}}`,
+    wrap: 'bop', hat: true,
+    pig: { face: `<path d="M116 66C124 38 176 30 206 44L202 60C176 52 146 54 120 72Z" fill="#7DBF6A"/>
+    <path d="M120 68C100 60 78 66 64 80C84 84 106 80 122 74Z" fill="#5FA84E"/>` },
+    over: `<rect x="24" y="246" width="210" height="14" rx="6" fill="#F3EDE4"/><rect x="32" y="258" width="194" height="42" rx="4" fill="#FFC2D1"/>
+    <path d="M60 258V300M100 258V300M140 258V300M180 258V300" fill="none" stroke="#FFD7E1" stroke-width="10"/>
+    <g class="shaker"><rect x="36" y="168" width="26" height="18" rx="7" fill="#AEB4BE"/><path d="M33 186H65L60 244H38Z" fill="#C9CED6"/><path d="M40 196l3 40" fill="none" stroke="#E6EAEE" stroke-width="4" stroke-linecap="round"/></g>
+    <path d="M176 206L186 172" fill="none" stroke="#FF7A93" stroke-width="7" stroke-linecap="round"/>
+    <path d="M150 206H190L184 246H156Z" fill="#E8C9A0"/><ellipse cx="170" cy="206" rx="21" ry="5" fill="#F7E6CF"/>
+    <g class="pearl" fill="#5A3E2B"><circle cx="162" cy="238" r="4"/><circle cx="176" cy="236" r="4"/></g>
+    <g class="pearl2" fill="#5A3E2B"><circle cx="168" cy="230" r="4"/><circle cx="180" cy="240" r="3.5"/></g>
+    ${sparkle(110, 150, 12, '#FFE27A', 'sp')}`,
+  },
+  'job-rider': {
+    title: '外卖骑手', note: '戴黄头盔、背外卖箱，踩着小滑板车往前冲，轮子飞转，身后拉出风线。',
+    css: `.ride{animation:ride .3s ease-in-out infinite;transform-origin:190px 298px}
+    .wheel{animation:spin .4s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .road{animation:road .5s linear infinite}
+    .wind{animation:wind .6s linear infinite}.wind2{animation:wind .6s linear -.3s infinite}
+    .tail{animation-duration:.3s}
+    @keyframes ride{50%{transform:translateY(-3px)}}
+    @keyframes spin{to{transform:rotate(-360deg)}}
+    @keyframes road{to{transform:translateX(60px)}}
+    @keyframes wind{0%{opacity:0;transform:translateX(0)}30%{opacity:1}100%{opacity:0;transform:translateX(30px)}}`,
+    wrap: 'ride', hat: true,
+    pig: { face: `<rect x="212" y="-4" width="104" height="78" rx="10" fill="#FFC83D"/><path d="M212 18H316" fill="none" stroke="#E5A92A" stroke-width="5"/>
+    <circle cx="264" cy="44" r="12" fill="#FFFFFF"/><path d="M258 44l5 5 8-9" fill="none" stroke="#E5A92A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M228 70Q208 110 222 160" fill="none" stroke="#E5A92A" stroke-width="9"/>
+    <path d="M76 100C70 50 120 10 180 4C220 2 246 22 244 52C200 44 140 56 90 104Z" fill="#FFC83D"/>
+    <path d="M120 30C140 18 170 12 196 14" fill="none" stroke="#FFE08A" stroke-width="8"/>
+    <path d="M84 104C128 60 196 46 248 54" fill="none" stroke="#E5A92A" stroke-width="9"/>` },
+    under: `<g class="road"><path d="M-60 300H0M60 300H120M180 300H240M300 300H360M420 300H480" fill="none" stroke="#D9CBB3" stroke-width="7" stroke-linecap="round"/></g>
+    <path d="M52 286L40 168" fill="none" stroke="#5B5F73" stroke-width="8" stroke-linecap="round"/><path d="M26 170H56" fill="none" stroke="#3A3E52" stroke-width="10" stroke-linecap="round"/>
+    <rect x="50" y="280" width="290" height="10" rx="5" fill="#5B5F73"/>`,
+    over: `<g class="wheel"><circle cx="52" cy="288" r="12" fill="#3A3E52"/><path d="M44 288h16M52 280v16" stroke="#9FA9B4" stroke-width="3"/></g>
+    <g class="wheel"><circle cx="330" cy="288" r="12" fill="#3A3E52"/><path d="M322 288h16M330 280v16" stroke="#9FA9B4" stroke-width="3"/></g>
+    <path class="wind" d="M320 110h26M330 150h22M318 190h30" fill="none" stroke="#CFD8E3" stroke-width="5" stroke-linecap="round"/>
+    <path class="wind2" d="M326 130h20M322 170h28" fill="none" stroke="#CFD8E3" stroke-width="5" stroke-linecap="round"/>`,
+  },
+  'job-site': {
+    title: '搬砖', note: '戴安全帽，背上码着三块砖，一步一顿地扛，汗珠往外甩。',
+    css: `.haul{animation:haul 1s ease-in-out infinite;transform-origin:190px 298px}
+    .bricks{animation:wobble 1s ease-in-out infinite;transform-origin:262px 66px}
+    .s1{animation:fling 1s ease-out infinite}.s2{animation:fling 1s ease-out -.5s infinite}
+    .puff{animation:puff 1s ease-out infinite}
+    @keyframes haul{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(5px) rotate(1deg)}}
+    @keyframes wobble{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(2deg)}}
+    @keyframes fling{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(-24px,-26px)}}
+    @keyframes puff{0%,40%{opacity:0;transform:scale(.6)}60%{opacity:.8}100%{opacity:0;transform:scale(1.3) translateY(-8px)}}`,
+    wrap: 'haul', hat: true,
+    pig: { face: `<g class="bricks"><rect x="212" y="36" width="58" height="28" rx="3" fill="#C8553D"/><rect x="272" y="40" width="54" height="26" rx="3" fill="#B84A35"/>
+    <rect x="236" y="8" width="58" height="28" rx="3" fill="#D2654C"/>
+    <path d="M220 50h12M246 22h12M282 54h12" fill="none" stroke="#E58A72" stroke-width="4" stroke-linecap="round"/></g>
+    <path d="M80 96C76 48 124 12 180 8C222 6 246 26 242 56C198 46 140 58 92 100Z" fill="#F5A23C"/>
+    <path d="M150 12C152 30 154 40 156 50" fill="none" stroke="#E57B2E" stroke-width="7"/>
+    <path d="M72 104C124 62 196 50 254 60" fill="none" stroke="#E57B2E" stroke-width="10"/>
+    ${drop(64, 110, 1.3, '#9FD8F0', 's1')}${drop(200, 92, 1.1, '#9FD8F0', 's2')}` },
+    over: `<rect x="26" y="280" width="34" height="18" rx="3" fill="#C8553D"/><rect x="62" y="280" width="34" height="18" rx="3" fill="#B84A35"/><rect x="42" y="262" width="34" height="18" rx="3" fill="#D2654C"/>
+    <g class="puff"><circle cx="190" cy="292" r="9" fill="#E6DED0"/><circle cx="204" cy="288" r="7" fill="#E6DED0"/></g>`,
+  },
+  'job-sorting': {
+    title: '快递分拣', note: '挂着工牌守在传送带边，一个个纸箱滑过来，扫码枪「嘀」一下亮红光。',
+    css: `.scan{animation:scan 1.2s ease-in-out infinite;transform-origin:190px 298px}
+    .b1{animation:belt 2.4s linear infinite}.b2{animation:belt 2.4s linear -1.2s infinite}
+    .beam{animation:beam 1.2s steps(1) infinite}
+    .roll{animation:roll .6s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes scan{0%,100%{transform:rotate(0)}50%{transform:rotate(-2deg)}}
+    @keyframes belt{0%{opacity:0;transform:translateX(0)}10%,85%{opacity:1}100%{opacity:0;transform:translateX(-150px)}}
+    @keyframes beam{0%,50%,70%,100%{opacity:0}55%,65%{opacity:1}}
+    @keyframes roll{to{transform:rotate(-360deg)}}`,
+    wrap: 'scan',
+    pig: { face: `<path d="M118 212Q150 240 192 226" fill="none" stroke="#4A6FB5" stroke-width="4"/>
+    <rect x="140" y="228" width="26" height="32" rx="4" fill="#FFFFFF"/><rect x="144" y="232" width="18" height="10" rx="2" fill="#6FA8DC"/>
+    <path d="M145 248h16M145 254h10" fill="none" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>` },
+    over: `<g class="b1"><rect x="176" y="222" width="44" height="34" rx="3" fill="#D9A066"/><path d="M198 222V256" fill="none" stroke="#F3D9B1" stroke-width="6"/></g>
+    <g class="b2"><rect x="180" y="228" width="38" height="28" rx="3" fill="#C8904F"/><path d="M180 240H218" fill="none" stroke="#F3D9B1" stroke-width="5"/></g>
+    <rect x="24" y="256" width="226" height="14" rx="7" fill="#5B5F73"/>
+    <circle class="roll" cx="44" cy="263" r="5" fill="#9FA9B4"/><circle class="roll" cx="100" cy="263" r="5" fill="#9FA9B4"/><circle class="roll" cx="156" cy="263" r="5" fill="#9FA9B4"/><circle class="roll" cx="212" cy="263" r="5" fill="#9FA9B4"/>
+    <path d="M40 270V300M234 270V300" fill="none" stroke="#3A3E52" stroke-width="8"/>
+    <path d="M30 150L62 140L66 154L44 162L40 182H30Z" fill="#3A3E52"/>
+    <path class="beam" d="M62 148L92 236" fill="none" stroke="#FF5A5A" stroke-width="4" stroke-linecap="round"/>`,
+  },
+
+  // ---- school stages (data.js SCHOOL_STAGES): study-<stage>.svg ----
+  'study-primary': {
+    title: '上小学', note: '系着红领巾、背着小黄书包，对着积木大声念，音符一个个往外冒。',
+    css: `.recite{animation:recite .8s ease-in-out infinite;transform-origin:190px 298px}
+    .n1{animation:note 1.6s ease-out infinite}.n2{animation:note 1.6s ease-out -.8s infinite}
+    .top{animation:bounce .8s ease-in-out infinite}
+    @keyframes recite{0%,100%{transform:rotate(0)}50%{transform:rotate(-2deg) translateY(-2px)}}
+    @keyframes note{0%{opacity:0;transform:translate(0,0)}25%{opacity:1}100%{opacity:0;transform:translate(-14px,-56px)}}
+    @keyframes bounce{50%{transform:translateY(-6px)}}`,
+    wrap: 'recite',
+    pig: { face: `<path d="M236 58Q206 110 226 168" fill="none" stroke="#E5A92A" stroke-width="8"/>
+    <rect x="244" y="40" width="70" height="80" rx="22" fill="#FFC83D" transform="rotate(8 280 80)"/>
+    <rect x="254" y="84" width="52" height="26" rx="10" fill="#F5B52A" transform="rotate(8 280 80)"/>
+    <path d="M128 212L198 226L152 262Z" fill="#E5534B"/>
+    <path d="M156 222L138 252M156 222L174 254" fill="none" stroke="#E5534B" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="156" cy="222" r="9" fill="#C9433C"/>` },
+    over: `<g class="n1"><circle cx="48" cy="200" r="7" fill="#8C9BC4"/><path d="M54 200V176l10 4" fill="none" stroke="#8C9BC4" stroke-width="4" stroke-linecap="round"/></g>
+    <g class="n2"><circle cx="40" cy="176" r="6" fill="#FF9FB0"/><path d="M45 176V156l9 4" fill="none" stroke="#FF9FB0" stroke-width="4" stroke-linecap="round"/></g>
+    <rect x="28" y="266" width="34" height="34" rx="4" fill="#FF7A93"/><circle cx="45" cy="283" r="9" fill="#FFFFFF"/>
+    <rect x="64" y="266" width="34" height="34" rx="4" fill="#6FA8DC"/><path d="M81 273L91 292H71Z" fill="#FFFFFF"/>
+    <g class="top"><rect x="46" y="230" width="34" height="34" rx="4" fill="#7DBF6A"/>${sparkle(63, 247, 11, '#FFFFFF', '')}</g>`,
+  },
+  'study-college': {
+    title: '上大学', note: '面前摊着厚课本，荧光笔一行行划过去，旁边一摞书，头顶挂着校旗。',
+    css: `.tilt{animation:tilt 2.4s ease-in-out infinite;transform-origin:190px 298px}
+    .hl{stroke-dasharray:64;animation:hl 2.4s linear infinite}
+    .pen{animation:pen 2.4s linear infinite}
+    .flag{animation:flag 1.6s ease-in-out infinite;transform-origin:30px -26px}
+    @keyframes tilt{0%,100%{transform:rotate(0)}40%{transform:rotate(-2.5deg)}}
+    @keyframes hl{0%{stroke-dashoffset:64}70%,100%{stroke-dashoffset:0}}
+    @keyframes pen{0%{transform:translateX(0)}70%{transform:translateX(56px)}100%{transform:translateX(56px);opacity:0}}
+    @keyframes flag{50%{transform:rotate(6deg)}}`,
+    wrap: 'tilt',
+    under: `<path d="M24 -30H140" fill="none" stroke="#B0875A" stroke-width="3"/>
+    <g class="flag"><path d="M30 -28L110 -16L30 -2Z" fill="#6A5ACD"/><circle cx="54" cy="-15" r="5" fill="#FFE27A"/></g>`,
+    over: `<path d="M34 276L110 262V300H34Z" fill="#FFFDF6"/><path d="M110 262L186 276V300H110Z" fill="#F3EEDF"/>
+    <path d="M118 278L172 286M118 290L160 296" fill="none" stroke="#D9D2C0" stroke-width="4" stroke-linecap="round"/>
+    <path class="hl" d="M44 282L100 272" fill="none" stroke="#FFF07A" stroke-width="8" stroke-linecap="round" opacity=".9"/>
+    <path d="M44 294L96 285" fill="none" stroke="#D9D2C0" stroke-width="4" stroke-linecap="round"/>
+    <g class="pen"><path d="M40 270L54 252" fill="none" stroke="#F5D33A" stroke-width="10" stroke-linecap="round"/><path d="M40 270L36 276" fill="none" stroke="#3A3E52" stroke-width="5" stroke-linecap="round"/></g>
+    <rect x="300" y="280" width="58" height="20" rx="3" fill="#6FA8DC"/><rect x="306" y="262" width="50" height="18" rx="3" fill="#E5534B"/><rect x="302" y="246" width="54" height="16" rx="3" fill="#7DBF6A"/>`,
+  },
+  'study-graduate': {
+    title: '读研究生', note: '戴护目镜做实验，烧瓶里咕嘟咕嘟冒泡，偶尔「噗」地冒一小团烟。',
+    css: `.tilt{animation:tilt 2.4s ease-in-out infinite;transform-origin:190px 298px}
+    .bub{animation:bub 1.4s ease-out infinite}.bub2{animation:bub 1.4s ease-out -.5s infinite}.bub3{animation:bub 1.4s ease-out -1s infinite}
+    .poof{animation:poof 4.2s ease-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+    .liq{animation:slosh 1.4s ease-in-out infinite;transform-origin:56px 288px}
+    @keyframes tilt{0%,100%{transform:rotate(0)}40%{transform:rotate(-3deg)}75%{transform:rotate(-1deg)}}
+    @keyframes bub{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-60px)}}
+    @keyframes poof{0%,80%{opacity:0;transform:scale(.4)}86%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.4) translateY(-10px)}}
+    @keyframes slosh{50%{transform:scaleY(1.06)}}`,
+    wrap: 'tilt',
+    pig: { face: `<path d="M58 132C80 112 196 118 228 152" fill="none" stroke="#5B5F73" stroke-width="6"/>
+    <ellipse cx="91" cy="142" rx="24" ry="19" fill="#BFE6F6" opacity=".55"/><ellipse cx="91" cy="142" rx="24" ry="19" fill="none" stroke="#5B8DB8" stroke-width="5"/>
+    <ellipse cx="165" cy="157" rx="24" ry="19" fill="#BFE6F6" opacity=".55"/><ellipse cx="165" cy="157" rx="24" ry="19" fill="none" stroke="#5B8DB8" stroke-width="5"/>
+    <path d="M115 146L141 152" fill="none" stroke="#5B8DB8" stroke-width="5"/>` },
+    over: `<path d="M48 236V208h18v28l26 46c3 6-1 12-8 12H30c-7 0-11-6-8-12Z" fill="#EAF6FB" opacity=".9"/>
+    <path class="liq" d="M37 262H77L92 284c2 5-1 10-6 10H28c-5 0-8-5-6-10Z" fill="#7DDCA8"/>
+    <rect x="44" y="200" width="26" height="10" rx="4" fill="#C9CED6"/>
+    <circle class="bub" cx="56" cy="190" r="6" fill="#A9E6C4"/><circle class="bub2" cx="64" cy="186" r="4" fill="#A9E6C4"/><circle class="bub3" cx="52" cy="184" r="5" fill="#A9E6C4"/>
+    <g class="poof"><circle cx="58" cy="170" r="16" fill="#D7F0E2"/><circle cx="44" cy="160" r="11" fill="#D7F0E2"/><circle cx="72" cy="158" r="12" fill="#D7F0E2"/></g>
+    <rect x="300" y="262" width="58" height="10" rx="3" fill="#B0875A"/><rect x="306" y="272" width="6" height="28" fill="#B0875A"/><rect x="346" y="272" width="6" height="28" fill="#B0875A"/>
+    <rect x="310" y="226" width="10" height="40" rx="5" fill="#EAF6FB"/><rect x="310" y="246" width="10" height="20" rx="5" fill="#FF9FB0"/>
+    <rect x="326" y="226" width="10" height="40" rx="5" fill="#EAF6FB"/><rect x="326" y="240" width="10" height="26" rx="5" fill="#8C9BC4"/>
+    <rect x="342" y="226" width="10" height="40" rx="5" fill="#EAF6FB"/><rect x="342" y="252" width="10" height="14" rx="5" fill="#FFD35A"/>`,
+  },
+  'study-doctor': {
+    title: '读博士', note: '深夜台灯下守着一大摞论文，戴着圆眼镜、挂着黑眼圈，打个盹又猛地惊醒，咖啡还冒着热气。',
+    css: `.doze{animation:doze 4s ease-in-out infinite;transform-origin:190px 298px}
+    .steam{animation:steam 2s ease-in-out infinite}
+    .tw{animation:tw 2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}.tw2{animation:tw 2s ease-in-out -1s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .glow{animation:glow 4s ease-in-out infinite}
+    @keyframes doze{0%,55%,100%{transform:rotate(0)}70%{transform:rotate(-4deg) translateY(4px)}74%{transform:rotate(1deg) translateY(-3px)}80%{transform:rotate(0)}}
+    @keyframes steam{0%,100%{opacity:0;transform:translateY(6px)}50%{opacity:.9;transform:translateY(-6px)}}
+    @keyframes tw{0%,100%{opacity:.2;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
+    @keyframes glow{0%,100%{opacity:.55}50%{opacity:.8}}`,
+    wrap: 'doze',
+    pig: { face: `${glasses('#7A5A3A')}
+    <path d="M80 166Q91 172 102 166M154 181Q165 187 176 181" fill="none" stroke="#B9A7CF" stroke-width="5" stroke-linecap="round"/>` },
+    under: `<path d="M330 -30a28 28 0 1 0 18 50 24 24 0 1 1-18-50Z" fill="#FFE27A"/>
+    ${sparkle(270, -16, 10, '#FFE27A', 'tw')}${sparkle(244, 14, 7, '#FFE27A', 'tw2')}${sparkle(352, 40, 8, '#FFE27A', 'tw2')}`,
+    over: `<path class="glow" d="M40 206L84 252H30Z" fill="#FFF4C8"/>
+    ${DESK}
+    <path d="M30 252L36 244H52L58 252Z" fill="#5B5F73"/><path d="M44 244L50 206L34 178" fill="none" stroke="#5B5F73" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24 186L50 172L56 202Z" fill="#E5534B"/>
+    <rect x="84" y="244" width="62" height="8" rx="1" fill="#FFFDF6"/><rect x="88" y="236" width="60" height="8" rx="1" fill="#F3EEDF"/><rect x="84" y="228" width="62" height="8" rx="1" fill="#FFFDF6"/>
+    <rect x="86" y="220" width="60" height="8" rx="1" fill="#F3EEDF"/><rect x="84" y="212" width="62" height="8" rx="1" fill="#FFFDF6"/>
+    <path class="steam" d="M164 214q-5-7 0-14t0-14M178 214q-5-7 0-14" fill="none" stroke="#D8CFC2" stroke-width="4" stroke-linecap="round"/>
+    <path d="M156 222H186V246C186 250 183 252 179 252H163C159 252 156 250 156 246Z" fill="#FFFFFF"/>
+    <path d="M186 228C198 228 198 244 186 244" fill="none" stroke="#FFFFFF" stroke-width="5"/>`,
+  },
+  'react-graduate': {
+    title: '博士毕业', note: '戴学位帽、抱着卷好的证书，高兴得把帽子抛上天又接住，彩带撒下来。',
+    css: `.hop{animation:hop .8s ease-in-out infinite;transform-origin:190px 298px}
+    .cap{animation:toss 2.4s cubic-bezier(.3,0,.4,1) infinite;transform-origin:168px 52px}
+    .tassel{animation:swing .8s ease-in-out infinite;transform-origin:236px 52px}
+    .f{animation:fall 1.6s linear infinite}.f2{animation-delay:-.5s}.f3{animation-delay:-1.1s}
+    @keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    @keyframes toss{0%,25%,85%,100%{transform:translateY(0) rotate(0)}55%{transform:translateY(-70px) rotate(-200deg)}}
+    @keyframes swing{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(12deg)}}
+    @keyframes fall{0%{opacity:0;transform:translateY(-30px) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translateY(260px) rotate(240deg)}}`,
+    wrap: 'hop', hat: true,
+    pig: { eyes: 'happy', blush: cheeks(18, 10, '#FF9AA0', '.6'), face: `<g class="cap">
+    <path d="M126 58C124 76 200 82 208 62L206 48L130 52Z" fill="#3A3A48"/>
+    <path d="M94 50L168 26L242 46L168 70Z" fill="#2E2E3A"/><circle cx="168" cy="48" r="5" fill="#F5C24C"/>
+    <path d="M168 48L236 52" fill="none" stroke="#F5C24C" stroke-width="3"/>
+    <g class="tassel"><path d="M236 52V84" fill="none" stroke="#F5C24C" stroke-width="4"/><rect x="230" y="82" width="12" height="16" rx="3" fill="#F5C24C"/></g></g>
+    <rect x="30" y="224" width="88" height="24" rx="12" fill="#FFFDF6"/><ellipse cx="34" cy="236" rx="6" ry="12" fill="#EDE6D3"/>
+    <rect x="68" y="222" width="12" height="28" fill="#E5534B"/><path d="M74 250l-8 16M74 250l8 16" fill="none" stroke="#E5534B" stroke-width="5" stroke-linecap="round"/>` },
+    under: [[60, '#FF7A93', ''], [120, '#6FA8DC', 'f2'], [190, '#FFD35A', 'f3'], [250, '#7DBF6A', ''], [320, '#B49CD8', 'f2'], [290, '#FF9FB0', 'f3']].map(([x, c, d]) =>
+      `<g class="f ${d}"><rect x="${x}" y="-20" width="8" height="18" rx="2" fill="${c}"/></g>`).join(''),
+  },
+
+  // ---- trips by region (world.js REGIONS): away-trip-<region>.svg ----
+  'away-trip-china': trip('旅行 · 中国', '远处是一段长城和烽火台，头顶一盏红灯笼晃呀晃。', {
+    css: `.lantern{animation:swing 2s ease-in-out infinite;transform-origin:60px -36px}
+    @keyframes swing{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}`,
+    under: `<path d="M24 30C70 4 110 22 150 4S250 -14 300 6 340 22 360 16" fill="none" stroke="#DCC59A" stroke-width="12"/>
+    <path d="M24 21C70 -5 110 13 150 -5S250 -23 300 -3 340 13 360 7" fill="none" stroke="#DCC59A" stroke-width="8" stroke-dasharray="7 7"/>
+    <rect x="138" y="-22" width="26" height="26" fill="#D1B585"/><path d="M132 -22L151 -34L170 -22Z" fill="#C9433C"/>
+    <g class="lantern"><path d="M60 -36V-18" fill="none" stroke="#8B6B4E" stroke-width="3"/>
+    <rect x="50" y="-20" width="20" height="5" rx="2" fill="#F5C24C"/><ellipse cx="60" cy="0" rx="17" ry="16" fill="#E5534B"/>
+    <path d="M60 -16V16" fill="none" stroke="#C9433C" stroke-width="3"/><rect x="50" y="14" width="20" height="5" rx="2" fill="#F5C24C"/>
+    <path d="M60 19V36" fill="none" stroke="#F5C24C" stroke-width="4" stroke-linecap="round"/></g>`,
+  }),
+  'away-trip-eastasia': trip('旅行 · 东亚', '远处是雪顶富士山，旁边一座红鸟居，樱花瓣飘下来。', {
+    css: `.p1{animation:petal 3s linear infinite}.p2{animation:petal 3s linear -1s infinite}.p3{animation:petal 3s linear -2s infinite}
+    @keyframes petal{0%{opacity:0;transform:translate(0,0) rotate(0)}10%{opacity:1}100%{opacity:0;transform:translate(-70px,300px) rotate(300deg)}}`,
+    under: `<path d="M196 44L280 -26L360 44Z" fill="#A9C1DE"/><path d="M262 -11L280 -26L298 -11L290 -4L280 -12L270 -4Z" fill="#FFFFFF"/>
+    <g fill="none" stroke="#E5534B" stroke-linecap="round"><path d="M42 -8V58M86 -8V58" stroke-width="8"/><path d="M28 -20Q64 -30 100 -20" stroke-width="10"/><path d="M36 -4H92" stroke-width="6"/></g>`,
+    over: `<ellipse class="p1" cx="140" cy="-30" rx="7" ry="4" fill="#FFC2D1"/><ellipse class="p2" cx="220" cy="-30" rx="6" ry="4" fill="#FFB0C4"/><ellipse class="p3" cx="300" cy="-30" rx="7" ry="4" fill="#FFC2D1"/>`,
+  }),
+  'away-trip-southasia': trip('旅行 · 南亚·东南亚', '远处一座金色佛塔，身边的椰子树叶子沙沙地摇。', {
+    css: `.palm{animation:palm 2.4s ease-in-out infinite;transform-origin:58px -6px}
+    .sun{animation:glow 2.4s ease-in-out infinite}
+    @keyframes palm{50%{transform:rotate(5deg)}}
+    @keyframes glow{50%{opacity:.6}}`,
+    under: `<circle class="sun" cx="200" cy="-8" r="20" fill="#FFE27A"/>
+    <path d="M296 -34L304 -2H288Z" fill="#E5B33A"/><path d="M262 44C262 4 330 4 330 44Z" fill="#F2C14E"/><rect x="254" y="40" width="84" height="8" rx="3" fill="#E5B33A"/>
+    <path d="M44 120Q30 50 58 -6" fill="none" stroke="#A8764C" stroke-width="9" stroke-linecap="round"/>
+    <g class="palm"><path d="M58 -6C40 -26 20 -18 24 -4M58 -6C70 -30 96 -26 100 -12M58 -6C40 2 30 18 34 30M58 -6C80 -2 96 10 94 24" fill="none" stroke="#5FA84E" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="54" cy="4" r="6" fill="#8B6B4E"/><circle cx="64" cy="6" r="6" fill="#8B6B4E"/></g>`,
+  }),
+  'away-trip-europe': trip('旅行 · 欧洲', '远处一座小铁塔，云慢慢飘过，背包里插着一根比猪还长的法棍。', {
+    css: `.cloud{animation:drift 6s ease-in-out infinite}.cloud2{animation:drift 6s ease-in-out -3s infinite}
+    @keyframes drift{50%{transform:translateX(-24px)}}`,
+    under: `<g fill="none" stroke="#8C7A68" stroke-linecap="round"><path d="M56 -34V-14" stroke-width="4"/><path d="M56 -14C52 30 42 80 28 128M56 -14C60 30 70 80 84 128" stroke-width="6"/>
+    <path d="M44 36H68M36 82H76" stroke-width="5"/><path d="M34 128Q56 96 78 128" stroke-width="5"/></g>
+    <g class="cloud"><path d="M250 -4a14 14 0 0 1 26-8 16 16 0 0 1 30 6 10 10 0 0 1 0 20H254a10 10 0 0 1-4-18Z" fill="#E6ECF2"/></g>
+    <g class="cloud2"><path d="M170 -20a11 11 0 0 1 20-6 12 12 0 0 1 24 5 8 8 0 0 1 0 15H174a8 8 0 0 1-4-14Z" fill="#E6ECF2"/></g>`,
+    back: `<path d="M262 44L318 -22" fill="none" stroke="#D9A066" stroke-width="18" stroke-linecap="round"/>
+    <path d="M280 14l8 6M292 0l8 6M304 -14l8 6" fill="none" stroke="#B9824A" stroke-width="4" stroke-linecap="round"/>`,
+  }),
+  'away-trip-americas': trip('旅行 · 美洲', '远处是高楼天际线和举着火炬的自由女神，路边一株仙人掌。', {
+    css: `.flame{animation:flame .5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+    .win{animation:win 2s steps(1) infinite}
+    @keyframes flame{50%{transform:scale(.8,1.15)}}
+    @keyframes win{50%{opacity:.3}}`,
+    under: `<g fill="#DCE3EC"><rect x="214" y="-6" width="24" height="50"/><rect x="242" y="-26" width="20" height="70"/><rect x="266" y="2" width="28" height="42"/><rect x="298" y="-18" width="22" height="62"/><rect x="324" y="-2" width="30" height="46"/></g>
+    <g class="win" fill="#FFF4C8"><rect x="247" y="-18" width="4" height="6"/><rect x="253" y="-6" width="4" height="6"/><rect x="303" y="-10" width="4" height="6"/><rect x="311" y="2" width="4" height="6"/></g>
+    <g fill="#7FB8A4"><path d="M28 120L32 40H48L52 120Z"/><circle cx="40" cy="28" r="11"/></g>
+    <path d="M30 20L26 10M38 16V4M46 18L52 8M46 34L58 -10" fill="none" stroke="#7FB8A4" stroke-width="5" stroke-linecap="round"/>
+    <path class="flame" d="M60 -12c-9-6-7-16 0-22 7 6 9 16 0 22Z" fill="#F5A23C"/>`,
+    over: `<path d="M326 300V236a11 11 0 0 1 22 0V300Z" fill="#6FB36A"/><path d="M326 266h-10a8 8 0 0 1-8-8v-14" fill="none" stroke="#6FB36A" stroke-width="10" stroke-linecap="round"/>
+    <path d="M334 250h.1M342 274h.1" fill="none" stroke="#4E8F4A" stroke-width="4" stroke-linecap="round"/>`,
+  }),
+  'away-trip-mideast': trip('旅行 · 中东·非洲', '远处两座金字塔，大太阳晒着，猪戴上了墨镜。', {
+    css: `.rays{animation:spin 10s linear infinite;transform-origin:56px -4px}
+    .heat{animation:heat 1.6s ease-in-out infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes heat{0%,100%{opacity:0;transform:translateY(4px)}50%{opacity:.8;transform:translateY(-4px)}}`,
+    under: `<path d="M190 44L240 -10L290 44Z" fill="#E9C98A"/><path d="M240 -10L290 44H254Z" fill="#D9B06C"/>
+    <path d="M262 44L304 0L346 44Z" fill="#E9C98A"/><path d="M304 0L346 44H316Z" fill="#D9B06C"/>
+    <g class="rays"><path d="M56 -38V-30M56 22V30M22 -4H30M82 -4H90M32 -28l6 6M74 14l6 6M80 -28l-6 6M32 20l6-6" fill="none" stroke="#FFD35A" stroke-width="5" stroke-linecap="round"/></g>
+    <circle cx="56" cy="-4" r="20" fill="#FFD35A"/>`,
+    gear: `<path d="M72 134h40v10a16 16 0 0 1-40 0ZM146 148h40v10a16 16 0 0 1-40 0Z" fill="#2E2E3A"/><path d="M112 138L146 152M72 136L58 130" fill="none" stroke="#2E2E3A" stroke-width="5"/>`,
+    over: `<path class="heat" d="M30 280q6-8 0-16t0-16M46 284q6-8 0-16t0-16" fill="none" stroke="#F2D488" stroke-width="4" stroke-linecap="round"/>`,
+  }),
+  'away-trip-oceania': trip('旅行 · 大洋洲·南极', '远处是歌剧院的白贝壳顶，雪花飘着，一只小企鹅摇摇摆摆跟在后面。', {
+    css: `.peng{animation:waddle .5s ease-in-out infinite;transform-origin:44px 298px}
+    .sn{animation:snow 3s linear infinite}.sn2{animation:snow 3s linear -1s infinite}.sn3{animation:snow 3s linear -2s infinite}
+    @keyframes waddle{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+    @keyframes snow{0%{opacity:0;transform:translate(0,0)}10%{opacity:1}100%{opacity:0;transform:translate(-30px,300px)}}`,
+    under: `<g fill="#E6ECF2"><path d="M210 44Q216 4 252 -8Q240 18 246 44Z"/><path d="M244 44Q256 -6 300 -20Q284 12 290 44Z"/><path d="M286 44Q300 6 336 0Q322 20 330 44Z"/></g>
+    <g fill="#CBD5E0"><path d="M246 44Q240 18 252 -8L250 44Z"/><path d="M290 44Q284 12 300 -20L296 44Z"/><path d="M330 44Q322 20 336 0L334 44Z"/></g>
+    <rect x="204" y="42" width="136" height="7" rx="3" fill="#C9CED6"/>`,
+    over: `<circle class="sn" cx="120" cy="-30" r="5" fill="#CFE6F5"/><circle class="sn2" cx="200" cy="-30" r="4" fill="#CFE6F5"/><circle class="sn3" cx="290" cy="-30" r="5" fill="#CFE6F5"/>
+    <g class="peng"><ellipse cx="44" cy="294" rx="8" ry="4" fill="#F5A23C"/><ellipse cx="58" cy="294" rx="8" ry="4" fill="#F5A23C"/>
+    <ellipse cx="50" cy="266" rx="20" ry="28" fill="#3A3E52"/><ellipse cx="45" cy="272" rx="12" ry="20" fill="#FFFFFF"/>
+    <circle cx="42" cy="250" r="4" fill="#FFFFFF"/><circle cx="41" cy="250" r="2" fill="#3A3E52"/><path d="M32 254L20 258L32 262Z" fill="#F5A23C"/></g>`,
+  }),
 }
 
-for (const [name, s] of Object.entries(SPRITES)) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEWBOX}" width="128" height="128" role="img" aria-label="${s.title}">
-  <title>${s.title}</title>
+function render(s, look = null) {
+  // The stage's look sits under the pose's own face props; headwear replaces the bow and cap.
+  const dress = look === null ? '' : (s.hat ? '' : look.head ?? '') + (look.face ?? '')
+  const title = look === null ? s.title : `${s.title} · ${look.title}`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEWBOX}" width="128" height="128" role="img" aria-label="${title}">
+  <title>${title}</title>
   <!-- ${s.note} 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
   <style>${BASE_CSS}
     ${s.css}
@@ -691,12 +1124,24 @@ for (const [name, s] of Object.entries(SPRITES)) {
   </style>
   ${s.under ?? ''}
   <g class="${s.wrap}">
-  ${pig(s.pig)}
+  ${pig({ ...s.pig, look: dress })}
   </g>
   ${s.over ?? ''}
 </svg>
 `
-  // Empty slots (no props, no face) would leave blank, space-only lines.
-  writeFileSync(new URL(name + '.svg', OUT), svg.replace(/[ \t]+$/gm, '').replace(/\n{2,}/g, '\n'))
 }
-console.log(`wrote ${Object.keys(SPRITES).length} sprites to assets/`)
+
+// Empty slots (no props, no face) would leave blank, space-only lines.
+const write = (name, svg) => writeFileSync(new URL(name + '.svg', OUT), svg.replace(/[ \t]+$/gm, '').replace(/\n{2,}/g, '\n'))
+
+let count = 0
+for (const [name, s] of Object.entries(SPRITES)) {
+  write(name, render(s))
+  count += 1
+  if (s.looks === false) continue
+  for (const [stage, look] of Object.entries(STAGE_LOOKS)) {
+    write(`${name}--${stage}`, render(s, look))
+    count += 1
+  }
+}
+console.log(`wrote ${count} sprites to assets/`)

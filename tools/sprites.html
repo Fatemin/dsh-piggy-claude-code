@@ -18,6 +18,7 @@
 <body>
 <h1>🐖 dsh-pig · 形象与动画</h1>
 <div class="sub">每张 SVG 自带动画（内嵌 CSS），放进 &lt;img&gt; 就会动。风格取自 <code>sample/</code>。</div>
+<div class="sub">阶段：<span id="looks"></span>（除「生命阶段」外，每个姿势按阶段各有一张 <code>&lt;姿势&gt;--&lt;阶段&gt;.svg</code>，戴着那个阶段的配饰）</div>
 <div id="root"></div>
 <script>
 var groups = [
@@ -28,19 +29,34 @@ var groups = [
   ['卫生 · 三级', [['mood-dirty-1','有点脏'],['mood-dirty-2','该洗澡'],['mood-dirty-3','脏透了']]],
   ['心情低落 · 三级', [['mood-lonely-1','有点闷'],['mood-lonely-2','孤单'],['mood-lonely-3','伤心大哭']]],
   ['外出', [['away-work','打工'],['away-study','上课'],['away-trip','旅行']]],
+  ['工作', [['job-label','AI 数据标注'],['job-tutor','家教'],['job-office','上班'],['job-stall','摆地摊'],['job-odd','打零工'],['job-tea','奶茶店员'],['job-rider','外卖骑手'],['job-site','搬砖'],['job-sorting','快递分拣']]],
   ['高阶工作', [['job-aitrainer','AI 训练师'],['job-influencer','网红'],['job-vtuber','VTuber'],['job-coach','健身教练']]],
+  ['学段', [['study-primary','小学'],['study-college','大学'],['study-graduate','研究生'],['study-doctor','博士'],['react-graduate','博士毕业']]],
+  ['旅行 · 地区', [['away-trip-china','中国'],['away-trip-eastasia','东亚'],['away-trip-southasia','南亚·东南亚'],['away-trip-europe','欧洲'],['away-trip-americas','美洲'],['away-trip-mideast','中东·非洲'],['away-trip-oceania','大洋洲·南极']]],
   ['刮彩票', [['lottery-scratch','刮'],['lottery-jackpot','一等奖'],['lottery-win','中奖'],['lottery-lose','谢谢参与']]],
   ['互动反应', [['react-eat','喂食'],['react-bathe','洗澡'],['react-play','玩耍'],['react-pet','摸摸'],['react-refuse','拒绝'],['react-cure','病愈']]],
 ]
 var root = document.getElementById('root')
 if (location.hash === '#big') document.body.classList.add('big')
 var bust = '?v=' + Date.now()
+// ?look=piglet|middle|elder dresses every pose for that stage.
+var look = (location.search.match(/look=(piglet|middle|elder)/) || [])[1] || ''
+var looks = document.getElementById('looks')
+;[['', '青年猪'], ['piglet', '小猪'], ['middle', '中年猪'], ['elder', '老年猪']].forEach(function (l) {
+  var a = document.createElement('a')
+  a.href = (l[0] ? '?look=' + l[0] : '?') + location.hash
+  a.textContent = l[1]
+  a.style.marginRight = '10px'
+  if (l[0] === look) a.style.fontWeight = '700'
+  looks.appendChild(a)
+})
 groups.forEach(function (g) {
   var h = document.createElement('h2'); h.textContent = g[0]; root.appendChild(h)
   var row = document.createElement('div'); row.className = 'row'
   g[1].forEach(function (it) {
     var c = document.createElement('div'); c.className = 'cell'
-    c.innerHTML = '<img src="../assets/' + it[0] + '.svg' + bust + '"><div class="cap">' + it[1] + '</div><div class="meta">' + it[0] + '.svg</div>'
+    var name = it[0] + (look && g[0] !== '生命阶段' ? '--' + look : '')
+    c.innerHTML = '<img src="../assets/' + name + '.svg' + bust + '"><div class="cap">' + it[1] + '</div><div class="meta">' + name + '.svg</div>'
     row.appendChild(c)
   })
   root.appendChild(row)

@@ -276,28 +276,28 @@ export const RENAME_CARD = Object.freeze({ key: 'renamecard', label: '更名卡'
  * is a roll (`random: [min, max]`, before the trait bonus) and whose length is
  * `fixed` — schooling raises its pay but never shortens it. Any job may roll
  * its pay (VTuber does); only `fixed` keeps the length. The top rung of
- * each trait is a "career" that needs trait points first (`requires`) and has
- * its own outfit and working animation (`art`, drawn in assets/job-*.svg).
+ * each trait is a "career" that needs trait points first (`requires`). Every
+ * job has its own outfit and working animation (`art`, drawn in assets/job-*.svg).
  */
 const JOB = (fields) => Object.freeze({ tier: 'basic', requires: null, random: null, fixed: false, art: null, ...fields })
 
 export const JOBS = Object.freeze([
   // --- 🧠 smarts ------------------------------------------------------------
-  JOB({ key: 'label', label: 'AI 数据标注', emoji: '🏷️', trait: 'intel', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([10, 80]), fixed: true, xp: 45, satiety: -5, cleanliness: -2 }),
-  JOB({ key: 'tutor', label: '家教', emoji: '📝', trait: 'intel', minutes: MINUTES.hour, coins: 200, xp: 220, satiety: -12, cleanliness: -6 }),
-  JOB({ key: 'office', label: '上班', emoji: '💼', trait: 'intel', minutes: MINUTES.fourHours, coins: 900, xp: 900, satiety: -34, cleanliness: -26 }),
+  JOB({ key: 'label', label: 'AI 数据标注', emoji: '🏷️', trait: 'intel', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([10, 80]), fixed: true, xp: 45, satiety: -5, cleanliness: -2, art: 'label' }),
+  JOB({ key: 'tutor', label: '家教', emoji: '📝', trait: 'intel', minutes: MINUTES.hour, coins: 200, xp: 220, satiety: -12, cleanliness: -6, art: 'tutor' }),
+  JOB({ key: 'office', label: '上班', emoji: '💼', trait: 'intel', minutes: MINUTES.fourHours, coins: 900, xp: 900, satiety: -34, cleanliness: -26, art: 'office' }),
   JOB({ key: 'aitrainer', label: 'AI 训练师', emoji: '🤖', trait: 'intel', minutes: MINUTES.threeHours, coins: 1150, xp: 1150, satiety: -28, cleanliness: -12, tier: 'pro', requires: Object.freeze({ intel: 20 }), art: 'aitrainer' }),
   // --- ✨ charm -------------------------------------------------------------
-  JOB({ key: 'stall', label: '摆地摊', emoji: '🛍️', trait: 'charm', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([5, 85]), fixed: true, xp: 45, satiety: -6, cleanliness: -4 }),
-  JOB({ key: 'odd', label: '打零工', emoji: '🧹', trait: 'charm', minutes: MINUTES.quarter, coins: 40, xp: 45, satiety: -6, cleanliness: -4 }),
-  JOB({ key: 'tea', label: '奶茶店员', emoji: '🧋', trait: 'charm', minutes: 90, coins: 300, xp: 320, satiety: -14, cleanliness: -8 }),
+  JOB({ key: 'stall', label: '摆地摊', emoji: '🛍️', trait: 'charm', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([5, 85]), fixed: true, xp: 45, satiety: -6, cleanliness: -4, art: 'stall' }),
+  JOB({ key: 'odd', label: '打零工', emoji: '🧹', trait: 'charm', minutes: MINUTES.quarter, coins: 40, xp: 45, satiety: -6, cleanliness: -4, art: 'odd' }),
+  JOB({ key: 'tea', label: '奶茶店员', emoji: '🧋', trait: 'charm', minutes: 90, coins: 300, xp: 320, satiety: -14, cleanliness: -8, art: 'tea' }),
   JOB({ key: 'influencer', label: '网红', emoji: '🤳', trait: 'charm', minutes: MINUTES.twoHours, coins: 760, xp: 770, satiety: -18, cleanliness: -6, tier: 'pro', requires: Object.freeze({ charm: 15 }), art: 'influencer' }),
   // A stream can flop or go viral: the pay is a roll, but the stream still runs its full length.
   JOB({ key: 'vtuber', label: 'VTuber', emoji: '🎙️', trait: 'charm', minutes: MINUTES.threeHours, coins: 1300, random: Object.freeze([200, 2400]), xp: 1300, satiety: -26, cleanliness: -8, tier: 'pro', requires: Object.freeze({ charm: 30, intel: 10 }), art: 'vtuber' }),
   // --- 💪 strength ----------------------------------------------------------
-  JOB({ key: 'rider', label: '外卖骑手', emoji: '🛵', trait: 'strong', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([10, 80]), fixed: true, xp: 45, satiety: -8, cleanliness: -6 }),
-  JOB({ key: 'site', label: '搬砖', emoji: '🧱', trait: 'strong', minutes: MINUTES.hour, coins: 210, xp: 230, satiety: -16, cleanliness: -14 }),
-  JOB({ key: 'sorting', label: '快递分拣', emoji: '📦', trait: 'strong', minutes: MINUTES.threeHours, coins: 690, xp: 700, satiety: -30, cleanliness: -22 }),
+  JOB({ key: 'rider', label: '外卖骑手', emoji: '🛵', trait: 'strong', minutes: MINUTES.quarter, coins: 45, random: Object.freeze([10, 80]), fixed: true, xp: 45, satiety: -8, cleanliness: -6, art: 'rider' }),
+  JOB({ key: 'site', label: '搬砖', emoji: '🧱', trait: 'strong', minutes: MINUTES.hour, coins: 210, xp: 230, satiety: -16, cleanliness: -14, art: 'site' }),
+  JOB({ key: 'sorting', label: '快递分拣', emoji: '📦', trait: 'strong', minutes: MINUTES.threeHours, coins: 690, xp: 700, satiety: -30, cleanliness: -22, art: 'sorting' }),
   JOB({ key: 'coach', label: '健身教练', emoji: '🏋️', trait: 'strong', minutes: MINUTES.twoHours, coins: 780, xp: 780, satiety: -26, cleanliness: -20, tier: 'pro', requires: Object.freeze({ strong: 15 }), art: 'coach' }),
 ])
 

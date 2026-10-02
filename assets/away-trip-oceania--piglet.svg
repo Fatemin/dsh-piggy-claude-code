@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 -36 336 336" width="128" height="128" role="img" aria-label="旅行 · 大洋洲·南极 · 小猪">
+  <title>旅行 · 大洋洲·南极 · 小猪</title>
+  <!-- 远处是歌剧院的白贝壳顶，雪花飘着，一只小企鹅摇摇摆摆跟在后面。 本体是项目原有的 Noto 🐖，形状和颜色不变；由 tools/build-sprites.mjs 生成，别手改。 -->
+  <style>
+    .eye{animation:blink 4.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .tail{animation:wag 1.4s ease-in-out infinite;transform-origin:296px 64px}
+    .ear2{animation:flick 5.2s ease-in-out infinite;transform-origin:205px 108px}
+    @keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.1)}}
+    @keyframes wag{50%{transform:rotate(14deg)}}
+    @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
+    .walk{animation:walk .5s ease-in-out infinite;transform-origin:190px 298px}
+    .road{animation:road .8s linear infinite}
+    .tail{animation-duration:.5s}
+    @keyframes walk{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1.5deg)}}
+    @keyframes road{to{transform:translateX(60px)}}
+    .peng{animation:waddle .5s ease-in-out infinite;transform-origin:44px 298px}
+    .sn{animation:snow 3s linear infinite}.sn2{animation:snow 3s linear -1s infinite}.sn3{animation:snow 3s linear -2s infinite}
+    @keyframes waddle{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+    @keyframes snow{0%{opacity:0;transform:translate(0,0)}10%{opacity:1}100%{opacity:0;transform:translate(-30px,300px)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+  <g fill="#E6ECF2"><path d="M210 44Q216 4 252 -8Q240 18 246 44Z"/><path d="M244 44Q256 -6 300 -20Q284 12 290 44Z"/><path d="M286 44Q300 6 336 0Q322 20 330 44Z"/></g>
+    <g fill="#CBD5E0"><path d="M246 44Q240 18 252 -8L250 44Z"/><path d="M290 44Q284 12 300 -20L296 44Z"/><path d="M330 44Q322 20 336 0L334 44Z"/></g>
+    <rect x="204" y="42" width="136" height="7" rx="3" fill="#C9CED6"/><g class="road"><path d="M-60 300H0M60 300H120M180 300H240M300 300H360M420 300H480" fill="none" stroke="#D9CBB3" stroke-width="7" stroke-linecap="round"/></g>
+  <g class="walk">
+  <g class="pig" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#FF9FA5" d="M214 210C213 221 210 232 211 246C212 256 224 257 233 254C244 251 246 240 247 225L248 211Z"/>
+    <path class="tail" d="M294 62C298 47 305 40 315 45C327 50 341 64 329 72C319 80 309 67 316 51C322 39 330 31 339 35" fill="none" stroke="#FFD1AF" stroke-width="11"/>
+    <path fill="#FFD1AF" d="M110 70C155 46 192 37 231 41C259 43 279 48 298 64C320 83 332 105 332 128C333 146 326 163 319 180C312 197 309 223 308 241C308 254 301 260 289 260C277 260 270 255 269 244L267 230C266 222 261 219 253 220C231 227 213 235 192 240L191 282C191 292 185 298 173 298C159 298 152 293 152 284L151 248C140 248 131 247 123 245L122 271C121 282 116 287 104 287C93 287 88 283 87 273L84 232C63 224 52 210 48 192C42 170 48 148 62 126C69 115 75 106 80 94C87 79 96 68 110 70Z"/>
+    <path fill="#FFD1AF" d="M63 107C64 97 75 81 84 68C90 58 102 58 108 66L115 87L90 113Z"/>
+    <path class="ear1" d="M97 65C88 63 83 75 78 82C71 91 65 101 64 106C68 116 86 109 93 98" fill="none" stroke="#E95892" stroke-width="10"/>
+    <path class="ear2" d="M187 104C174 110 184 129 193 139C201 147 213 150 220 139C225 131 224 119 222 112" fill="none" stroke="#E95892" stroke-width="11"/>
+    <path class="eye" fill="#373A32" d="M91 130C84 129 79 136 80 144C80 151 85 155 92 154C99 153 103 147 102 140C102 134 98 130 91 130Z"/><path class="eye" fill="#373A32" d="M166 145C159 144 154 150 154 157C153 164 158 170 165 170C171 170 176 164 176 157C176 151 173 146 166 145Z"/>
+    <g class="snout"><path fill="#FF8195" d="M108 165C91 161 78 166 74 175C68 186 74 200 90 207C106 214 125 214 135 204C143 196 140 183 129 174C123 170 116 167 108 165Z"/>
+    <path fill="#373A32" d="M92 175C87 174 84 178 85 185C85 191 89 196 94 195C99 194 101 188 99 182C98 178 96 175 92 175Z"/>
+    <path fill="#373A32" d="M115 180C110 178 107 183 107 189C106 195 109 200 114 200C119 200 122 195 122 189C122 184 119 180 115 180Z"/></g>
+    <ellipse class="blush" cx="155" cy="187" rx="12" ry="7" fill="#FFAFAC" opacity=".75"/><ellipse class="blush" cx="60" cy="170" rx="9" ry="5.3" fill="#FFAFAC" opacity=".75"/>
+    <path d="M236 58Q206 110 226 168" fill="none" stroke="#4E7FB0" stroke-width="9"/>
+    <rect x="238" y="34" width="84" height="92" rx="26" fill="#6FA8DC" transform="rotate(8 280 80)"/>
+    <rect x="248" y="86" width="64" height="32" rx="13" fill="#5A93C8" transform="rotate(8 280 80)"/>
+    <ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
+    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/>
+  </g>
+  </g>
+  <circle class="sn" cx="120" cy="-30" r="5" fill="#CFE6F5"/><circle class="sn2" cx="200" cy="-30" r="4" fill="#CFE6F5"/><circle class="sn3" cx="290" cy="-30" r="5" fill="#CFE6F5"/>
+    <g class="peng"><ellipse cx="44" cy="294" rx="8" ry="4" fill="#F5A23C"/><ellipse cx="58" cy="294" rx="8" ry="4" fill="#F5A23C"/>
+    <ellipse cx="50" cy="266" rx="20" ry="28" fill="#3A3E52"/><ellipse cx="45" cy="272" rx="12" ry="20" fill="#FFFFFF"/>
+    <circle cx="42" cy="250" r="4" fill="#FFFFFF"/><circle cx="41" cy="250" r="2" fill="#3A3E52"/><path d="M32 254L20 258L32 262Z" fill="#F5A23C"/></g>
+</svg>
