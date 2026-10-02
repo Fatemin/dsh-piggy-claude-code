@@ -1230,6 +1230,31 @@ test('the pig is clamped to the window but never pushed around', async () => {
   assert.equal(parseFloat(host.style.bottom), parked.bottom)
 })
 
+test('a desktop shell can place the pig inside its window, clamped and remembered', async () => {
+  const { registration, dom, store } = await loadClient()
+  registration.factory(() => {}).apply({})
+  await settle()
+
+  const host = hostOf(dom)
+  const scene = sceneOf(dom)
+  scene.rect = { x: 0, y: 0, top: 700, left: 1200, right: 1260, bottom: 768, width: 60, height: 68 }
+  findByClass(scene, 'dp-pig').rect = { x: 0, y: 0, top: 712, left: 1200, right: 1260, bottom: 768, width: 60, height: 56 }
+
+  // The window stopped at the top of the screen; the pig goes on up inside it.
+  host.fire('dsh-pig:place', { detail: { right: 18, bottom: 500 } })
+  assert.equal(parseFloat(host.style.bottom), 500)
+  assert.deepEqual(JSON.parse(store.get('dsh-pig:position')), { right: 18, bottom: 500 })
+
+  // Past the window's edge it is clamped like any drag.
+  host.fire('dsh-pig:place', { detail: { right: 18, bottom: 5000 } })
+  assert.equal(parseFloat(host.style.bottom), 800 - 132 - 4)
+
+  // Junk from the host leaves the pig where it was.
+  host.fire('dsh-pig:place', { detail: { right: 'x', bottom: null } })
+  host.fire('dsh-pig:place', {})
+  assert.equal(parseFloat(host.style.bottom), 800 - 132 - 4)
+})
+
 test('the panel uses one anchor at a time, never top and bottom together', async () => {
   const { registration, dom, resize } = await loadClient()
   registration.factory(() => {}).apply({})

@@ -87,18 +87,24 @@ function defaultPosition() {
   return { x: area.x + area.width - size.width - 8, y: area.y + area.height - size.height - 8 }
 }
 
-/** The pig sits in the window's bottom-right corner; keep that corner visible. */
-function onScreen({ x, y }) {
+/** The pig stands `spot` in from the window's bottom-right corner; keep it visible. */
+function onScreen({ x, y }, spot = { right: 0, bottom: 0 }) {
   const size = windowSize()
-  const corner = { x: x + size.width - 90, y: y + size.height - 90, width: 90, height: 90 }
+  const corner = { x: x + size.width - spot.right - 90, y: y + size.height - spot.bottom - 90, width: 90, height: 90 }
   return screen.getAllDisplays().some(({ workArea: a }) =>
     corner.x < a.x + a.width && corner.x + corner.width > a.x && corner.y < a.y + a.height && corner.y + corner.height > a.y)
 }
 
+// client.js's default spot for the pig: right/bottom offsets inside the window.
+const PIG_HOME = { right: 18, bottom: 18 }
+// Where in the window the pig stands, once this process has placed it there
+// (null: wherever the page remembers it).
+let pigSpot = null
+
 /**
- * Where the pig is: the window's bottom-right corner, since the pig lives
- * there and the window's size can change between versions. Older saves kept
- * the top-left of the 340×800 window; convert those.
+ * Where the pig is: the window's bottom-right corner, since the window's size
+ * can change between versions, plus the pig's spot inside the window. Older
+ * saves kept the top-left of the 340×800 window; convert those.
  */
 function savedPosition() {
   const saved = readJson(userFile('window.json'), null)
@@ -107,14 +113,52 @@ function savedPosition() {
   if (saved && Number.isFinite(saved.right) && Number.isFinite(saved.bottom)) anchor = saved
   else if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) anchor = { right: saved.x + 340, bottom: saved.y + 800 }
   if (anchor === null) return defaultPosition()
+  const spot = Number.isFinite(saved.pigRight) && Number.isFinite(saved.pigBottom) ? { right: saved.pigRight, bottom: saved.pigBottom } : null
   const position = { x: anchor.right - size.width, y: anchor.bottom - size.height }
-  return onScreen(position) ? position : defaultPosition()
+  if (!onScreen(position, spot ?? undefined)) {
+    pigSpot = { ...PIG_HOME }
+    return defaultPosition()
+  }
+  pigSpot = spot
+  return position
 }
 
 function savePosition() {
   if (win === null) return
   const { x, y, width, height } = win.getBounds()
-  try { writeFileSync(userFile('window.json'), JSON.stringify({ right: x + width, bottom: y + height })) } catch { /* not worth failing over */ }
+  const spot = pigSpot === null ? {} : { pigRight: pigSpot.right, pigBottom: pigSpot.bottom }
+  try { writeFileSync(userFile('window.json'), JSON.stringify({ right: x + width, bottom: y + height, ...spot })) } catch { /* not worth failing over */ }
+}
+
+// ---- dragging the pig ----------------------------------------------------------
+
+// The pig's bottom-right corner in screen coordinates while it is being dragged.
+let dragCorner = null
+
+/** Tell the page where in the window the pig stands. */
+function placePigInWindow(right, bottom) {
+  pigSpot = { right: Math.round(right), bottom: Math.round(bottom) }
+  win.webContents.executeJavaScript(`window.__pigPlace?.(${pigSpot.right}, ${pigSpot.bottom})`).catch(() => {})
+}
+
+/**
+ * Put the pig's bottom-right corner at `corner`. The window follows with the
+ * pig at its home spot, but never leaves the work area of the display the pig
+ * is over: macOS will not move a window above the menu bar, and a window
+ * hanging off screen would take the pig's panel with it. Whatever the window
+ * cannot take, the pig moves inside the window instead, and its panel then
+ * opens on whichever side has room.
+ */
+function placePig(corner) {
+  const { width, height } = win.getBounds()
+  const area = screen.getDisplayNearestPoint({ x: Math.round(corner.x), y: Math.round(corner.y) }).workArea
+  const clamp = (value, low, high) => Math.max(low, Math.min(value, Math.max(low, high)))
+  corner.x = clamp(corner.x, area.x + 4, area.x + area.width - 4)
+  corner.y = clamp(corner.y, area.y + 4, area.y + area.height - 4)
+  const x = Math.round(clamp(corner.x + PIG_HOME.right - width, area.x, area.x + area.width - width))
+  const y = Math.round(clamp(corner.y + PIG_HOME.bottom - height, area.y, area.y + area.height - height))
+  win.setPosition(x, y)
+  placePigInWindow(x + width - corner.x, y + height - corner.y)
 }
 
 // ---- the pig window ----------------------------------------------------------
@@ -150,6 +194,9 @@ function createWindow(url) {
   })
   // Never hand a URL to the system browser (it may be the retired IE 11).
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  // The page keeps its own copy of the pig's spot, but on its own origin,
+  // which changes when the preferred port is taken; ours wins.
+  win.webContents.on('did-finish-load', () => { if (pigSpot !== null) placePigInWindow(pigSpot.right, pigSpot.bottom) })
   win.loadURL(url)
   if (process.env.PIGGY_DEBUG_SNAPSHOT) win.webContents.once('did-finish-load', () => selfCheck(process.env.PIGGY_DEBUG_SNAPSHOT))
 }
@@ -161,11 +208,19 @@ ipcMain.on('pig', (event, message) => {
       win.setIgnoreMouseEvents(message.hit !== true, { forward: true })
       break
     case 'drag': {
-      const [x, y] = win.getPosition()
-      win.setPosition(Math.round(x + Number(message.dx || 0)), Math.round(y + Number(message.dy || 0)))
+      if (message.start === true || dragCorner === null) {
+        const { x, y, width, height } = win.getBounds()
+        const right = Number.isFinite(message.right) ? message.right : PIG_HOME.right
+        const bottom = Number.isFinite(message.bottom) ? message.bottom : PIG_HOME.bottom
+        dragCorner = { x: x + width - right, y: y + height - bottom }
+      }
+      dragCorner.x += Number(message.dx || 0)
+      dragCorner.y += Number(message.dy || 0)
+      placePig(dragCorner)
       break
     }
     case 'dragEnd':
+      dragCorner = null
       savePosition()
       break
     case 'openPanel':
@@ -216,7 +271,7 @@ function trayMenu() {
   const t = zh => tr(lang, zh)
   return Menu.buildFromTemplate([
     { label: visible ? t('隐藏猪猪') : t('显示猪猪'), click: () => { visible ? win.hide() : win.showInactive(); refreshTray(true) } },
-    { label: t('猪猪回到右下角'), click: () => { win.setPosition(...Object.values(defaultPosition())); savePosition(); win.showInactive() } },
+    { label: t('猪猪回到右下角'), click: () => { win.setPosition(...Object.values(defaultPosition())); placePigInWindow(PIG_HOME.right, PIG_HOME.bottom); savePosition(); win.showInactive() } },
     { label: t('打开大面板'), click: openPanelWindow },
     { type: 'separator' },
     {
