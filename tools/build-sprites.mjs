@@ -164,11 +164,13 @@ const wearMarkup = key => {
 const DESK = `<rect x="28" y="252" width="170" height="12" rx="6" fill="#C69C6D"/>
     <rect x="38" y="264" width="12" height="36" rx="6" fill="#B0875A"/><rect x="176" y="264" width="12" height="36" rx="6" fill="#B0875A"/>`
 // On the road: straw hat, backpack, the road sliding back under the feet.
+// The dashes repeat every 120px, so one loop must slide exactly 120px or the
+// road snaps back half a dash each time it restarts.
 const TRIP_CSS = `.walk{animation:walk .5s ease-in-out infinite;transform-origin:190px 298px}
-    .road{animation:road .8s linear infinite}
+    .road{animation:road 1.6s linear infinite}
     .tail{animation-duration:.5s}
     @keyframes walk{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1.5deg)}}
-    @keyframes road{to{transform:translateX(60px)}}`
+    @keyframes road{to{transform:translateX(120px)}}`
 const TRIP_GEAR = `<path d="M236 58Q206 110 226 168" fill="none" stroke="#4E7FB0" stroke-width="9"/>
     <rect x="238" y="34" width="84" height="92" rx="26" fill="#6FA8DC" transform="rotate(8 280 80)"/>
     <rect x="248" y="86" width="64" height="32" rx="13" fill="#5A93C8" transform="rotate(8 280 80)"/>
@@ -926,12 +928,12 @@ const SPRITES = {
     title: '外卖骑手', note: '戴黄头盔、背外卖箱，踩着小滑板车往前冲，轮子飞转，身后拉出风线。',
     css: `.ride{animation:ride .3s ease-in-out infinite;transform-origin:190px 298px}
     .wheel{animation:spin .4s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
-    .road{animation:road .5s linear infinite}
+    .road{animation:road 1s linear infinite}
     .wind{animation:wind .6s linear infinite}.wind2{animation:wind .6s linear -.3s infinite}
     .tail{animation-duration:.3s}
     @keyframes ride{50%{transform:translateY(-3px)}}
     @keyframes spin{to{transform:rotate(-360deg)}}
-    @keyframes road{to{transform:translateX(60px)}}
+    @keyframes road{to{transform:translateX(120px)}}
     @keyframes wind{0%{opacity:0;transform:translateX(0)}30%{opacity:1}100%{opacity:0;transform:translateX(30px)}}`,
     wrap: 'ride', wears: ['head'],
     pig: { face: `<rect x="212" y="-4" width="104" height="78" rx="10" fill="#FFC83D"/><path d="M212 18H316" fill="none" stroke="#E5A92A" stroke-width="5"/>

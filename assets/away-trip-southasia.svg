@@ -9,10 +9,10 @@
     @keyframes wag{50%{transform:rotate(14deg)}}
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
     .walk{animation:walk .5s ease-in-out infinite;transform-origin:190px 298px}
-    .road{animation:road .8s linear infinite}
+    .road{animation:road 1.6s linear infinite}
     .tail{animation-duration:.5s}
     @keyframes walk{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1.5deg)}}
-    @keyframes road{to{transform:translateX(60px)}}
+    @keyframes road{to{transform:translateX(120px)}}
     .palm{animation:palm 2.4s ease-in-out infinite;transform-origin:58px -6px}
     .sun{animation:glow 2.4s ease-in-out infinite}
     @keyframes palm{50%{transform:rotate(5deg)}}
