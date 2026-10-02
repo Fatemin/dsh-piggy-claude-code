@@ -36,6 +36,7 @@ import {
   lifeStageFor,
   mood,
   perksOf,
+  diplomaView,
   regionProgress,
   traitView,
   tripQuote,
@@ -198,6 +199,13 @@ function collectionLines(lang, state) {
   const perks = perksOf(state).map(key => REGIONS.find(region => region.perk.key === key)?.perk).filter(Boolean)
   if (perks.length > 0) {
     lines.push(tr(lang, '🎁 加成  {perks}', { perks: perks.map(perk => `${perk.emoji}${tr(lang, perk.label)}`).join(' · ') }))
+  }
+  // [mod] diplomas held, with a count for the ones that can be earned again.
+  const diplomas = diplomaView(state).filter(diploma => diploma.count > 0)
+  if (diplomas.length > 0) {
+    lines.push(tr(lang, '📜 毕业证  {list}', {
+      list: diplomas.map(diploma => `${diploma.emoji}${tr(lang, diploma.label)}${diploma.count > 1 ? ` ×${diploma.count}` : ''}`).join(' · '),
+    }))
   }
   if (state.doctorDone === true || state.worldDone === true) {
     const titles = []

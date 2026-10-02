@@ -52,6 +52,10 @@ export default {
     '、': '、',
     '🎓 博士答辩通过！三项属性各 +1': '🎓 博士論文の審査に合格！3つの能力がそれぞれ +1',
     '{name} 博士毕业了！🎓 以后请叫它「{name} 博士」': '{name}が博士課程を修了！🎓 これからは「{name}博士」と呼んでね',
+    '{emoji} 拿到了{diploma}': '{emoji} {diploma}をもらった',
+    '{emoji} 又拿到一张{diploma}（第 {n} 张）': '{emoji} {diploma}をまたもらった（{n} 枚目）',
+    '{name} 毕业了，拿到{diploma} {emoji}': '{name}が卒業！{diploma}をもらったよ {emoji}',
+    '{name} 又拿到一张{diploma} {emoji}（第 {n} 张）': '{name}が{diploma}をまたもらったよ {emoji}（{n} 枚目）',
     '{emoji} 去上{lesson}（学费 {tuition}）': '{emoji} {lesson}のじゅぎょうへ（授業料 {tuition}）',
     // --- trips --------------------------------------------------------------
     '{emoji} {trip}回来，带回「{souvenir}」{isNew}{loot}': '{emoji} {trip}から帰ってきた。おみやげは「{souvenir}」{isNew}{loot}',
@@ -144,6 +148,10 @@ export default {
     '、': ', ',
     '🎓 博士答辩通过！三项属性各 +1': '🎓 Thesis defended! All three traits +1',
     '{name} 博士毕业了！🎓 以后请叫它「{name} 博士」': '{name} earned a doctorate! 🎓 Call it "Dr. {name}" from now on',
+    '{emoji} 拿到了{diploma}': '{emoji} Got the {diploma}',
+    '{emoji} 又拿到一张{diploma}（第 {n} 张）': '{emoji} Another {diploma} (#{n})',
+    '{name} 毕业了，拿到{diploma} {emoji}': '{name} graduated and got the {diploma} {emoji}',
+    '{name} 又拿到一张{diploma} {emoji}（第 {n} 张）': '{name} earned another {diploma} {emoji} (#{n})',
     '{emoji} 去上{lesson}（学费 {tuition}）': '{emoji} Off to class: {lesson} (tuition {tuition})',
     // --- trips --------------------------------------------------------------
     '{emoji} {trip}回来，带回「{souvenir}」{isNew}{loot}': '{emoji} Back from {trip} with {souvenir}{isNew}{loot}',

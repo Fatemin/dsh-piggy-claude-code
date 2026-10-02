@@ -7,7 +7,8 @@
  */
 
 import { PLACES, REGIONS, SOUVENIRS, SPECIALTIES, WORLD_BONUS, fareFor, zonesBetween } from '../world.js'
-import { ALL_ITEMS, PARALLEL_COURSES, RENAME_CARD, schoolStageByKey as schoolStage } from '../data.js'
+import { ALL_ITEMS, DIPLOMAS, PARALLEL_COURSES, RENAME_CARD, diplomaCount, schoolStageByKey as schoolStage } from '../data.js'
+import { diplomaView } from '../core.js'
 import { hasDefaultName, perksOf, regionProgress, renamePig, tripQuote } from '../core.js'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
@@ -476,6 +477,45 @@ test('the capped schools bound each trait, and beat the open ones per coin and p
     const before = SCHOOL_STAGES.find(s => s.key === stage.requires.stage)
     if (before.cap !== null) assert.ok(stage.requires.lessons <= before.cap * SUBJECTS.length)
   }
+})
+
+test('every school hands out a diploma; graduate degrees and doctorates come again', () => {
+  assert.deepEqual(DIPLOMAS.map(d => [d.stage, d.repeat]), [['primary', false], ['college', false], ['graduate', true], ['doctor', true]])
+  const once = DIPLOMAS[0]
+  const again = DIPLOMAS[2]
+  assert.deepEqual([0, 8, 9, 18].map(n => diplomaCount(once, n)), [0, 0, 1, 1])
+  assert.deepEqual([0, 8, 9, 17, 18, 27].map(n => diplomaCount(again, n)), [0, 0, 1, 1, 2, 3])
+
+  const pig = hatchEgg(T0)
+  pig.coins = 1_000_000
+  assert.ok(diplomaView(pig).every(d => d.count === 0), 'a fresh pig has none')
+  pig.lessonsByStage = { primary: 8, college: 0, graduate: 8, doctor: 0 }
+  pig.satiety = 100
+  pig.happiness = 100
+  assert.equal(startStudy(pig, 'chinese', 'primary', T0).ok, true)
+  advance(pig, SCHOOL_STAGES[0].minutes + 1)
+  assert.equal(diplomaView(pig)[0].count, 1)
+  assert.equal(diplomaView(pig)[0].next, null, 'a one-off diploma has no next')
+  assert.ok(pig.pending.some(e => e.kind === 'diploma'))
+
+  pig.lessonsByStage.college = 9
+  for (let round = 1; round <= 2; round += 1) {
+    pig.pending = []
+    pig.satiety = 100
+    pig.happiness = 100
+    assert.equal(startStudy(pig, ['chinese', 'music', 'pe'], 'graduate', pig.lastSeenAt).ok, true)
+    advance(pig, SCHOOL_STAGES[2].minutes + 1)
+    if (round === 1) assert.equal(diplomaView(pig)[2].count, 1, '8 + 3 lessons: the first degree')
+  }
+  // 8 + 6 = 14 lessons: still one, five into the next.
+  assert.deepEqual(diplomaView(pig)[2].next, { done: 5, need: 9 })
+  pig.lessonsByStage.graduate = 17
+  pig.pending = []
+  pig.satiety = 100
+  startStudy(pig, 'art', 'graduate', pig.lastSeenAt)
+  advance(pig, SCHOOL_STAGES[2].minutes + 1)
+  assert.equal(diplomaView(pig)[2].count, 2, 'the second degree')
+  assert.ok(pig.pending.some(e => e.kind === 'diploma' && e.text.includes('第 2 张')))
 })
 
 test('a save from before the caps spreads its lessons over the subjects', () => {

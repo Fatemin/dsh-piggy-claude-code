@@ -220,6 +220,8 @@ window.__ModuleLoader__.load({
         '先选课': 'じゅぎょうをえらんでね', '用来改名': 'なまえを変えるのに使う',
         '✈️ 限定': '✈️ 旅行限定',
         '纪念品 {have}/{total} → 去「旅行」看看': 'おみやげ {have}/{total} → 「旅行」で見てね',
+        '毕业证': '卒業証書', '收藏品': 'コレクション',
+        '再上 {left} 节再发一张': 'あと {left} こまでもう1枚', '上满 {need} 节发证（{done}/{need}）': '{need} こまでもらえる（{done}/{need}）',
         '家': 'おうち', '每跨一个时区 +{cost} 🪙 · +{hours} 小时': '時差1時間ごとに +{cost} 🪙 · +{hours} 時間',
         '刚从{place}回来': '{place}から帰ってきたよ', '新！': 'はじめて！', '还带回了：': 'ほかにも：',
         '集齐了「{region}」！': '「{region}」コンプリート！', '集齐奖励：{list}': 'コンプリート報酬：{list}',
@@ -377,6 +379,8 @@ window.__ModuleLoader__.load({
         '先选课': 'Pick lessons first', '用来改名': 'For renaming',
         '✈️ 限定': '✈️ Travel only',
         '纪念品 {have}/{total} → 去「旅行」看看': 'Souvenirs {have}/{total} → see Travel',
+        '毕业证': 'Diplomas', '收藏品': 'Collectible',
+        '再上 {left} 节再发一张': '{left} more lessons for another', '上满 {need} 节发证（{done}/{need}）': 'Awarded after {need} lessons ({done}/{need})',
         '家': 'Home', '每跨一个时区 +{cost} 🪙 · +{hours} 小时': 'Each time zone crossed: +{cost} 🪙 · +{hours} h',
         '刚从{place}回来': 'Just back from {place}', '新！': 'New!', '还带回了：': 'Also brought: ',
         '集齐了「{region}」！': '{region} complete!', '集齐奖励：{list}': 'Complete set: {list}',
@@ -570,6 +574,15 @@ window.__ModuleLoader__.load({
           renameCardPrice: num(pig.renameCardPrice, 1000),
           perks: arr(pig.perks).filter(k => typeof k === 'string'),
           doctor: pig.doctor === true,
+          // [mod] every diploma, held or not; an older host sent none.
+          diplomas: arr(pig.diplomas).map(d => ({
+            key: str(obj(d).key, ''),
+            label: str(obj(d).label, ''),
+            emoji: str(obj(d).emoji, '📜'),
+            count: Math.max(0, Math.floor(num(obj(d).count, 0))),
+            repeat: obj(d).repeat === true,
+            next: isObj(obj(d).next) ? { done: num(obj(d).next.done, 0), need: num(obj(d).next.need, 0) } : null,
+          })).filter(d => d.key !== ''),
           worldTraveler: pig.worldTraveler === true,
           souvenirs: arr(pig.souvenirs),
           memories: arr(pig.memories).filter(m => typeof m === 'string'),
@@ -3446,9 +3459,11 @@ window.__ModuleLoader__.load({
             if (count > 0) owned.push({ key: view.shop[i].key, label: view.shop[i].label, emoji: view.shop[i].emoji, kind: view.shop[i].kind, count: count, exclusive: false, effects: view.shop[i].effects })
           }
         }
-        if (owned.length === 0) {
+        var diplomas = view.pig !== null && Array.isArray(view.pig.diplomas) ? view.pig.diplomas : []
+        var heldDiplomas = diplomas.filter(d => d.count > 0).length
+        if (owned.length === 0 && heldDiplomas === 0) {
           content.appendChild(el('div', 'dp-empty', T('背包空空的 —— 去「商店」买点东西。')))
-        } else {
+        } else if (owned.length > 0) {
           var list = el('div', 'dp-list')
           // [dsh-piggy-claude-code mod] the same shelves as the shop.
           owned = owned.slice().sort((a, b) => kindRank(a.kind) - kindRank(b.kind))
@@ -3479,6 +3494,28 @@ window.__ModuleLoader__.load({
             })(owned[j])
           }
           content.appendChild(list)
+        }
+
+        // [dsh-piggy-claude-code mod] diplomas: collectibles, nothing to use.
+        if (diplomas.length > 0) {
+          var shelf = el('div', 'dp-list')
+          shelf.appendChild(el('div', 'dp-shelf', '📜 ' + T('毕业证') + ' ' + heldDiplomas + '/' + diplomas.length))
+          for (var k = 0; k < diplomas.length; k += 1) {
+            var d = diplomas[k]
+            var held = d.count > 0
+            var row = el('div', 'dp-item')
+            if (!held) row.style.opacity = '0.5'
+            row.appendChild(el('span', null, held ? d.emoji : '🔒'))
+            var grow = el('div', 'dp-grow')
+            grow.appendChild(el('div', null, d.label + (held ? ' ×' + d.count : '')))
+            var hint = d.next === null
+              ? T('收藏品')
+              : (held ? T('再上 {left} 节再发一张', { left: d.next.need - d.next.done }) : T('上满 {need} 节发证（{done}/{need}）', d.next))
+            grow.appendChild(el('div', 'dp-dim', hint))
+            row.appendChild(grow)
+            shelf.appendChild(row)
+          }
+          content.appendChild(shelf)
         }
 
         var w = view.world
@@ -3736,6 +3773,7 @@ window.__ModuleLoader__.load({
           else if (event.kind === 'death') react('refuse', 700)
           else if (event.kind === 'work') { react('away', 900); burst(['🪙', '💰'], 3) }
           else if (event.kind === 'study') { react('away', 900); burst(['📚', '✨'], 3) }
+          else if (event.kind === 'diploma') { react('levelup', 950); burst(['📜', '🎓', '✨'], 3) }
           else if (event.kind === 'trip') { react('away', 900); burst(['🧳', '🎁'], 3) }
         }
 
