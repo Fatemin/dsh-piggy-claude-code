@@ -10,12 +10,12 @@
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
     .ride{animation:ride .3s ease-in-out infinite;transform-origin:190px 298px}
     .wheel{animation:spin .4s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
-    .road{animation:road .5s linear infinite}
+    .road{animation:road 1s linear infinite}
     .wind{animation:wind .6s linear infinite}.wind2{animation:wind .6s linear -.3s infinite}
     .tail{animation-duration:.3s}
     @keyframes ride{50%{transform:translateY(-3px)}}
     @keyframes spin{to{transform:rotate(-360deg)}}
-    @keyframes road{to{transform:translateX(60px)}}
+    @keyframes road{to{transform:translateX(120px)}}
     @keyframes wind{0%{opacity:0;transform:translateX(0)}30%{opacity:1}100%{opacity:0;transform:translateX(30px)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
