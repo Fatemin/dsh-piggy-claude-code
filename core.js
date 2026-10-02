@@ -30,6 +30,7 @@ import {
   LIFESPAN_DAYS,
   STAGE_OUTFIT,
   WEARABLES,
+  WEAR_FOR_SALE,
   WEAR_SLOTS,
   wearableByKey,
   SOUL,
@@ -238,7 +239,7 @@ export function lifeStageFor(state, nowMs) {
 
 const stageRank = key => LIFE_STAGES.findIndex(stage => stage.key === key)
 
-/** Has this pig earned `item` (a WEARABLES entry)? Derived, never saved. */
+/** Has this pig earned `item` (a WEARABLES entry)? Derived from progress, or [ST0012] bought. */
 export function wearUnlocked(state, item) {
   if (state === null || item === null || state.hatched !== true) return false
   const unlock = item.unlock
@@ -251,6 +252,7 @@ export function wearUnlocked(state, item) {
     case 'diploma': return diplomaView(state).some(diploma => diploma.count > 0)
     case 'trip': return (state.stats?.trips ?? 0) > 0 || collected.length > 0
     case 'region': return collected.some(key => souvenirByKey(key)?.region === unlock.region)
+    case 'shop': return (state.wardrobeBought ?? []).includes(item.key)
     default: return false
   }
 }
@@ -589,6 +591,8 @@ export function layEgg(nowMs) {
     sleep: null,
     // [ST0004] the owner's outfit as wardrobe keys, or null: wear the stage's look.
     outfit: null,
+    // [ST0012] decorations bought on the shop's 装扮 shelf, once each.
+    wardrobeBought: [],
     riskMinutes: 0,
     lastFedAt: 0,
     // [dsh-piggy-claude-code mod] when the last scratch card was bought.
@@ -654,6 +658,7 @@ export function migrate(raw) {
   // [dsh-piggy-claude-code mod] travel collection, region payouts, doctorate.
   state.collected = sanitizeCollected(raw.collected)
   state.regionsDone = Array.isArray(raw.regionsDone) ? REGIONS.map(r => r.key).filter(key => raw.regionsDone.includes(key)) : []
+  state.wardrobeBought = Array.isArray(raw.wardrobeBought) ? WEAR_FOR_SALE.map(w => w.key).filter(key => raw.wardrobeBought.includes(key)) : []
   state.worldDone = raw.worldDone === true
   state.doctorDone = raw.doctorDone === true
   state.lastTrip = sanitizeLastTrip(raw.lastTrip)
@@ -1722,6 +1727,8 @@ export const callOffWork = callOffActivity
 // ---------------------------------------------------------------------------
 
 export function buy(state, itemKey) {
+  const wearable = wearableByKey(itemKey)
+  if (wearable !== null) return buyWearable(state, wearable)
   const item = itemByKey(itemKey)
   if (item === null) return { ok: false, reason: 'unknown' }
   // [mod] travel-only specialties never come from the shop.
@@ -1735,6 +1742,26 @@ export function buy(state, itemKey) {
   state.stats.purchases += 1
   remember(state, say(state, '买了 {emoji} {item}（-{price} 金币）', { emoji: item.emoji, item: word(state, item.label), price: item.price }), Date.now())
   return { ok: true, item }
+}
+
+/**
+ * [ST0012] A decoration off the 装扮 shelf: bought once, kept in the
+ * wardrobe, and put straight on (taking off whatever was at that slot).
+ */
+function buyWearable(state, wearable) {
+  if (wearable.unlock.kind !== 'shop') return { ok: false, reason: 'not-for-sale' }
+  const refusal = wearRefusal(state)
+  if (refusal !== null) return { ok: false, reason: refusal }
+  if (wearUnlocked(state, wearable)) return { ok: false, reason: 'owned' }
+  const price = wearable.unlock.price
+  if (state.coins < price) return { ok: false, reason: 'poor', price }
+
+  state.coins -= price
+  state.wardrobeBought = [...(state.wardrobeBought ?? []), wearable.key]
+  state.stats.purchases += 1
+  wear(state, wearable.key, true, Date.now())
+  remember(state, say(state, '买了 {emoji} {item}（-{price} 金币）', { emoji: wearable.emoji, item: word(state, wearable.label), price }), Date.now())
+  return { ok: true, item: { key: wearable.key, label: wearable.label, emoji: wearable.emoji, price, kind: 'wear' } }
 }
 
 /** [dsh-piggy-claude-code mod] Seconds until the next scratch card may be bought. */

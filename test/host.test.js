@@ -17,7 +17,7 @@ import { test } from 'node:test'
 
 import { apply, dispatch, snapshot } from '../index.js'
 import { JOBS, SHOP, hatchEgg, layEgg } from '../core.js'
-import { DEFAULT_TOY } from '../data.js'
+import { DEFAULT_TOY, WEAR_FOR_SALE } from '../data.js'
 
 const MIN = 60_000
 
@@ -202,7 +202,8 @@ test('the snapshot reports the unhatched state before anything exists', async ()
     assert.equal(snap.activity, null)
     assert.deepEqual(Object.keys(snap.actions).sort(), ['bathe', 'feed', 'pet', 'play'])
     assert.equal(snap.jobs.length, JOBS.length)
-    assert.equal(snap.shop.length, SHOP.length)
+    assert.equal(snap.shop.length, SHOP.length + WEAR_FOR_SALE.length, 'the shelves plus the 装扮 shelf')
+    assert.ok(snap.shop.filter(item => item.kind === 'wear').every(item => item.owned === false), 'nothing owned before hatching')
   } finally {
     app.cleanup()
   }

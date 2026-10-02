@@ -480,10 +480,19 @@ export function renderBuy(state, result, item) {
       })
     }
     if (result?.reason === 'dead') return tr(lang, '{name} 已经走了…先救回来再买东西。', { name: nameOf(lang, state) })
+    if (result?.reason === 'owned') return tr(lang, '👗 {emoji} {item} 已经在衣柜里了，不用再买。', { emoji: item.emoji, item: label })
     if (result?.reason === 'not-for-sale') {
       return tr(lang, '🧳 {emoji} {item} 是旅行限定的特产，商店不卖 —— 只能出门旅行时碰运气带回来。', { emoji: item.emoji, item: label })
     }
     return tr(lang, '🐖 没能买下 {item}。', { item: label })
+  }
+  if (item.kind === 'wear') {
+    return [
+      tr(lang, '🛒 买到了 {emoji} {item}（-{price} 金币）', { emoji: item.emoji, item: label, price: item.price }),
+      '',
+      tr(lang, '🪙 余额    {coins}', { coins: state.coins }),
+      tr(lang, '👗 已经穿上了，衣柜里随时换：/pig wear'),
+    ].join('\n')
   }
   return [
     tr(lang, '🛒 买到了 {emoji} {item}（-{price} 金币）', { emoji: item.emoji, item: label, price: item.price }),
@@ -633,6 +642,7 @@ export function wearHint(lang, unlock) {
     case 'diploma': return tr(lang, '拿到任意一张毕业证后解锁')
     case 'trip': return tr(lang, '旅行回来后解锁')
     case 'region': return tr(lang, '从{region}带回纪念品后解锁', { region: tr(lang, REGIONS.find(region => region.key === unlock.region)?.label ?? unlock.region) })
+    case 'shop': return tr(lang, '在商店「装扮」货架买，{price} 金币', { price: unlock.price })
     default: return ''
   }
 }

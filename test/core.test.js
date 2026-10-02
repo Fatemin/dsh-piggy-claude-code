@@ -7,7 +7,7 @@
  */
 
 import { PLACES, REGIONS, SOUVENIRS, SPECIALTIES, WORLD_BONUS, fareFor, zonesBetween } from '../world.js'
-import { ALL_ITEMS, DIPLOMAS, PARALLEL_COURSES, RENAME_CARD, diplomaCount, schoolStageByKey as schoolStage } from '../data.js'
+import { ALL_ITEMS, DIPLOMAS, PARALLEL_COURSES, RENAME_CARD, WEAR_FOR_SALE, diplomaCount, schoolStageByKey as schoolStage } from '../data.js'
 import { diplomaView, outfitIsAuto, wardrobeView, wear, wearAuto, wornFor } from '../core.js'
 import { hasDefaultName, perksOf, regionProgress, renamePig, tripQuote } from '../core.js'
 import assert from 'node:assert/strict'
@@ -258,6 +258,40 @@ test('wardrobe: the stage look until the owner dresses the pig, one thing per sl
   pig.dead = true
   assert.deepEqual(wornFor(pig), [], 'a grave wears nothing')
   assert.deepEqual(wear(pig, 'bow', true, T0), { ok: false, reason: 'dead' })
+})
+
+test('[ST0012] waist gear is bought once in the shop and worn straight away', () => {
+  assert.deepEqual(WEAR_FOR_SALE.map(item => [item.key, item.slot, item.price]), [
+    ['hulahoop', 'waist', 66], ['swimring', 'waist', 88], ['fannypack', 'waist', 168], ['chainbelt', 'waist', 188], ['pager', 'waist', 288],
+  ])
+  const pig = hatchEgg(T0)
+  pig.coins = 200
+  pig.lessonsByStage.primary = 1
+  assert.equal(wear(pig, 'scarf', true, T0).ok, true)
+  assert.equal(wardrobeView(pig).find(item => item.key === 'swimring').unlocked, false, 'not until it is bought')
+  assert.deepEqual(wear(pig, 'swimring', true, T0), { ok: false, reason: 'wear-locked' })
+
+  const bought = buy(pig, 'swimring')
+  assert.equal(bought.ok, true)
+  assert.equal(bought.item.kind, 'wear')
+  assert.equal(pig.coins, 112)
+  assert.deepEqual(pig.wardrobeBought, ['swimring'])
+  assert.deepEqual(wornFor(pig), ['swimring', 'bow'], 'on at once, the scarf off: one thing per slot')
+  assert.equal(pig.inventory.swimring, undefined, 'never in the bag')
+  assert.equal(pig.stats.purchases, 1)
+
+  assert.deepEqual(buy(pig, 'swimring'), { ok: false, reason: 'owned' })
+  assert.deepEqual(buy(pig, 'pager'), { ok: false, reason: 'poor', price: 288 })
+  assert.deepEqual(buy(pig, 'scarf'), { ok: false, reason: 'not-for-sale' }, 'earned, never sold')
+  assert.equal(pig.coins, 112, 'refusals cost nothing')
+  assert.equal(wear(pig, 'swimring', false, T0).ok, true)
+  assert.equal(wear(pig, 'swimring', true, T0).ok, true, 'it stays in the wardrobe')
+
+  assert.deepEqual(migrate({ ...pig, wardrobeBought: ['pager', 'scarf', 'nope', 'swimring'] }).wardrobeBought, ['swimring', 'pager'], 'only gear on sale, in shelf order')
+  assert.deepEqual(migrate({ ...pig, wardrobeBought: undefined }).wardrobeBought, [], 'an old save has bought nothing')
+
+  pig.dead = true
+  assert.deepEqual(buy(pig, 'hulahoop'), { ok: false, reason: 'dead' })
 })
 
 test('wardrobe: migration keeps the outfit tidy and moves the old elder look over', () => {

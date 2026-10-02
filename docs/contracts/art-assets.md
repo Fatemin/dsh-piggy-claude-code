@@ -37,10 +37,10 @@
 
 <!-- contract:wear-keys -->
 ```json
-{"bow": "head", "flatcap": "head", "mortarboard": "head", "strawhat": "head", "glasses": "eyes", "sunglasses": "eyes", "scarf": "waist", "whiskers": "face"}
+{"bow": "head", "flatcap": "head", "mortarboard": "head", "strawhat": "head", "glasses": "eyes", "sunglasses": "eyes", "scarf": "waist", "whiskers": "face", "hulahoop": "waist", "swimring": "waist", "fannypack": "waist", "chainbelt": "waist", "pager": "waist"}
 ```
 
-解锁条件（`WEARABLES[].unlock`，全部从存档已有进度推导，**不新增解锁存档**）：
+解锁条件（`WEARABLES[].unlock`）：除 `shop` 外全部从存档已有进度推导、不存档；`shop` 是商店「装扮」货架上买的，买过的键记在存档 `wardrobeBought`（ST0012，见 [STORE.SAVE.V6](save-format.md)）：
 
 | 键 | 名称 | 解锁 |
 |---|---|---|
@@ -52,6 +52,13 @@
 | `sunglasses` | 🕶️ 墨镜 | `region mideast`：带回过中东·非洲的纪念品 |
 | `scarf` | 🧣 红领巾 | `lessons primary`：上过小学 |
 | `whiskers` | 🧓 白眉白胡子 | `stage elder`：长成老年猪 |
+| `hulahoop` | ⭕ 网红呼啦圈 | `shop 66`：商店购买 |
+| `swimring` | 🦆 小黄鸭游泳圈 | `shop 88`：商店购买 |
+| `fannypack` | 👝 多巴胺腰包 | `shop 168`：商店购买 |
+| `chainbelt` | ⛓️ 杀马特腰链 | `shop 188`：商店购买 |
+| `pager` | 📟 BP机皮带 | `shop 288`：商店购买 |
+
+商店购买（`core.js` `buy` 对装饰键的分支）：每件只能买一次（已拥有拒绝 `owned`）、未孵化 / 死亡拒绝；扣 `unlock.price` 金币、记入 `wardrobeBought`、计一次 `stats.purchases`，并立刻穿上（同部位的换下）。装饰不进 `SHOP`、`inventory` 与背包，不能“使用”。
 
 ### 2.3 穿戴（存档 `outfit`，见 [STORE.SAVE.V6](save-format.md)）
 
@@ -150,7 +157,7 @@
 2. **行为资产恰好一个穿戴槽**，`undressable-poses` 里的除外（零个）；槽里的 `data-occupies` 与 `pose-occupies` 一致。
 3. **行为资产不含 `data-wear=`**：它自带的装备是行为的一部分，只靠 `data-occupies` 让出部位，不冒充装饰。
 4. **装饰资产恰好一个片段**，`data-wear` 与文件名一致，`data-slot` 与 `wear-keys` 一致；`wear-keys` 与 `WEARABLES` 一一对应。
-5. **装饰不改玩法**：`WEARABLES` 条目只有 `key`/`slot`/`label`/`emoji`/`unlock`；穿脱只改 `outfit` 与 `lastActiveAt`。
+5. **装饰不改玩法**：`WEARABLES` 条目只有 `key`/`slot`/`label`/`emoji`/`unlock`（唯一的数字是 `shop` 的售价 `unlock.price`，只在购买时扣金币）；穿脱只改 `outfit` 与 `lastActiveAt`。
 6. **同一坐标系**：装饰画在猪本体（Noto 🐖，`VIEWBOX 24 -36 336 336`）坐标上；姿势只能移动整只猪（动画作用在分组上），不得重画本体，否则装饰会错位。
 7. **新美术先归类**：设计交接文档（`docs/design/*design-handoff*.md`）必须写明每项新美术属于哪一类；行为资产写明占用部位，装饰资产写明部位与解锁条件。
 

@@ -1895,6 +1895,25 @@ test('the shop has an items shelf with the rename card', async () => {
   }
 })
 
+// [ST0012] the 装扮 shelf: one decoration owned, one for sale.
+test('the shop has a dress-up shelf; owned gear cannot be bought again', async () => {
+  const shop = [
+    ...SHOP,
+    { key: 'pager', label: 'BP机皮带', emoji: '📟', price: 288, kind: 'wear', tier: null, affordable: true, needed: false, owned: true },
+    { key: 'hulahoop', label: '网红呼啦圈', emoji: '⭕', price: 66, kind: 'wear', tier: null, affordable: true, needed: false, owned: false },
+  ]
+  for (const [lang, shelf, owned] of [['zh', '👗 装扮', '已拥有'], ['ja', '👗 きせかえ', '持ってる'], ['en', '👗 Dress-up', 'Owned']]) {
+    const { dom } = await loadWithPoll({ status: { ...SNAPSHOT, shop, lang, langs: LANGS } })
+    openPanel(dom)
+    pickTab(dom, 'shop')
+    assert.ok(contentOf(dom).allText().includes(shelf), `${lang}: ${contentOf(dom).allText()}`)
+    const pager = findByAttr(contentOf(dom), 'data-buy', 'pager')
+    assert.equal(pager.disabled, true, `${lang}: owned`)
+    assert.equal(pager.textContent, owned)
+    assert.equal(findByAttr(contentOf(dom), 'data-buy', 'hulahoop').disabled, false, `${lang}: on sale`)
+  }
+})
+
 const STUDY_SUBJECTS = [
   ...SUBJECTS,
   { key: 'math', label: '数学', emoji: '🔢', traitLabel: '智力', level: 0, available: true },
