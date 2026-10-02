@@ -116,10 +116,10 @@ const hat = (cx, cy, svg) => `<g transform="translate(${cx} ${cy}) scale(${HAT_S
 // [ST0012] Waist gear. The pig has no neck, so anything worn round the middle
 // goes round its waist, following the body: the pig is turned toward us, so a
 // belt round it leans, its top toward the head and its foot toward the rump,
-// bowing a little toward the rump (the line the owner drew). The belt is a
-// band clipped to the body, so it ends exactly on the outline, and it passes
-// behind the near ear. A hoop leans the same way, its far half behind the pig.
-const WAIST = { top: [196, 30], ctrl: [230, 128], bottom: [240, 244] }
+// bowing toward the rump (the line the owner drew), and stays clear of the
+// near ear. The belt is a band clipped to the body, so it ends exactly on the
+// outline. A hoop leans the same way, its far half behind the pig.
+const WAIST = { top: [222, 32], ctrl: [270, 124], bottom: [256, 244] }
 /** The waist line `t` of the way down (0 = the back, 1 = the belly), `dx` to the right. */
 const waistAt = (t, dx = 0) => {
   const q = i => (1 - t) ** 2 * WAIST.top[i] + 2 * t * (1 - t) * WAIST.ctrl[i] + t ** 2 * WAIST.bottom[i]
@@ -140,7 +140,7 @@ const waistBand = (w, dx = 0) => {
 /** Something fastened on the belt at `t`, drawn about its own 0,0 and turned with the belt. */
 const onWaist = (t, inner, dx = 0) => { const [x, y] = waistAt(t, dx); return `<g transform="translate(${x} ${y}) rotate(${waistLean(t)})">${inner}</g>` }
 const bodyClip = id => `<clipPath id="${id}"><path d="${P.body}"/></clipPath>`
-/** Hides what passes behind the near ear (the ear is nearer us than the waist). */
+/** Hides anything that would cross the near ear (the ear is nearer us than the waist). */
 const earMask = id => `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="-60" width="400" height="400"><rect x="0" y="-60" width="400" height="400" fill="#fff"/><path d="${P.ear2}" fill="none" stroke="#000" stroke-width="15" stroke-linecap="round"/></mask>`
 /** The belt itself, clipped to the body and tucked behind the ear. */
 const belt = (key, inner) => `${bodyClip(`w-${key}-body`)}${earMask(`w-${key}-ear`)}
@@ -148,7 +148,7 @@ const belt = (key, inner) => `${bodyClip(`w-${key}-body`)}${earMask(`w-${key}-ea
 /** Paints only outside the body: the far half of a hoop goes behind the pig. */
 const behindBody = id => `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="-60" width="400" height="400"><rect x="0" y="-60" width="400" height="400" fill="#fff"/><path d="${P.body}" fill="#000"/></mask>`
 /** A hoop round the waist, leaning like the belt: its near arc bows toward the rump. */
-const HOOP = { cx: 222, cy: 136, tilt: -14 }
+const HOOP = { cx: 246, cy: 138, tilt: -12 }
 const HOOP_TILT = `rotate(${HOOP.tilt} ${HOOP.cx} ${HOOP.cy})`
 const hoopArcs = (rx, ry) => ({
   near: `M${HOOP.cx} ${HOOP.cy - ry}A${rx} ${ry} 0 0 1 ${HOOP.cx} ${HOOP.cy + ry}`,
