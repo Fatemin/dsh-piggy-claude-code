@@ -137,10 +137,11 @@ function fakeNet(status, actResult) {
 }
 
 async function loadClient(options) {
-  const { status = SNAPSHOT, actResult = null } = options ?? {}
+  const { status = SNAPSHOT, actResult = null, storage = {} } = options ?? {}
   const dom = fakeDom()
   const net = fakeNet(status, actResult)
-  const store = new Map()
+  // `storage` seeds localStorage, as if an earlier session had left it there.
+  const store = new Map(Object.entries(storage))
 
   const windowListeners = {}
   globalThis.window = {
@@ -1785,18 +1786,59 @@ test('the bag lists everything held, tags specialties and has no Use for rename 
   assert.ok(text.includes('用来改名'), text)
   assert.notEqual(findByAttr(contentOf(dom), 'data-use', 'duck'), undefined, 'a specialty is used like any food')
   assert.equal(findByAttr(contentOf(dom), 'data-use', 'renamecard'), undefined, 'a card is spent by renaming')
-  // The souvenir list moved to the travel tab; the bag sums it up and links there.
-  const link = findByAttr(contentOf(dom), 'data-goto', 'travel')
-  assert.ok(link.textContent.includes('纪念品 8/12'), link.textContent)
-  assert.ok(!text.includes('贝壳'), 'no souvenir list in the bag any more')
-  link.fire('click')
-  assert.equal(findByAttr(barOf(dom), 'data-tab', 'travel').attributes['data-active'], 'true')
+  // Consumables only: the collections have shelves of their own.
+  assert.ok(!text.includes('贝壳'), 'no souvenirs on the consumables shelf')
+  assert.equal(findByAttr(contentOf(dom), 'data-bag', 'items').attributes['data-active'], 'true')
+  assert.ok(findByAttr(contentOf(dom), 'data-bag', 'items').textContent.includes('4'), 'counts every item held')
 
-  pickTab(dom, 'bag')
   findLastByAttr(contentOf(dom), 'data-use', 'duck').fire('click')
   await settle()
   await settle()
   assert.deepEqual(postsOf(net), [{ action: 'use', item: 'duck' }])
+})
+
+// [dsh-piggy-claude-code mod] ST0002: the bag's collections, by where they came from.
+test('the bag keeps travel souvenirs and school diplomas on shelves of their own', async () => {
+  const diplomas = [
+    { key: 'diploma-primary', stage: 'primary', label: '小学毕业证', emoji: '📃', repeat: false, count: 1, next: null },
+    { key: 'diploma-college', stage: 'college', label: '大学毕业证', emoji: '📜', repeat: false, count: 0, next: { done: 4, need: 9 } },
+    { key: 'diploma-graduate', stage: 'graduate', label: '硕士学位证', emoji: '🎖️', repeat: true, count: 2, next: { done: 3, need: 9 } },
+    { key: 'diploma-doctor', stage: 'doctor', label: '博士学位证', emoji: '🎓', repeat: true, count: 0, next: { done: 0, need: 9 } },
+  ]
+  const status = { ...worldSnapshot(), pig: { ...worldSnapshot().pig, diplomas } }
+  const { dom, store } = await loadWithPoll({ status })
+  openPanel(dom)
+  pickTab(dom, 'bag')
+  assert.ok(findByAttr(contentOf(dom), 'data-bag', 'travel').textContent.includes('纪念品 8/12'))
+  assert.ok(findByAttr(contentOf(dom), 'data-bag', 'school').textContent.includes('毕业证 2/4'))
+
+  findByAttr(contentOf(dom), 'data-bag', 'travel').fire('click')
+  let text = contentOf(dom).allText()
+  for (const bit of ['中国 2/6', '欧洲 6/6 ✅', '干饭王', '以前的纪念品：贝壳']) assert.ok(text.includes(bit), `expected "${bit}" in: ${text}`)
+  assert.equal(findLastByAttr(contentOf(dom), 'data-souvenir', 'wallbrick').textContent, '🧱长城砖（复刻版） ×2')
+  assert.equal(store.get('dsh-pig:bag'), 'travel', 'the shelf is remembered')
+
+  findByAttr(contentOf(dom), 'data-bag', 'school').fire('click')
+  text = contentOf(dom).allText()
+  for (const bit of ['小学毕业证 ×1', '收藏品', '硕士学位证 ×2', '再上 6 节再发一张', '上满 9 节发证（4/9）']) {
+    assert.ok(text.includes(bit), `expected "${bit}" in: ${text}`)
+  }
+  findLastByAttr(contentOf(dom), 'data-goto', 'study').fire('click')
+  assert.equal(findByAttr(barOf(dom), 'data-tab', 'study').attributes['data-active'], 'true')
+
+  // A fresh panel (the fake DOM keeps old nodes on re-render): each shelf holds only its own.
+  const travel = await loadWithPoll({ status, storage: { 'dsh-pig:bag': 'travel' } })
+  openPanel(travel.dom)
+  pickTab(travel.dom, 'bag')
+  assert.equal(findByAttr(contentOf(travel.dom), 'data-bag', 'travel').attributes['data-active'], 'true')
+  assert.equal(findByAttr(contentOf(travel.dom), 'data-trip', 'beijing'), undefined, 'trips stay on the travel tab')
+  assert.equal(findByAttr(contentOf(travel.dom), 'data-use', 'apple'), undefined, 'no consumables among the souvenirs')
+  assert.equal(findByAttr(contentOf(travel.dom), 'data-diploma', 'diploma-primary'), undefined)
+  const school = await loadWithPoll({ status, storage: { 'dsh-pig:bag': 'school' } })
+  openPanel(school.dom)
+  pickTab(school.dom, 'bag')
+  assert.ok(!contentOf(school.dom).allText().includes('长城砖'), 'no souvenirs among the diplomas')
+  assert.equal(findByAttr(contentOf(school.dom), 'data-use', 'apple'), undefined)
 })
 
 test('the shop has an items shelf with the rename card', async () => {
