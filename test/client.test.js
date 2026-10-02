@@ -983,7 +983,7 @@ test('a drawn pig wears its mood pose; fine and grave keep the stage drawing', a
 
 // [ST0001] every job, school stage and trip region has a pose. [ST0004] What the
 // pig wears rides along on every pose's URL, so the art route can dress it.
-test('away poses follow the job, the school stage and the region; the outfit goes along', async () => {
+test('away poses follow the job, the school stage and the destination; the outfit goes along', async () => {
   const young = { key: 'young', label: '青年猪', emoji: '🐖', size: 48, art: 'stage-young' }
   const piglet = { key: 'piglet', label: '小猪', emoji: '🐖', size: 40, art: 'stage-piglet' }
   const elder = { key: 'elder', label: '老年猪', emoji: '🐖', size: 56, art: 'stage-elder' }
@@ -1002,7 +1002,11 @@ test('away poses follow the job, the school stage and the region; the outfit goe
   assert.equal(await srcFor({ activity: away('study', 'math'), pig: { ...PIG, stage: young, mood: 'studying' } }),
     '/dsh-pig/art/away-study.svg', 'no stage from the host: the generic desk')
   assert.equal(await srcFor({ activity: away('trip', 'shanghai', { region: 'china' }), pig: { ...PIG, stage: young, mood: 'traveling' } }),
-    '/dsh-pig/art/away-trip-china.svg', 'a trip shows its region')
+    '/dsh-pig/art/away-trip-shanghai.svg', 'a trip shows its destination')
+  assert.equal(await srcFor({ activity: away('trip', 'atlantis', { region: 'europe' }), pig: { ...PIG, stage: young, mood: 'traveling' } }),
+    '/dsh-pig/art/away-trip-europe.svg', 'a destination without its own drawing shows its region')
+  assert.equal(await srcFor({ activity: away('trip', 'constructor', { region: 'toString' }), pig: { ...PIG, stage: young, mood: 'traveling' } }),
+    '/dsh-pig/art/away-trip.svg', 'prototype names are not destinations or regions')
   assert.equal(await srcFor({ activity: away('trip', 'mars', { region: 'mars' }), pig: { ...PIG, stage: young, mood: 'traveling' } }),
     '/dsh-pig/art/away-trip.svg', 'an unknown region falls back to the plain road')
 
@@ -1010,7 +1014,7 @@ test('away poses follow the job, the school stage and the region; the outfit goe
   assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'hungry', moodLevel: 1, outfit: wearing('bow') } }),
     '/dsh-pig/art/mood-hungry-1.svg?wear=bow', 'a piglet keeps its bow')
   assert.equal(await srcFor({ activity: away('trip', 'paris', { region: 'europe' }), pig: { ...PIG, stage: elder, mood: 'traveling', outfit: wearing('whiskers', 'glasses') } }),
-    '/dsh-pig/art/away-trip-europe.svg?wear=whiskers,glasses', 'an old pig keeps its beard and glasses on the road')
+    '/dsh-pig/art/away-trip-paris.svg?wear=whiskers,glasses', 'an old pig keeps its beard and glasses on the road')
   assert.equal(await srcFor({ pig: { ...PIG, stage: elder, mood: 'happy', outfit: wearing() } }),
     '/dsh-pig/art/mood-happy.svg', 'nothing worn: the plain pose')
   assert.equal(await srcFor({ pig: { ...PIG, stage: piglet, mood: 'fine', outfit: wearing('bow') } }), '/dsh-pig/art/stage-piglet.svg?wear=bow', 'fine still shows the stage itself')

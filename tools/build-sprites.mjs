@@ -196,6 +196,40 @@ const trip = (title, note, { css = '', under = '', over = '', gear = '', back = 
   over,
 })
 
+// [ST0011] Scenery a region's drawing shares with one of its destinations.
+const EIFFEL = `<g fill="none" stroke="#8C7A68" stroke-linecap="round"><path d="M56 -34V-14" stroke-width="4"/><path d="M56 -14C52 30 42 80 28 128M56 -14C60 30 70 80 84 128" stroke-width="6"/>
+    <path d="M44 36H68M36 82H76" stroke-width="5"/><path d="M34 128Q56 96 78 128" stroke-width="5"/></g>`
+const BAGUETTE = `<path d="M262 44L318 -22" fill="none" stroke="#D9A066" stroke-width="18" stroke-linecap="round"/>
+    <path d="M280 14l8 6M292 0l8 6M304 -14l8 6" fill="none" stroke="#B9824A" stroke-width="4" stroke-linecap="round"/>`
+const PYRAMIDS = `<path d="M190 44L240 -10L290 44Z" fill="#E9C98A"/><path d="M240 -10L290 44H254Z" fill="#D9B06C"/>
+    <path d="M262 44L304 0L346 44Z" fill="#E9C98A"/><path d="M304 0L346 44H316Z" fill="#D9B06C"/>`
+const HEAT = `<path class="heat" d="M30 280q6-8 0-16t0-16M46 284q6-8 0-16t0-16" fill="none" stroke="#F2D488" stroke-width="4" stroke-linecap="round"/>`
+const OPERA = `<g fill="#E6ECF2"><path d="M210 44Q216 4 252 -8Q240 18 246 44Z"/><path d="M244 44Q256 -6 300 -20Q284 12 290 44Z"/><path d="M286 44Q300 6 336 0Q322 20 330 44Z"/></g>
+    <g fill="#CBD5E0"><path d="M246 44Q240 18 252 -8L250 44Z"/><path d="M290 44Q284 12 300 -20L296 44Z"/><path d="M330 44Q322 20 336 0L334 44Z"/></g>
+    <rect x="204" y="42" width="136" height="7" rx="3" fill="#C9CED6"/>`
+const PENGUIN = `<g class="peng"><ellipse cx="44" cy="294" rx="8" ry="4" fill="#F5A23C"/><ellipse cx="58" cy="294" rx="8" ry="4" fill="#F5A23C"/>
+    <ellipse cx="50" cy="266" rx="20" ry="28" fill="#3A3E52"/><ellipse cx="45" cy="272" rx="12" ry="20" fill="#FFFFFF"/>
+    <circle cx="42" cy="250" r="4" fill="#FFFFFF"/><circle cx="41" cy="250" r="2" fill="#3A3E52"/><path d="M32 254L20 258L32 262Z" fill="#F5A23C"/></g>`
+const SNOW = `<circle class="sn" cx="120" cy="-30" r="5" fill="#CFE6F5"/><circle class="sn2" cx="200" cy="-30" r="4" fill="#CFE6F5"/><circle class="sn3" cx="290" cy="-30" r="5" fill="#CFE6F5"/>`
+const SNOW_CSS = `.peng{animation:waddle .5s ease-in-out infinite;transform-origin:44px 298px}
+    .sn{animation:snow 3s linear infinite}.sn2{animation:snow 3s linear -1s infinite}.sn3{animation:snow 3s linear -2s infinite}
+    @keyframes waddle{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+    @keyframes snow{0%{opacity:0;transform:translate(0,0)}10%{opacity:1}100%{opacity:0;transform:translate(-30px,300px)}}`
+// Twinkling and blinking, shared by several skylines.
+const TWINKLE_CSS = `.tw{animation:tw 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .tw2{animation:tw 1.6s ease-in-out -.55s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .tw3{animation:tw 1.6s ease-in-out -1.1s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes tw{0%,100%{opacity:.1;transform:scale(.5)}50%{opacity:1;transform:scale(1)}}`
+const BLINK_CSS = `.tip{animation:tip 1.2s steps(1) infinite}
+    @keyframes tip{50%{opacity:.2}}`
+// Papel picado for Mexico City: little cut-paper flags along a sagging string.
+const PAPEL = [44, 84, 124, 164, 204, 244, 284, 324].map((x, i) => {
+  const t = (x - 24) / 336
+  const y = +(-30 + 48 * t * (1 - t)).toFixed(1)
+  const fill = ['#FF6F9A', '#F5A23C', '#3FB8AF', '#FFD35A', '#8C6BB1'][i % 5]
+  return `<g class="pp${i % 2 === 0 ? '' : '2'}"><path d="M${x - 10} ${y}h20v22l-5-4-5 4-5-4-5 4Z" fill="${fill}"/><circle cx="${x}" cy="${y + 9}" r="3" fill="#FFFFFF"/></g>`
+}).join('')
+
 // ---------------------------------------------------------------------------
 // Sprites. `css` animates; `under` sits behind the pig, `over` in front;
 // `wrap` names the class on the group holding the pig (+ its own props).
@@ -1149,12 +1183,10 @@ const SPRITES = {
   'away-trip-europe': trip('旅行 · 欧洲', '远处一座小铁塔，云慢慢飘过，背包里插着一根比猪还长的法棍。', {
     css: `.cloud{animation:drift 6s ease-in-out infinite}.cloud2{animation:drift 6s ease-in-out -3s infinite}
     @keyframes drift{50%{transform:translateX(-24px)}}`,
-    under: `<g fill="none" stroke="#8C7A68" stroke-linecap="round"><path d="M56 -34V-14" stroke-width="4"/><path d="M56 -14C52 30 42 80 28 128M56 -14C60 30 70 80 84 128" stroke-width="6"/>
-    <path d="M44 36H68M36 82H76" stroke-width="5"/><path d="M34 128Q56 96 78 128" stroke-width="5"/></g>
+    under: `${EIFFEL}
     <g class="cloud"><path d="M250 -4a14 14 0 0 1 26-8 16 16 0 0 1 30 6 10 10 0 0 1 0 20H254a10 10 0 0 1-4-18Z" fill="#E6ECF2"/></g>
     <g class="cloud2"><path d="M170 -20a11 11 0 0 1 20-6 12 12 0 0 1 24 5 8 8 0 0 1 0 15H174a8 8 0 0 1-4-14Z" fill="#E6ECF2"/></g>`,
-    back: `<path d="M262 44L318 -22" fill="none" stroke="#D9A066" stroke-width="18" stroke-linecap="round"/>
-    <path d="M280 14l8 6M292 0l8 6M304 -14l8 6" fill="none" stroke="#B9824A" stroke-width="4" stroke-linecap="round"/>`,
+    back: `${BAGUETTE}`,
   }),
   'away-trip-americas': trip('旅行 · 美洲', '远处是高楼天际线和举着火炬的自由女神，路边一株仙人掌。', {
     css: `.flame{animation:flame .5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
@@ -1174,25 +1206,381 @@ const SPRITES = {
     .heat{animation:heat 1.6s ease-in-out infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes heat{0%,100%{opacity:0;transform:translateY(4px)}50%{opacity:.8;transform:translateY(-4px)}}`,
-    under: `<path d="M190 44L240 -10L290 44Z" fill="#E9C98A"/><path d="M240 -10L290 44H254Z" fill="#D9B06C"/>
-    <path d="M262 44L304 0L346 44Z" fill="#E9C98A"/><path d="M304 0L346 44H316Z" fill="#D9B06C"/>
+    under: `${PYRAMIDS}
     <g class="rays"><path d="M56 -38V-30M56 22V30M22 -4H30M82 -4H90M32 -28l6 6M74 14l6 6M80 -28l-6 6M32 20l6-6" fill="none" stroke="#FFD35A" stroke-width="5" stroke-linecap="round"/></g>
     <circle cx="56" cy="-4" r="20" fill="#FFD35A"/>`,
     gear: WEAR.sunglasses.svg, wears: ['head', 'eyes'],
-    over: `<path class="heat" d="M30 280q6-8 0-16t0-16M46 284q6-8 0-16t0-16" fill="none" stroke="#F2D488" stroke-width="4" stroke-linecap="round"/>`,
+    over: `${HEAT}`,
   }),
   'away-trip-oceania': trip('旅行 · 大洋洲·南极', '远处是歌剧院的白贝壳顶，雪花飘着，一只小企鹅摇摇摆摆跟在后面。', {
-    css: `.peng{animation:waddle .5s ease-in-out infinite;transform-origin:44px 298px}
-    .sn{animation:snow 3s linear infinite}.sn2{animation:snow 3s linear -1s infinite}.sn3{animation:snow 3s linear -2s infinite}
-    @keyframes waddle{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
-    @keyframes snow{0%{opacity:0;transform:translate(0,0)}10%{opacity:1}100%{opacity:0;transform:translate(-30px,300px)}}`,
-    under: `<g fill="#E6ECF2"><path d="M210 44Q216 4 252 -8Q240 18 246 44Z"/><path d="M244 44Q256 -6 300 -20Q284 12 290 44Z"/><path d="M286 44Q300 6 336 0Q322 20 330 44Z"/></g>
-    <g fill="#CBD5E0"><path d="M246 44Q240 18 252 -8L250 44Z"/><path d="M290 44Q284 12 300 -20L296 44Z"/><path d="M330 44Q322 20 336 0L334 44Z"/></g>
-    <rect x="204" y="42" width="136" height="7" rx="3" fill="#C9CED6"/>`,
-    over: `<circle class="sn" cx="120" cy="-30" r="5" fill="#CFE6F5"/><circle class="sn2" cx="200" cy="-30" r="4" fill="#CFE6F5"/><circle class="sn3" cx="290" cy="-30" r="5" fill="#CFE6F5"/>
-    <g class="peng"><ellipse cx="44" cy="294" rx="8" ry="4" fill="#F5A23C"/><ellipse cx="58" cy="294" rx="8" ry="4" fill="#F5A23C"/>
-    <ellipse cx="50" cy="266" rx="20" ry="28" fill="#3A3E52"/><ellipse cx="45" cy="272" rx="12" ry="20" fill="#FFFFFF"/>
-    <circle cx="42" cy="250" r="4" fill="#FFFFFF"/><circle cx="41" cy="250" r="2" fill="#3A3E52"/><path d="M32 254L20 258L32 262Z" fill="#F5A23C"/></g>`,
+    css: SNOW_CSS,
+    under: OPERA,
+    over: `${SNOW}
+    ${PENGUIN}`,
+  }),
+
+  // ---- [ST0011] trips by destination (world.js PLACES): away-trip-<place>.svg ----
+  // Every place has its own landmark and something that moves; the region's
+  // drawing above stays as the fallback for a place that has none.
+
+  // China
+  'away-trip-beijing': trip('旅行 · 北京', '远处是红墙黄瓦的城楼，天上一只沙燕风筝一上一下地飘。', {
+    css: `.kite{animation:kite 2.6s ease-in-out infinite;transform-origin:82px -6px}
+    .ktail{animation:ktail .8s ease-in-out infinite;transform-origin:82px 2px}
+    @keyframes kite{0%,100%{transform:translate(0,0) rotate(-6deg)}50%{transform:translate(8px,-6px) rotate(6deg)}}
+    @keyframes ktail{50%{transform:skewX(14deg)}}`,
+    under: `<rect x="244" y="4" width="108" height="40" fill="#C9433C"/><path d="M290 44V28a8 8 0 0 1 16 0V44Z" fill="#8E2E2A"/>
+    <path d="M232 8H364L350 -4H246Z" fill="#F2B33D"/><rect x="258" y="-16" width="80" height="12" fill="#B83A34"/>
+    <path d="M246 -14H350L336 -28H260Z" fill="#F2B33D"/><path d="M262 -28H334" fill="none" stroke="#D99A2B" stroke-width="3"/>
+    <path d="M82 2Q50 60 30 128" fill="none" stroke="#8B6B4E" stroke-width="2"/>
+    <g class="kite"><path d="M82 -16C66 -28 46 -20 42 -4C56 -10 70 -8 82 0C94 -8 108 -10 122 -4C118 -20 98 -28 82 -16Z" fill="#3A6EA5"/>
+    <path d="M82 -16C74 -22 60 -20 56 -12M82 -16C90 -22 104 -20 108 -12" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="82" cy="-16" r="6" fill="#E5534B"/><path d="M82 -10V2" fill="none" stroke="#2E2E3A" stroke-width="5" stroke-linecap="round"/>
+    <g class="ktail"><path d="M82 2L70 26M82 2L94 26" fill="none" stroke="#E5534B" stroke-width="5" stroke-linecap="round"/></g></g>`,
+  }),
+  'away-trip-chengdu': trip('旅行 · 成都', '身边的竹子沙沙地摇，路边坐着一只熊猫，抱着竹子嚼个不停。', {
+    css: `.bamboo{animation:sway 3s ease-in-out infinite;transform-origin:44px 140px}
+    .chew{animation:chew .6s ease-in-out infinite}
+    @keyframes sway{50%{transform:rotate(3deg)}}
+    @keyframes chew{50%{transform:translateY(2px) rotate(-3deg)}}`,
+    under: `<path d="M196 44Q236 -6 280 26Q312 -4 360 22V44Z" fill="#CFE3C2"/><path d="M240 44Q280 10 320 30Q340 18 360 30V44Z" fill="#B5D6A4"/>
+    <g class="bamboo"><path d="M34 140V-36M56 100V-30" fill="none" stroke="#7DBF6A" stroke-width="8"/>
+    <path d="M30 100H38M30 50H38M30 0H38M52 60H60M52 14H60" fill="none" stroke="#5E9E4E" stroke-width="3"/>
+    <g fill="#6FB35E"><ellipse cx="48" cy="-10" rx="14" ry="4" transform="rotate(-30 48 -10)"/><ellipse cx="22" cy="20" rx="12" ry="4" transform="rotate(30 22 20)"/>
+    <ellipse cx="70" cy="-26" rx="14" ry="4" transform="rotate(-20 70 -26)"/><ellipse cx="72" cy="30" rx="12" ry="4" transform="rotate(-35 72 30)"/><ellipse cx="44" cy="44" rx="12" ry="4" transform="rotate(25 44 44)"/></g></g>`,
+    over: `<ellipse cx="338" cy="282" rx="22" ry="20" fill="#F7F5F0" stroke="#D9D4CA" stroke-width="2"/>
+    <ellipse cx="322" cy="294" rx="8" ry="6" fill="#2E2E3A"/><ellipse cx="354" cy="294" rx="8" ry="6" fill="#2E2E3A"/>
+    <path d="M318 290L306 236" fill="none" stroke="#7DBF6A" stroke-width="5" stroke-linecap="round"/><ellipse cx="302" cy="232" rx="8" ry="3" fill="#6FB35E" transform="rotate(-50 302 232)"/>
+    <ellipse cx="322" cy="270" rx="7" ry="10" fill="#2E2E3A" transform="rotate(30 322 270)"/>
+    <g class="chew"><circle cx="324" cy="236" r="6" fill="#2E2E3A"/><circle cx="350" cy="236" r="6" fill="#2E2E3A"/>
+    <circle cx="337" cy="250" r="16" fill="#F7F5F0" stroke="#D9D4CA" stroke-width="2"/>
+    <ellipse cx="331" cy="249" rx="4" ry="5" fill="#2E2E3A"/><ellipse cx="344" cy="249" rx="4" ry="5" fill="#2E2E3A"/>
+    <circle cx="331" cy="248" r="1.5" fill="#FFFFFF"/><circle cx="344" cy="248" r="1.5" fill="#FFFFFF"/><ellipse cx="337" cy="257" rx="3" ry="2" fill="#2E2E3A"/></g>`,
+  }),
+  'away-trip-xian': trip('旅行 · 西安', '远处是古城墙和钟楼，头顶一口铜钟咚咚地晃，路边一个兵马俑探出头来。', {
+    css: `.bell{animation:swing 2s ease-in-out infinite;transform-origin:64px -30px}
+    .dong{animation:dong 2s ease-out infinite;transform-box:fill-box;transform-origin:0 50%}
+    .peek{animation:peek 3s ease-in-out infinite}
+    @keyframes swing{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+    @keyframes dong{0%,40%{opacity:0;transform:scale(.6)}50%{opacity:1}100%{opacity:0;transform:scale(1.3)}}
+    @keyframes peek{0%,30%,100%{transform:translateY(12px)}50%,80%{transform:translateY(0)}}`,
+    under: `<rect x="24" y="16" width="336" height="28" fill="#BFA47E"/><path d="M24 12H360" fill="none" stroke="#BFA47E" stroke-width="10" stroke-dasharray="12 8"/>
+    <rect x="276" y="-2" width="68" height="20" fill="#A68A62"/><path d="M296 18V8a14 14 0 0 1 28 0V18Z" fill="#7A6446"/>
+    <rect x="290" y="-16" width="40" height="14" fill="#C9433C"/><path d="M274 -12H346L334 -22H286Z" fill="#3D6B5A"/>
+    <rect x="297" y="-30" width="26" height="9" fill="#C9433C"/><path d="M284 -26H336L326 -34H294Z" fill="#3D6B5A"/><circle cx="310" cy="-36" r="3" fill="#F5C24C"/>
+    <path d="M28 -30H100" fill="none" stroke="#8B6B4E" stroke-width="6" stroke-linecap="round"/>
+    <g class="bell"><path d="M64 -30V-22" fill="none" stroke="#8B6B4E" stroke-width="3"/><path d="M50 4C50 -14 54 -22 64 -22S78 -14 78 4L82 8H46Z" fill="#B8863B"/>
+    <path d="M52 -6H76" fill="none" stroke="#8E6528" stroke-width="3"/><circle cx="64" cy="10" r="4" fill="#8E6528"/></g>
+    <path class="dong" d="M90 -16q8 10 0 20M98 -22q12 16 0 32" fill="none" stroke="#D9A85C" stroke-width="4" stroke-linecap="round"/>`,
+    over: `<g class="peek"><path d="M314 300V276C314 266 324 262 336 262S358 266 358 276V300Z" fill="#B88A64"/>
+    <path d="M318 280H354M318 290H354" fill="none" stroke="#9C7250" stroke-width="3"/>
+    <circle cx="342" cy="228" r="7" fill="#9C7250"/><circle cx="336" cy="246" r="15" fill="#C99A72"/>
+    <path d="M330 246h.1M342 246h.1" fill="none" stroke="#5E4630" stroke-width="5" stroke-linecap="round"/>
+    <path d="M330 254Q336 258 342 254" fill="none" stroke="#5E4630" stroke-width="3" stroke-linecap="round"/></g>`,
+  }),
+  'away-trip-shanghai': trip('旅行 · 上海', '远处是东方明珠和陆家嘴的高楼，黄浦江上一条渡轮慢慢开过，路边一笼小笼包冒着热气。', {
+    css: `.glow{animation:glow 1.6s ease-in-out infinite}
+    .ferry{animation:ferry 7s ease-in-out infinite}
+    .steam{animation:steam 2s ease-in-out infinite}
+    @keyframes glow{50%{opacity:.55}}
+    @keyframes ferry{0%,100%{transform:translateX(0)}50%{transform:translateX(70px)}}
+    @keyframes steam{0%,100%{opacity:0;transform:translateY(6px)}50%{opacity:.9;transform:translateY(-6px)}}`,
+    under: `<rect x="24" y="30" width="336" height="14" fill="#CFE6F2"/>
+    <g fill="#DCE3EC"><path d="M214 30V-4L222 -16L230 -4V30Z"/><path d="M240 30V-22L256 -30V30Z"/><rect x="262" y="6" width="22" height="24"/><rect x="340" y="0" width="20" height="30"/></g>
+    <path d="M244 -18h8v6h-8Z" fill="#FFFFFF"/>
+    <path d="M304 30L313 -10M328 30L319 -10" fill="none" stroke="#B5BCC6" stroke-width="5"/><rect x="314" y="-28" width="4" height="26" fill="#B5BCC6"/>
+    <path d="M316 -29V-36" fill="none" stroke="#B5BCC6" stroke-width="3"/>
+    <circle class="glow" cx="316" cy="-2" r="11" fill="#E86AA0"/><circle class="glow" cx="316" cy="-25" r="6" fill="#E86AA0"/>
+    <g class="ferry"><path d="M30 30H84L76 42H38Z" fill="#E5534B"/><rect x="40" y="18" width="30" height="12" rx="2" fill="#FFFDF6" stroke="#C9CED6" stroke-width="2"/>
+    <path d="M46 24h4M54 24h4M62 24h4" fill="none" stroke="#7FA7C9" stroke-width="3"/></g>`,
+    over: `<path class="steam" d="M46 262q-5-7 0-14t0-14M62 262q-5-7 0-14" fill="none" stroke="#D8CFC2" stroke-width="4" stroke-linecap="round"/>
+    <rect x="28" y="274" width="54" height="24" rx="6" fill="#D9A85C"/><path d="M28 286H82" fill="none" stroke="#B9873E" stroke-width="3"/>
+    <ellipse cx="55" cy="274" rx="27" ry="7" fill="#E8BF77"/><ellipse cx="55" cy="275" rx="22" ry="5" fill="#C9984F"/>
+    <g fill="#FFF6E6"><circle cx="44" cy="271" r="7"/><circle cx="56" cy="269" r="7"/><circle cx="68" cy="271" r="7"/></g>`,
+  }),
+
+  // East Asia
+  'away-trip-tokyo': trip('旅行 · 东京', '远处是红白相间的东京塔和亮着霓虹的楼，路边一只招财猫不停地招手。', {
+    css: `.paw{animation:beckon .7s ease-in-out infinite;transform-origin:350px 252px}
+    .neon{animation:neon 1.2s steps(1) infinite}
+    @keyframes beckon{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}
+    @keyframes neon{50%{opacity:.25}}`,
+    under: `<g fill="#E3E6F0"><rect x="250" y="-2" width="26" height="46"/><rect x="280" y="-18" width="22" height="62"/><rect x="306" y="4" width="24" height="40"/><rect x="334" y="-10" width="26" height="54"/></g>
+    <g class="neon"><rect x="283" y="-12" width="16" height="22" rx="3" fill="#FF7A93"/><path d="M287 -6h8M287 0h8M291 -8v14" fill="none" stroke="#FFFFFF" stroke-width="2"/></g>
+    <g fill="none" stroke-linecap="round"><path d="M56 -36V-18" stroke="#B5BCC6" stroke-width="3"/><path d="M56 -18L34 128M56 -18L78 128" stroke="#E5534B" stroke-width="7"/>
+    <path d="M50 30L68 72M62 30L44 72M44 100H70" stroke="#E5534B" stroke-width="3"/></g>
+    <rect x="44" y="14" width="24" height="9" rx="2" fill="#FFFFFF" stroke="#E5534B" stroke-width="3"/><rect x="40" y="50" width="32" height="10" rx="2" fill="#FFFFFF" stroke="#E5534B" stroke-width="3"/>`,
+    over: `<path d="M318 300V268C318 256 326 250 338 250S358 256 358 268V300Z" fill="#FFFDF6" stroke="#E1DCD3" stroke-width="2"/>
+    <path d="M322 262Q338 270 354 262" fill="none" stroke="#E5534B" stroke-width="5"/><circle cx="338" cy="268" r="4" fill="#F5C24C"/>
+    <path d="M324 230L326 218L334 226ZM352 230L350 218L342 226Z" fill="#FFFDF6" stroke="#E1DCD3" stroke-width="2"/>
+    <circle cx="338" cy="240" r="15" fill="#FFFDF6" stroke="#E1DCD3" stroke-width="2"/><circle cx="345" cy="232" r="4" fill="#F2B33D"/>
+    <path d="M331 238q2-3 4 0M341 238q2-3 4 0M336 245q2 2 4 0" fill="none" stroke="#3A3A48" stroke-width="2" stroke-linecap="round"/>
+    <g class="paw"><path d="M350 252V232" fill="none" stroke="#E1DCD3" stroke-width="13" stroke-linecap="round"/><path d="M350 252V232" fill="none" stroke="#FFFDF6" stroke-width="9" stroke-linecap="round"/></g>`,
+  }),
+  'away-trip-seoul': trip('旅行 · 首尔', '远处是宫殿的屋檐和山顶的南山塔，猪举着应援手灯挥个不停，爱心往上冒。', {
+    css: `.stick{animation:cheer .8s ease-in-out infinite;transform-origin:56px 300px}
+    .h1{animation:float 1.6s ease-out infinite}.h2{animation:float 1.6s ease-out -.8s infinite}
+    @keyframes cheer{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+    @keyframes float{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-50px)}}
+    ${BLINK_CSS}`,
+    under: `<path d="M196 44Q274 -18 360 30V44Z" fill="#A8D49A"/>
+    <rect x="270" y="-20" width="8" height="32" fill="#E6ECF2" stroke="#C9D3DE" stroke-width="2"/><ellipse cx="274" cy="-14" rx="13" ry="6" fill="#C9D3DE"/>
+    <path d="M274 -20V-33" fill="none" stroke="#B5BCC6" stroke-width="3"/><circle class="tip" cx="274" cy="-34" r="3" fill="#E5534B"/>
+    <rect x="34" y="14" width="56" height="24" fill="#F3EEDF"/><path d="M40 14V38M84 14V38M62 14V38" fill="none" stroke="#C9433C" stroke-width="5"/>
+    <path d="M22 16Q62 4 102 16L96 4Q62 -6 28 4Z" fill="#3F5F6B"/><path d="M28 4Q62 -6 96 4" fill="none" stroke="#5B7F8C" stroke-width="3"/>`,
+    over: `${heart(28, 200, .5, '#FF7AC0', 'h1')}${heart(50, 212, .4, '#FFB3D9', 'h2')}
+    <g class="stick"><rect x="52" y="250" width="8" height="48" rx="4" fill="#5B5F73"/><circle cx="56" cy="238" r="16" fill="#FFB3D9"/><circle cx="56" cy="238" r="10" fill="#FF7AC0"/>
+    <path transform="translate(50 234) scale(.33)" d="M0 0c0-10 13-15 18-5 5-10 18-5 18 5 0 13-18 23-18 23S0 13 0 0Z" fill="#FFFFFF"/></g>`,
+  }),
+  'away-trip-ulaanbaatar': trip('旅行 · 乌兰巴托', '草原上几座蒙古包冒着炊烟，一只雄鹰在天上盘旋，路边的小羊低头吃草。', {
+    css: `.eagle{animation:soar 6s ease-in-out infinite}
+    .smoke{animation:smoke 2.4s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .smoke2{animation:smoke 2.4s ease-out -1.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .graze{animation:graze 1.8s ease-in-out infinite;transform-origin:36px 276px}
+    @keyframes soar{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(40px,-8px) rotate(6deg)}50%{transform:translate(80px,0) rotate(0)}75%{transform:translate(40px,8px) rotate(-6deg)}}
+    @keyframes smoke{0%{opacity:0;transform:translate(0,0) scale(.6)}30%{opacity:.8}100%{opacity:0;transform:translate(10px,-30px) scale(1.4)}}
+    @keyframes graze{0%,100%{transform:rotate(0)}50%{transform:rotate(-20deg)}}`,
+    under: `<path d="M24 44Q100 8 180 30T360 22V44Z" fill="#BFDDA0"/>
+    <rect x="268" y="10" width="52" height="26" fill="#FFFDF6" stroke="#D9D2C0" stroke-width="2"/><rect x="268" y="16" width="52" height="4" fill="#4E7FB0"/>
+    <path d="M262 12Q294 -14 326 12Z" fill="#F3EEDF" stroke="#D9D2C0" stroke-width="2"/><rect x="288" y="20" width="12" height="16" fill="#E5534B"/><rect x="306" y="-8" width="5" height="10" fill="#8B6B4E"/>
+    <circle class="smoke" cx="308" cy="-14" r="5" fill="#E6ECF2"/><circle class="smoke2" cx="308" cy="-14" r="4" fill="#E6ECF2"/>
+    <rect x="332" y="22" width="30" height="16" fill="#FFFDF6" stroke="#D9D2C0" stroke-width="2"/><path d="M328 24Q346 8 364 24Z" fill="#F3EEDF" stroke="#D9D2C0" stroke-width="2"/>
+    <g class="eagle"><path d="M30 -14Q42 -24 54 -16Q60 -20 66 -16Q78 -24 90 -14Q76 -14 66 -8L60 -4L54 -8Q44 -14 30 -14Z" fill="#6E5239"/><circle cx="60" cy="-13" r="3" fill="#FFFDF6"/></g>`,
+    over: `<path d="M42 286V298M64 286V298" fill="none" stroke="#5B5F73" stroke-width="4" stroke-linecap="round"/>
+    <path d="M34 284a10 10 0 0 1 4-18 10 10 0 0 1 18-4 10 10 0 0 1 18 6 9 9 0 0 1-2 18H40a8 8 0 0 1-6-2Z" fill="#FFFDF6" stroke="#D9D2C0" stroke-width="2"/>
+    <g class="graze"><ellipse cx="32" cy="280" rx="7" ry="9" fill="#5B5F73"/><circle cx="30" cy="278" r="1.5" fill="#FFFFFF"/></g>`,
+  }),
+
+  // South & Southeast Asia
+  'away-trip-bangkok': trip('旅行 · 曼谷', '远处是金顶的寺庙和高高的郑王庙塔，路边一辆嘟嘟车颠颠地等客。', {
+    css: `.tuk{animation:tuk .3s ease-in-out infinite}
+    .puff{animation:puff 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes tuk{50%{transform:translateY(-3px)}}
+    @keyframes puff{0%{opacity:.8;transform:translate(0,0) scale(.5)}100%{opacity:0;transform:translate(14px,-8px) scale(1.5)}}`,
+    under: `<path d="M20 40L62 6L104 40Z" fill="#C9433C"/><path d="M34 14L62 -14L90 14Z" fill="#C9433C"/>
+    <path d="M20 40L62 6L104 40M34 14L62 -14L90 14" fill="none" stroke="#F2B33D" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M62 -14V-32M20 40q-6-8 2-12M104 40q6-8-2-12" fill="none" stroke="#F2B33D" stroke-width="4" stroke-linecap="round"/>
+    <path d="M304 -34L308 -18L314 0L318 22L322 44H286L290 22L294 0L300 -18Z" fill="#E8D7B0"/>
+    <path d="M296 -4H312M292 18H316M300 -20H308" fill="none" stroke="#C9B48A" stroke-width="3"/>
+    <path d="M262 44L266 20L272 8L278 20L282 44ZM326 44L330 20L336 8L342 20L346 44Z" fill="#E8D7B0"/>`,
+    over: `<circle class="puff" cx="364" cy="284" r="6" fill="#D8D8D8"/>
+    <g class="tuk"><path d="M312 288V270Q312 258 324 256L340 254V288Z" fill="#2F9C95"/><rect x="336" y="254" width="26" height="34" fill="#2F9C95"/>
+    <rect x="306" y="244" width="58" height="9" rx="3" fill="#F5C24C"/><path d="M314 253V262M340 253V256" fill="none" stroke="#5B5F73" stroke-width="3"/>
+    <circle cx="312" cy="276" r="4" fill="#FFE27A"/>
+    <circle cx="324" cy="292" r="8" fill="#3A3E52"/><circle cx="352" cy="292" r="8" fill="#3A3E52"/><circle cx="324" cy="292" r="3" fill="#C9CED6"/><circle cx="352" cy="292" r="3" fill="#C9CED6"/></g>`,
+  }),
+  'away-trip-singapore': trip('旅行 · 新加坡', '鱼尾狮的水柱哗哗地喷，远处是顶着船的金沙酒店，路边一棵擎天树闪着灯。', {
+    css: `.spout{animation:spout .6s linear infinite}
+    @keyframes spout{to{stroke-dashoffset:-28}}
+    ${TWINKLE_CSS}`,
+    under: `<g fill="#DCE3EC"><path d="M262 44L266 -4H280L278 44Z"/><path d="M292 44L294 -4H308L308 44Z"/><path d="M322 44L322 -4H336L340 44Z"/></g>
+    <path d="M250 -10H350L344 -3H256Z" fill="#B9C2CC"/>
+    <path d="M24 78H74L70 64H28Z" fill="#B9AE9A"/>
+    <path d="M34 64C26 52 30 36 44 26L60 30C66 44 62 58 52 64Z" fill="#F4F1EA" stroke="#C9C1B0" stroke-width="2"/>
+    <path d="M36 50q6-4 12 0M38 58q6-4 12 0" fill="none" stroke="#C9C1B0" stroke-width="2"/>
+    <path d="M30 70Q20 60 28 46" fill="none" stroke="#F4F1EA" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="50" cy="14" r="17" fill="#E6DCC8"/><circle cx="56" cy="14" r="12" fill="#F4F1EA" stroke="#C9C1B0" stroke-width="2"/>
+    <circle cx="60" cy="10" r="2" fill="#5B5F73"/><path d="M62 18h6" fill="none" stroke="#C9C1B0" stroke-width="3" stroke-linecap="round"/>
+    <path class="spout" d="M68 16Q130 -40 200 30" fill="none" stroke="#8CCBEB" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 6"/>`,
+    over: `<path d="M336 300V250" fill="none" stroke="#8C6BB1" stroke-width="8"/><path d="M336 270L322 250M336 270L350 250" fill="none" stroke="#8C6BB1" stroke-width="3"/>
+    <path d="M314 232Q336 256 358 232Z" fill="#8C6BB1"/><path d="M316 232H356" fill="none" stroke="#6FB35E" stroke-width="6" stroke-linecap="round"/>
+    ${sparkle(322, 226, 6, '#FFE27A', 'tw')}${sparkle(338, 222, 7, '#FFE27A', 'tw2')}${sparkle(352, 226, 6, '#FFE27A', 'tw3')}`,
+  }),
+  'away-trip-newdelhi': trip('旅行 · 新德里', '远处是莲花寺和印度门，路边一只孔雀把尾巴哗地一下开屏。', {
+    css: `.fan{animation:fan 3s ease-in-out infinite;transform-origin:332px 290px}
+    @keyframes fan{0%,100%{transform:scale(.55,.4)}40%,70%{transform:scale(1,1)}}`,
+    under: `<g fill="#F4F1EA" stroke="#D9D2C0" stroke-width="2"><path d="M26 40Q30 16 48 8Q46 26 52 40Z"/><path d="M98 40Q94 16 76 8Q78 26 72 40Z"/><path d="M40 40Q44 4 62 -6Q80 4 84 40Z"/></g>
+    <rect x="272" y="-22" width="64" height="66" fill="#D9A57A"/><path d="M292 44V10a12 12 0 0 1 24 0V44Z" fill="#FFFFFF"/>
+    <rect x="268" y="-28" width="72" height="8" fill="#C88E62"/><path d="M290 -28Q304 -40 318 -28Z" fill="#C88E62"/>
+    <path d="M278 -12H286M322 -12H330" fill="none" stroke="#C88E62" stroke-width="3"/>`,
+    over: `<g class="fan"><path d="M294 290A38 38 0 0 1 370 290Z" fill="#3E9C6E"/>
+    ${[[306, 280], [314, 269], [327, 262], [342, 264], [353, 272], [358, 280]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="6" fill="#F5C24C"/><circle cx="${x}" cy="${y}" r="4" fill="#2E5FA8"/>`).join('')}</g>
+    <path d="M330 296V300M336 296V300" fill="none" stroke="#C9A276" stroke-width="3"/>
+    <ellipse cx="332" cy="284" rx="9" ry="13" fill="#2E5FA8"/><path d="M328 274Q324 262 326 254" fill="none" stroke="#2E5FA8" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="326" cy="252" r="5" fill="#2E5FA8"/><path d="M321 251L315 253L321 255Z" fill="#F5C24C"/><circle cx="324" cy="251" r="1.5" fill="#FFFFFF"/>
+    <path d="M326 247L324 240M328 247L331 240" fill="none" stroke="#2E5FA8" stroke-width="2"/>`,
+  }),
+
+  // Europe
+  'away-trip-paris': trip('旅行 · 巴黎', '远处的埃菲尔铁塔一闪一闪，旁边是凯旋门，背包里插着一根比猪还长的法棍。', {
+    css: TWINKLE_CSS,
+    under: `${EIFFEL}
+    ${sparkle(48, 10, 7, '#FFE27A', 'tw')}${sparkle(66, 44, 6, '#FFE27A', 'tw2')}${sparkle(42, 78, 6, '#FFE27A', 'tw3')}${sparkle(58, -22, 5, '#FFE27A', 'tw2')}
+    <path d="M270 44V-14H346V44H326V18a18 18 0 0 0-36 0V44Z" fill="#E8DCC4"/><rect x="266" y="-22" width="84" height="10" fill="#D9C9A8"/>
+    <path d="M276 -4H284M332 -4H340" fill="none" stroke="#D9C9A8" stroke-width="4"/>`,
+    back: BAGUETTE,
+  }),
+  'away-trip-rome': trip('旅行 · 罗马', '远处是缺了一角的斗兽场和柏树，猪往许愿池里抛了一枚硬币。', {
+    css: `.coin{animation:toss 2.4s ease-in infinite}
+    .ripple{animation:ripple 2.4s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes toss{0%{opacity:0;transform:translate(0,0)}10%{opacity:1}25%{transform:translate(-14px,-26px)}50%{opacity:1;transform:translate(-32px,30px)}51%,100%{opacity:0;transform:translate(-32px,30px)}}
+    @keyframes ripple{0%,50%{opacity:0;transform:scale(.3)}55%{opacity:1}100%{opacity:0;transform:scale(1.4)}}`,
+    under: `<path d="M224 44V-2Q288 -22 352 -14L346 2L356 16L350 44Z" fill="#E2C39A"/>
+    <path d="M232 34H344" fill="none" stroke="#C49A6C" stroke-width="10" stroke-dasharray="7 6"/>
+    <path d="M232 14Q288 2 344 6" fill="none" stroke="#C49A6C" stroke-width="9" stroke-dasharray="6 6"/>
+    <path d="M232 -4Q288 -18 340 -10" fill="none" stroke="#C49A6C" stroke-width="5" stroke-dasharray="5 7"/>
+    <g fill="#5E8F52"><path d="M40 -16C50 6 52 50 48 90H32C28 50 30 6 40 -16Z"/><path d="M64 -28C74 -4 76 40 72 80H56C52 40 54 -4 64 -28Z"/></g>`,
+    over: `<path d="M24 280H86L80 300H30Z" fill="#E6DCC8"/><ellipse cx="55" cy="280" rx="31" ry="7" fill="#9FD3E6"/>
+    <ellipse class="ripple" cx="54" cy="280" rx="10" ry="3" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+    <g class="coin"><circle cx="86" cy="244" r="6" fill="#F5C24C" stroke="#D99A2B" stroke-width="2"/></g>`,
+  }),
+  'away-trip-london': trip('旅行 · 伦敦', '远处的大本钟分针转啊转，头顶一朵乌云一直在下雨，路边一个红色电话亭。', {
+    css: `.minute{animation:spin 6s linear infinite;transform-origin:54px 14px}
+    .rain{animation:rain .7s linear infinite}.rain2{animation:rain .7s linear -.35s infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes rain{0%{opacity:0;transform:translate(0,0)}20%{opacity:.8}100%{opacity:0;transform:translate(-8px,40px)}}`,
+    under: `<rect x="38" y="-4" width="32" height="140" fill="#C9A86A"/><path d="M46 34V130M62 34V130" fill="none" stroke="#B39256" stroke-width="3"/>
+    <path d="M34 -4L54 -36L74 -4Z" fill="#6E5A3A"/><rect x="34" y="-6" width="40" height="5" fill="#A88A50"/>
+    <circle cx="54" cy="14" r="12" fill="#FFFDF6" stroke="#8B6B4E" stroke-width="3"/><path d="M54 14V8" fill="none" stroke="#3A3A48" stroke-width="3" stroke-linecap="round"/>
+    <g class="minute"><path d="M54 14H62" fill="none" stroke="#3A3A48" stroke-width="2" stroke-linecap="round"/></g>
+    <path d="M232 -2a16 16 0 0 1 28-12 20 20 0 0 1 38 4 14 14 0 0 1 4 28H236a12 12 0 0 1-4-20Z" fill="#B9C2CC"/>
+    <path d="M306 -10a12 12 0 0 1 22-8 14 14 0 0 1 26 4 10 10 0 0 1 2 20H310a9 9 0 0 1-4-16Z" fill="#C9D0D8"/>`,
+    over: `<g fill="none" stroke="#9FC3DA" stroke-width="3" stroke-linecap="round"><path class="rain" d="M250 22l-3 12M290 26l-3 12M330 18l-3 12"/><path class="rain2" d="M270 20l-3 12M310 24l-3 12M350 16l-3 12"/></g>
+    <path d="M318 226Q337 214 356 226Z" fill="#C42A23"/><rect x="320" y="226" width="34" height="74" rx="3" fill="#D8342C"/>
+    <rect x="324" y="230" width="26" height="6" fill="#2E2E3A"/>
+    <g fill="#F7E7C6"><rect x="325" y="242" width="10" height="12"/><rect x="339" y="242" width="10" height="12"/><rect x="325" y="258" width="10" height="12"/><rect x="339" y="258" width="10" height="12"/></g>`,
+  }),
+
+  // Americas
+  'away-trip-newyork': trip('旅行 · 纽约', '一辆黄色出租车开过布鲁克林大桥，后面是帝国大厦和高楼天际线。', {
+    css: `.taxi{animation:taxi 4s linear infinite}
+    @keyframes taxi{to{transform:translateX(300px)}}
+    ${BLINK_CSS}`,
+    under: `<g fill="#DCE3EC"><rect x="254" y="4" width="22" height="40"/><rect x="280" y="-6" width="16" height="50"/>
+    <path d="M300 44V-6H304V-16H308V-24H312V-16H316V-6H320V44Z"/><rect x="324" y="8" width="18" height="36"/><rect x="344" y="-2" width="16" height="46"/></g>
+    <path d="M310 -24V-33" fill="none" stroke="#C9D3DE" stroke-width="2"/><circle class="tip" cx="310" cy="-34" r="2.5" fill="#E5534B"/>
+    <rect x="50" y="-12" width="22" height="52" fill="#B98E6A"/><rect x="184" y="-12" width="22" height="52" fill="#B98E6A"/>
+    <path d="M54 30V4l3-6 3 6V30ZM62 30V4l3-6 3 6V30ZM188 30V4l3-6 3 6V30ZM196 30V4l3-6 3 6V30Z" fill="#FFFFFF"/>
+    <path d="M24 2Q42 20 61 -12M61 -12Q128 36 195 -12M195 -12Q218 14 240 30" fill="none" stroke="#8C7A68" stroke-width="3"/>
+    <path d="M80 10V30M100 16V30M120 18V30M140 18V30M160 16V30M176 8V30" fill="none" stroke="#B5A898" stroke-width="2"/>
+    <path d="M24 30H250" fill="none" stroke="#8C7A68" stroke-width="5"/>
+    <g class="taxi"><path d="M-24 18L-20 12H-10L-6 18Z" fill="#F5C24C"/><rect x="-30" y="17" width="28" height="9" rx="3" fill="#F5C24C"/>
+    <circle cx="-24" cy="27" r="3" fill="#3A3E52"/><circle cx="-8" cy="27" r="3" fill="#3A3E52"/></g>`,
+  }),
+  'away-trip-mexicocity': trip('旅行 · 墨西哥城', '远处一座阶梯金字塔，头顶挂着一串彩色剪纸小旗，风一吹就晃。', {
+    css: `.pp{animation:flutter 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
+    .pp2{animation:flutter 1.2s ease-in-out -.6s infinite;transform-box:fill-box;transform-origin:50% 0}
+    @keyframes flutter{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}`,
+    under: `<g fill="#C9A27A"><rect x="244" y="34" width="116" height="10"/><rect x="256" y="22" width="92" height="12"/><rect x="268" y="10" width="68" height="12"/><rect x="280" y="-2" width="44" height="12"/></g>
+    <rect x="290" y="-14" width="24" height="12" fill="#B5835A"/><path d="M302 -2V44" fill="none" stroke="#E2C39A" stroke-width="8"/>
+    <path d="M24 -30Q192 -6 360 -30" fill="none" stroke="#8B6B4E" stroke-width="2"/>
+    ${PAPEL}`,
+  }),
+  'away-trip-rio': trip('旅行 · 里约热内卢', '远处是山顶张开双臂的基督像和面包山的缆车，路边一只足球蹦蹦跳跳。', {
+    css: `.car{animation:car 5s ease-in-out infinite}
+    .ball{animation:ball .8s infinite}
+    .shade{animation:shade .8s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes car{0%,10%{transform:translate(0,0)}50%,60%{transform:translate(70px,-28px)}100%{transform:translate(0,0)}}
+    @keyframes ball{0%,100%{transform:translateY(0);animation-timing-function:ease-out}50%{transform:translateY(-34px);animation-timing-function:ease-in}}
+    @keyframes shade{0%,100%{transform:scale(1);animation-timing-function:ease-out}50%{transform:scale(.6);animation-timing-function:ease-in}}`,
+    under: `<rect x="24" y="36" width="336" height="8" fill="#BFE0F0"/>
+    <path d="M24 60Q48 4 70 -2Q90 6 118 44H24Z" fill="#8FBF7A"/>
+    <g fill="#F4F1EA" stroke="#D9D2C0" stroke-width="1"><rect x="68" y="-22" width="5" height="20"/><rect x="58" y="-20" width="25" height="4" rx="2"/><circle cx="70.5" cy="-25" r="3"/></g>
+    <path d="M222 44Q236 4 262 8Q274 20 280 44Z" fill="#8FBF7A"/><path d="M282 44Q288 -16 322 -20Q350 -16 360 8V44Z" fill="#7FAF6E"/>
+    <path d="M248 11L330 -22" fill="none" stroke="#8C7A68" stroke-width="2"/>
+    <g class="car"><path d="M254 9V14" fill="none" stroke="#8C7A68" stroke-width="2"/><rect x="246" y="13" width="16" height="11" rx="3" fill="#E5534B"/><rect x="249" y="16" width="10" height="4" fill="#FFFDF6"/></g>`,
+    over: `<ellipse class="shade" cx="50" cy="296" rx="12" ry="3" fill="#000000" opacity=".12"/>
+    <g class="ball"><circle cx="50" cy="278" r="12" fill="#FFFFFF" stroke="#3A3A48" stroke-width="2"/><path d="M50 272l5 4-2 6h-6l-2-6Z" fill="#3A3A48"/>
+    <path d="M38 276l4 1M62 276l-4 1M44 289l2-3M56 289l-2-3" fill="none" stroke="#3A3A48" stroke-width="2"/></g>`,
+  }),
+
+  // Middle East & Africa
+  'away-trip-dubai': trip('旅行 · 迪拜', '沙丘那头是帆船酒店和高耸入云的哈利法塔，空气里闪着金光。', {
+    css: `${TWINKLE_CSS}
+    ${BLINK_CSS}`,
+    under: `<path d="M24 44Q70 8 120 28Q160 10 220 36V44Z" fill="#EBCB8B"/>
+    <path d="M262 44L268 -14Q302 4 300 44Z" fill="#F4F6F8" stroke="#C9D3DE" stroke-width="2"/><path d="M268 -14V44" fill="none" stroke="#B5BCC6" stroke-width="3"/>
+    <path d="M270 6Q284 14 298 26" fill="none" stroke="#C9D3DE" stroke-width="2"/>
+    <path d="M324 44V12H328V-4H332V-20H336V-36H338V-20H342V-4H346V12H350V44Z" fill="#C9D6E3"/><circle class="tip" cx="337" cy="-36" r="2.5" fill="#E5534B"/>
+    ${sparkle(214, -18, 8, '#F5C24C', 'tw')}${sparkle(110, -24, 7, '#F5C24C', 'tw2')}${sparkle(300, -26, 6, '#F5C24C', 'tw3')}${sparkle(40, -10, 7, '#F5C24C', 'tw2')}`,
+  }),
+  'away-trip-cairo': trip('旅行 · 开罗', '远处是金字塔，一头骆驼慢悠悠地走着，太阳太大，猪戴上了墨镜。', {
+    css: `.camel{animation:camel .6s ease-in-out infinite}
+    .lg1{animation:stride .6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
+    .lg2{animation:stride .6s ease-in-out -.3s infinite;transform-box:fill-box;transform-origin:50% 0}
+    .heat{animation:heat 1.6s ease-in-out infinite}
+    @keyframes camel{50%{transform:translateY(-3px)}}
+    @keyframes stride{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-14deg)}}
+    @keyframes heat{0%,100%{opacity:0;transform:translateY(4px)}50%{opacity:.8;transform:translateY(-4px)}}`,
+    under: `<circle cx="200" cy="-18" r="13" fill="#FFD35A"/>
+    ${PYRAMIDS}
+    <path d="M24 44Q120 30 360 40V44Z" fill="#EBCB8B"/>
+    <g class="camel"><path class="lg1" d="M62 8V34" fill="none" stroke="#C49A5C" stroke-width="5" stroke-linecap="round"/><path class="lg2" d="M68 8V34" fill="none" stroke="#C49A5C" stroke-width="5" stroke-linecap="round"/>
+    <path class="lg2" d="M84 8V34" fill="none" stroke="#C49A5C" stroke-width="5" stroke-linecap="round"/><path class="lg1" d="M90 8V34" fill="none" stroke="#C49A5C" stroke-width="5" stroke-linecap="round"/>
+    <path d="M98 0q6 6 2 14" fill="none" stroke="#C49A5C" stroke-width="3"/>
+    <ellipse cx="74" cy="0" rx="24" ry="11" fill="#D9A86A"/><path d="M60 -6Q72 -26 86 -6Z" fill="#D9A86A"/>
+    <path d="M54 -2Q44 -10 46 -24" fill="none" stroke="#D9A86A" stroke-width="8" stroke-linecap="round"/>
+    <ellipse cx="42" cy="-26" rx="8" ry="5" fill="#D9A86A"/><circle cx="41" cy="-28" r="1.5" fill="#5E4630"/></g>`,
+    gear: WEAR.sunglasses.svg, wears: ['head', 'eyes'],
+    over: HEAT,
+  }),
+  'away-trip-nairobi': trip('旅行 · 内罗毕', '大草原上一棵平顶的金合欢树，夕阳下一只长颈鹿慢慢嚼着叶子，鸟儿飞过。', {
+    css: `.gir{animation:munch 2.4s ease-in-out infinite;transform-origin:352px 130px}
+    .bird{animation:fly 8s linear infinite}
+    @keyframes munch{0%,100%{transform:rotate(0)}50%{transform:rotate(-4deg)}}
+    @keyframes fly{0%{opacity:0;transform:translateX(40px)}10%,90%{opacity:1}100%{opacity:0;transform:translateX(-200px)}}`,
+    under: `<circle cx="268" cy="2" r="24" fill="#FFC27A"/>
+    <path d="M24 44Q100 34 180 40T360 36V44Z" fill="#E2C77E"/>
+    <path d="M50 130Q46 60 58 6M58 30Q70 14 84 4M56 20Q42 10 34 2" fill="none" stroke="#6E5239" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="60" cy="0" rx="40" ry="9" fill="#6FA25A"/><ellipse cx="54" cy="-8" rx="28" ry="7" fill="#82B36A"/>
+    <g class="bird"><path d="M200 -24q5-5 10 0q5-5 10 0M226 -14q4-4 8 0q4-4 8 0" fill="none" stroke="#5E4630" stroke-width="2.5" stroke-linecap="round"/></g>
+    <g class="gir"><path d="M346 130L338 -6L350 -8L360 130Z" fill="#F2C14E"/>
+    <g fill="#C98A3A"><circle cx="346" cy="10" r="4"/><circle cx="350" cy="40" r="5"/><circle cx="346" cy="70" r="4"/><circle cx="354" cy="100" r="5"/></g>
+    <path d="M340 -20V-30M346 -18V-28" fill="none" stroke="#C98A3A" stroke-width="3" stroke-linecap="round"/><circle cx="340" cy="-31" r="2.5" fill="#8B6B4E"/><circle cx="346" cy="-29" r="2.5" fill="#8B6B4E"/>
+    <ellipse cx="350" cy="-14" rx="5" ry="2.5" fill="#E0A94A"/><ellipse cx="334" cy="-12" rx="14" ry="8" fill="#F2C14E"/><ellipse cx="322" cy="-10" rx="6" ry="5" fill="#E0A94A"/>
+    <circle cx="334" cy="-15" r="2" fill="#5E4630"/></g>`,
+  }),
+
+  // Oceania & Antarctica
+  'away-trip-sydney': trip('旅行 · 悉尼', '远处是海港大桥和歌剧院的白贝壳顶，一只戴拳击手套的袋鼠蹦在前面。', {
+    css: `.roo{animation:hop .7s ease-in-out infinite;transform-origin:50px 298px}
+    @keyframes hop{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-22px) rotate(-6deg)}}`,
+    under: `<rect x="24" y="36" width="336" height="8" fill="#BFE0F0"/>
+    <path d="M24 30Q90 -34 156 30M24 30Q90 -18 156 30" fill="none" stroke="#8E9AA6" stroke-width="5"/>
+    <path d="M50 30V10M70 30V1M90 30V-2M110 30V1M130 30V10" fill="none" stroke="#B5BCC6" stroke-width="2"/>
+    <path d="M24 30H170" fill="none" stroke="#8E9AA6" stroke-width="5"/>
+    <rect x="18" y="14" width="12" height="22" fill="#C9C1B0"/><rect x="152" y="14" width="12" height="22" fill="#C9C1B0"/>
+    ${OPERA}`,
+    over: `<g class="roo"><path d="M62 290Q76 296 84 288" fill="none" stroke="#C68B59" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="46" cy="296" rx="12" ry="4" fill="#B07A4A"/>
+    <ellipse cx="54" cy="274" rx="13" ry="20" fill="#C68B59" transform="rotate(-15 54 274)"/><ellipse cx="48" cy="278" rx="7" ry="12" fill="#E2B88E" transform="rotate(-15 48 278)"/>
+    <ellipse cx="48" cy="234" rx="3" ry="8" fill="#C68B59" transform="rotate(15 48 234)"/><ellipse cx="42" cy="246" rx="11" ry="8" fill="#C68B59"/>
+    <circle cx="38" cy="244" r="2" fill="#3A3A48"/><circle cx="31" cy="247" r="2" fill="#3A3A48"/>
+    <circle cx="36" cy="264" r="6" fill="#E5534B"/><circle cx="44" cy="268" r="6" fill="#E5534B"/></g>`,
+  }),
+  'away-trip-auckland': trip('旅行 · 奥克兰', '绿油油的山坡上有一扇圆圆的霍比特人小门，远处是天空塔，路边一只几维鸟埋头啄地。', {
+    css: `.peck{animation:peck 1.2s ease-in-out infinite;transform-origin:340px 284px}
+    .cloud{animation:drift 6s ease-in-out infinite}
+    @keyframes peck{0%,40%,100%{transform:rotate(0)}55%{transform:rotate(-18deg)}70%{transform:rotate(0)}}
+    @keyframes drift{50%{transform:translateX(-20px)}}`,
+    under: `<path d="M24 44Q90 0 160 30T290 22T360 30V44Z" fill="#9CCB7E"/>
+    <g class="cloud"><path d="M200 -16a11 11 0 0 1 20-6 12 12 0 0 1 24 5 8 8 0 0 1 0 15H204a8 8 0 0 1-4-14Z" fill="#E6ECF2"/></g>
+    <rect x="312" y="-4" width="8" height="48" fill="#DCE3EC"/><ellipse cx="316" cy="-6" rx="14" ry="6" fill="#C9D3DE"/><ellipse cx="316" cy="-14" rx="9" ry="4" fill="#C9D3DE"/>
+    <path d="M316 -18V-36" fill="none" stroke="#B5BCC6" stroke-width="3"/>
+    <path d="M24 70Q30 6 70 4Q104 6 112 50Z" fill="#8FC06E"/>
+    <circle cx="58" cy="34" r="15" fill="#8B6B4E"/><circle cx="58" cy="34" r="12" fill="#4E8F4A"/><path d="M58 22V46M47 34H69" fill="none" stroke="#3F7A3C" stroke-width="2"/>
+    <circle cx="62" cy="34" r="2.5" fill="#F5C24C"/><circle cx="88" cy="30" r="6" fill="#F7E7C6" stroke="#8B6B4E" stroke-width="3"/>`,
+    over: `<path d="M334 292L330 300M346 292L344 300" fill="none" stroke="#C9A276" stroke-width="3" stroke-linecap="round"/>
+    <g class="peck"><ellipse cx="342" cy="280" rx="18" ry="13" fill="#8B6B4E"/><circle cx="326" cy="274" r="7" fill="#7A5A3A"/>
+    <path d="M320 276Q306 284 300 294" fill="none" stroke="#E2C39A" stroke-width="3" stroke-linecap="round"/><circle cx="324" cy="272" r="1.6" fill="#2E2E3A"/>
+    <path d="M336 274q6 3 12 0M340 284q6 3 12 0" fill="none" stroke="#6E5239" stroke-width="2"/></g>`,
+  }),
+  'away-trip-antarctica': trip('旅行 · 南极科考站', '冰山旁边是橙色的科考站，天上的极光一飘一飘，雪花里一只小企鹅跟在后面。', {
+    css: `.aur{animation:aur 4s ease-in-out infinite}.aur2{animation:aur 4s ease-in-out -2s infinite}
+    @keyframes aur{0%,100%{opacity:.35;transform:translateX(0)}50%{opacity:.8;transform:translateX(-16px)}}
+    ${BLINK_CSS}
+    ${SNOW_CSS}`,
+    under: `<path class="aur" d="M24 -18Q90 -38 160 -16T300 -20T440 -16" fill="none" stroke="#7EE0B5" stroke-width="10" stroke-linecap="round"/>
+    <path class="aur2" d="M24 -6Q100 -24 170 -4T320 -8T470 -4" fill="none" stroke="#A9B4F5" stroke-width="7" stroke-linecap="round"/>
+    <path d="M24 44Q120 32 220 40T360 36V44Z" fill="#EEF4F8"/>
+    <path d="M24 44L36 4L52 -6L64 10L80 2L96 44Z" fill="#E6F2FA" stroke="#CFE3F0" stroke-width="2"/><path d="M52 -6L58 44H40Z" fill="#CFE3F0"/>
+    <path d="M270 36V44M302 36V44M316 36V44M346 36V44" fill="none" stroke="#8E9AA6" stroke-width="3"/>
+    <rect x="264" y="14" width="44" height="22" rx="3" fill="#F28C3A"/><rect x="310" y="8" width="40" height="28" rx="3" fill="#E5734A"/>
+    <g fill="#CFE6F5"><rect x="270" y="20" width="8" height="6"/><rect x="284" y="20" width="8" height="6"/><rect x="318" y="16" width="8" height="6"/><rect x="332" y="16" width="8" height="6"/></g>
+    <path d="M340 8V-16M288 14V-6" fill="none" stroke="#8E9AA6" stroke-width="2"/><circle class="tip" cx="340" cy="-17" r="3" fill="#E5534B"/>
+    <path d="M288 -6h14l-4 4 4 4h-14Z" fill="#4E7FB0"/>`,
+    over: `${SNOW}
+    ${PENGUIN}`,
   }),
 }
 
