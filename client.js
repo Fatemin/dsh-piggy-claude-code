@@ -148,7 +148,7 @@ window.__ModuleLoader__.load({
         '智力': 'かしこさ', '魅力': 'みりょく', '武力': 'ちから', '体重': '体重', '年龄': '年齢',
         '再长 {kg} kg 就长成下一阶段了': 'あと {kg} kg で次の姿に育つよ',
         // [ST0004] the wardrobe
-        '衣柜': 'クローゼット', '跟着阶段': '成長に合わせる', '还没解锁：{hint}': 'まだ使えない：{hint}',
+        '衣柜': 'クローゼット', '跟着阶段': '成長に合わせる', '还没解锁：{hint}': 'まだ使えない：{hint}', '什么也没穿': 'なにも着ていない',
         '不在家': 'おでかけ中', '{n}s': '{n}秒', '语言': '言語',
         // care item picker
         '喂点什么？': 'なにを食べさせる？', '用哪个洗澡？': 'どれでおふろにする？',
@@ -308,7 +308,7 @@ window.__ModuleLoader__.load({
         '智力': 'Smarts', '魅力': 'Charm', '武力': 'Strength', '体重': 'Weight', '年龄': 'Age',
         '再长 {kg} kg 就长成下一阶段了': '{kg} kg more to grow into the next stage',
         // [ST0004] the wardrobe
-        '衣柜': 'Wardrobe', '跟着阶段': 'Match the stage', '还没解锁：{hint}': 'Locked: {hint}',
+        '衣柜': 'Wardrobe', '跟着阶段': 'Match the stage', '还没解锁：{hint}': 'Locked: {hint}', '什么也没穿': 'Nothing on',
         '不在家': 'out', '{n}s': '{n}s', '语言': 'Language',
         // care item picker
         '喂点什么？': 'What should it eat?', '用哪个洗澡？': 'Bathe with what?',
@@ -1262,7 +1262,7 @@ window.__ModuleLoader__.load({
       // [dsh-piggy-claude-code mod] the language switcher: one pill per language.
       '.dp-langs{grid-template-columns:repeat(3,1fr);margin-top:4px}',
       // [ST0004] the wardrobe: four pills a row, locked ones dashed and greyed.
-      '.dp-wear-head{align-items:center;margin-top:10px}',
+      '.dp-wear-head{align-items:center}',
       '.dp-wear{grid-template-columns:repeat(4,1fr);margin-top:6px}',
       '.dp-wear .dp-btn{padding:6px 2px;font-size:10px;flex-direction:column;gap:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.dp-wear .dp-btn[data-locked="true"]{border-style:dashed;color:var(--ac-text-disabled);background:var(--ac-bg-disabled);cursor:not-allowed}',
@@ -2534,7 +2534,6 @@ window.__ModuleLoader__.load({
         age.appendChild(el('b', null, p.ageLabel + ' · ' + p.stage.label))
         content.appendChild(age)
         growthNote()
-        wardrobe()
 
         content.appendChild(careGrid())
         if (picker !== null && (view.care[picker] ?? []).length > 0) content.appendChild(pickerPanel(picker))
@@ -2552,7 +2551,6 @@ window.__ModuleLoader__.load({
         nameRow()
         if (p.stage.line !== '') content.appendChild(el('div', 'dp-note', p.stage.line))
         growthNote()
-        wardrobe()
         if (p.memories.length > 0) {
           content.appendChild(el('div', 'dp-memo', p.memories.slice(-12).join('\n')))
         }
@@ -2568,15 +2566,15 @@ window.__ModuleLoader__.load({
       }
 
       /**
-       * [ST0004] The wardrobe: every decoration as a pill, worn ones pressed,
-       * locked ones dashed with how to earn them. One per slot — putting on a
-       * hat takes the other hat off. The pig above is the preview.
+       * [ST0004] The bag's wardrobe shelf: every decoration as a pill, worn ones
+       * pressed, locked ones dashed with how to earn them. One per slot —
+       * putting on a hat takes the other hat off. The pig itself is the preview.
        */
-      function wardrobe() {
+      function wardrobeShelf() {
         var p = view.pig
-        if (p.wardrobe.length === 0 || view.dead) return
+        var worn = p.wardrobe.filter(item => item.worn)
         var head = el('div', 'dp-row dp-wear-head')
-        head.appendChild(el('span', null, '👗 ' + T('衣柜')))
+        head.appendChild(el('span', null, worn.length === 0 ? T('什么也没穿') : worn.map(item => item.emoji + item.label).join(' · ')))
         var auto = button('dp-mini', { 'data-wear-auto': 'true', 'aria-pressed': String(p.outfit.auto) }, function () {
           if (!p.outfit.auto) send('wear', { auto: true })
         })
@@ -3505,21 +3503,25 @@ window.__ModuleLoader__.load({
       }
 
       /**
-       * [dsh-piggy-claude-code mod] The bag, as three shelves: what can be used
-       * up, and the two collections — souvenirs from travel, diplomas from
-       * school — each where it came from.
+       * [dsh-piggy-claude-code mod] The bag, as shelves: what can be used up,
+       * [ST0004] the wardrobe right beside it, and the two collections —
+       * souvenirs from travel, diplomas from school — each where it came from.
        */
       function bagTab() {
         var owned = ownedItems()
         var diplomas = view.pig !== null && Array.isArray(view.pig.diplomas) ? view.pig.diplomas : []
         var trips = souvenirTally()
+        // An older host has no wardrobe, and a grave wears nothing: no shelf then.
+        var clothes = view.pig !== null && !view.dead ? view.pig.wardrobe : []
         var shelves = [
           { key: 'items', label: '🎒 ' + T('消耗品') + ' ' + owned.reduce((sum, item) => sum + item.count, 0) },
+          { key: 'wardrobe', label: '👗 ' + T('衣柜') + ' ' + clothes.filter(item => item.unlocked).length + '/' + clothes.length, hidden: clothes.length === 0 },
           { key: 'travel', label: '🧳 ' + T('纪念品') + ' ' + (trips.total > 0 ? trips.have + '/' + trips.total : trips.have) },
           { key: 'school', label: '📜 ' + T('毕业证') + ' ' + diplomas.filter(d => d.count > 0).length + '/' + diplomas.length },
-        ]
+        ].filter(entry => entry.hidden !== true)
         var current = shelves.some(entry => entry.key === bagView) ? bagView : 'items'
-        var seg = el('div', 'dp-seg')
+        // Four shelves sit two by two; three still fit on one row.
+        var seg = el('div', 'dp-seg' + (shelves.length > 3 ? ' dp-seg-2' : ''))
         for (var s = 0; s < shelves.length; s += 1) {
           (function (entry) {
             var btn = button(null, { 'data-bag': entry.key }, function () {
@@ -3534,6 +3536,7 @@ window.__ModuleLoader__.load({
         }
         content.appendChild(seg)
         if (current === 'travel') souvenirShelf()
+        else if (current === 'wardrobe') wardrobeShelf()
         else if (current === 'school') diplomaShelf(diplomas)
         else itemShelf(owned)
       }
