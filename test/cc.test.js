@@ -144,6 +144,34 @@ test('server serves the shell, the client and upstream routes', async () => {
   }
 })
 
+test('the update route is there only when the host can update itself', async () => {
+  const plain = await startServer({ port: 0, statePath: tempState() })
+  try {
+    assert.equal((await fetch(new URL('pig/update', plain.url))).status, 404, 'the Claude Code panel has no updater')
+  } finally {
+    await plain.close()
+  }
+
+  const acts = []
+  const update = {
+    state: () => ({ current: '0.6.0', status: acts.includes('check') ? 'latest' : 'idle' }),
+    act: action => (['check', 'install'].includes(action) ? (acts.push(action), true) : false),
+  }
+  const server = await startServer({ port: 0, statePath: tempState(), update })
+  const route = new URL('pig/update', server.url)
+  const post = body => fetch(route, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+  try {
+    assert.deepEqual(await (await fetch(route)).json(), { current: '0.6.0', status: 'idle' })
+    assert.deepEqual(await (await post({ action: 'check' })).json(), { current: '0.6.0', status: 'latest' })
+    assert.equal((await post({ action: 'rm -rf' })).status, 400)
+    const foreign = await fetch(route, { method: 'POST', headers: { origin: 'http://evil.example', 'content-type': 'application/json' }, body: '{"action":"install"}' })
+    assert.equal(foreign.status, 403, 'other pages cannot start an install')
+    assert.deepEqual(acts, ['check'])
+  } finally {
+    await server.close()
+  }
+})
+
 test('server refuses foreign hosts, foreign origins and non-JSON posts', async () => {
   const server = await startServer({ port: 0, statePath: tempState() })
   const act = new URL('dsh-pig/act', server.url)

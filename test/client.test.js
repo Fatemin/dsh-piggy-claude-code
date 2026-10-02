@@ -2074,3 +2074,114 @@ test('a scratch card plays scratching first, then the verdict and the line', asy
   assert.equal(img().src, '/dsh-pig/art/lottery-jackpot.svg', 'then the jackpot')
   assert.ok(findByClass(hostOf(dom), 'dp-bubble').allText().includes('2000'))
 })
+
+// ===========================================================================
+// [ST0007] Updates, shown in the panel (the desktop app's /pig/update route)
+// ===========================================================================
+
+/** The fake DOM keeps cleared children around; the live element is the last one. */
+const lastByClass = (root, className) => {
+  let found
+  root.walk(node => {
+    if (typeof node.className === 'string' && node.className.split(/\s+/).includes(className)) found = node
+  })
+  return found
+}
+
+const UPDATE = { current: '0.6.0', status: 'available', latest: { version: '0.7.0', notes: '新衣柜' }, progress: 0, canInstall: true, error: null, message: '' }
+
+/** Route /pig/update to `update` (a 404 when null); everything else gets the snapshot. */
+function updateNet(update, onPost = () => {}) {
+  const calls = []
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, method: options?.method ?? 'GET' })
+    if (url === '/pig/update') {
+      if (update === null) return { ok: false, status: 404, async json() { return { error: 'no updater' } } }
+      if (options?.method === 'POST') update = onPost(JSON.parse(options.body).action, update) ?? update
+      return { ok: true, status: 200, async json() { return update } }
+    }
+    return { ok: true, status: 200, async json() { return SNAPSHOT } }
+  }
+  return calls
+}
+
+test('a new version shows above every tab, and the button installs it', async () => {
+  const { dom, poll } = await loadWithPoll()
+  const posts = []
+  updateNet(UPDATE, (action, now) => {
+    posts.push(action)
+    return action === 'install' ? { ...now, status: 'downloading', progress: 42 } : now
+  })
+  await poll()
+  assert.ok(hostOf(dom).allText().includes('有新版本 v0.7.0 啦'), 'the pig says so even with the panel closed')
+  openPanel(dom)
+
+  const card = lastByClass(contentOf(dom), 'dp-update')
+  assert.notEqual(card, undefined)
+  for (const line of ['有新版本 v0.7.0', '当前版本 v0.6.0', '新衣柜', '立即更新']) assert.ok(card.allText().includes(line), card.allText())
+  pickTab(dom, 'shop')
+  assert.notEqual(lastByClass(contentOf(dom), 'dp-update'), undefined, 'visible from any tab')
+
+  findLastByAttr(contentOf(dom), 'data-update', 'install').fire('click')
+  await settle()
+  await settle()
+  assert.deepEqual(posts, ['install'])
+  const downloading = lastByClass(contentOf(dom), 'dp-update')
+  assert.equal(downloading.attributes['data-update-status'], 'downloading')
+  assert.ok(downloading.allText().includes('正在下载 v0.7.0… 42%'), downloading.allText())
+  assert.equal(findByAttr(downloading, 'data-update', 'install'), undefined, 'no second install while downloading')
+})
+
+test('a failed install says why and offers to try again', async () => {
+  const { dom, poll } = await loadWithPoll()
+  updateNet({ ...UPDATE, error: 'install', message: 'download checksum mismatch' })
+  await poll()
+  openPanel(dom)
+  const card = lastByClass(contentOf(dom), 'dp-update')
+  assert.ok(card.allText().includes('更新失败：download checksum mismatch'), card.allText())
+  assert.ok(findByAttr(card, 'data-update', 'install').allText().includes('再试一次'))
+})
+
+test('a copy that cannot replace itself points to the download page', async () => {
+  const { dom, poll } = await loadWithPoll()
+  const posts = []
+  updateNet({ ...UPDATE, canInstall: false }, action => { posts.push(action) })
+  await poll()
+  openPanel(dom)
+  assert.equal(findLastByAttr(contentOf(dom), 'data-update', 'install'), undefined)
+  findLastByAttr(contentOf(dom), 'data-update', 'page').fire('click')
+  await settle()
+  assert.deepEqual(posts, ['page'])
+})
+
+test('the version row under the languages checks for updates', async () => {
+  const { dom, poll } = await loadWithPoll()
+  const posts = []
+  updateNet({ ...UPDATE, status: 'latest', latest: null }, (action, now) => {
+    posts.push(action)
+    return { ...now, status: 'checking' }
+  })
+  await poll()
+  openPanel(dom)
+  assert.equal(lastByClass(contentOf(dom), 'dp-update'), undefined, 'nothing new, no card')
+  const row = lastByClass(contentOf(dom), 'dp-version')
+  assert.ok(row.allText().includes('v0.6.0 · 已经是最新版本'), row.allText())
+  findByAttr(row, 'data-update', 'check').fire('click')
+  await settle()
+  await settle()
+  assert.deepEqual(posts, ['check'])
+  const checking = lastByClass(contentOf(dom), 'dp-version')
+  assert.ok(checking.allText().includes('正在检查更新…'), checking.allText())
+  assert.equal(findByAttr(checking, 'data-update', 'check').disabled, true)
+})
+
+test('a host without an updater shows nothing about versions and stops asking', async () => {
+  const { dom, poll } = await loadWithPoll()
+  const calls = updateNet(null)
+  await poll()
+  await poll()
+  openPanel(dom)
+  assert.equal(calls.filter(call => call.url === '/pig/update').length, 1, 'one 404 is enough')
+  assert.equal(lastByClass(contentOf(dom), 'dp-update'), undefined)
+  assert.equal(lastByClass(contentOf(dom), 'dp-version'), undefined)
+})

@@ -46,6 +46,10 @@ window.__ModuleLoader__.load({
       scratch: 'lottery-scratch', jackpot: 'lottery-jackpot', win: 'lottery-win', lose: 'lottery-lose',
     }
     var ACT_URL = '/dsh-pig/act'
+    // [ST0007] the desktop app's updater; other hosts answer 404 and the panel
+    // shows nothing about updates.
+    var UPDATE_URL = '/pig/update'
+    var UPDATE_STATUSES = ['idle', 'checking', 'latest', 'available', 'downloading', 'installing']
     var POLL_MS = 4000
     var MOUNTED = 'data-dsh-pig'
     var OPEN_KEY = 'dsh-pig:open'
@@ -266,6 +270,17 @@ window.__ModuleLoader__.load({
         '睡着时只会变饿，心情和清洁会慢慢恢复': 'ねている間はおなかがへるだけ。きげんときれいさは少しずつもどります',
         '跟着电脑一起睡的，电脑醒来它就起床': 'パソコンといっしょにねたので、パソコンがおきたらおきます',
         '它已经在睡了': 'もうねています', '它本来就醒着': 'もうおきています',
+        // [ST0007] updates
+        '有新版本 v{version}': '新しいバージョン v{version} があります',
+        '当前版本 v{current}': 'いまのバージョン v{current}',
+        '立即更新': '今すぐアップデート', '再试一次': 'もう一度ためす', '打开下载页面': 'ダウンロードページを開く',
+        '更新失败：{message}': 'アップデートに失敗しました：{message}',
+        '这份猪猪不能自己更新，请从下载页面下载新版本安装。': 'このアプリは自分でアップデートできません。ダウンロードページから新しいバージョンを入れてください。',
+        '正在下载 v{version}… {percent}%': 'v{version} をダウンロード中… {percent}%',
+        '正在安装 v{version}，猪猪马上回来…': 'v{version} をインストール中。すぐもどってくるよ…',
+        '检查更新': 'アップデートを確認', '正在检查更新…': 'アップデートを確認中…',
+        '检查更新失败': 'アップデートを確認できませんでした', '已经是最新版本': '最新バージョンです',
+        '有新版本 v{version} 啦，右键打开面板更新': '新しいバージョン v{version} が出たよ。右クリックでパネルを開いてアップデートしてね',
       },
       en: {
         // tabs
@@ -426,6 +441,17 @@ window.__ModuleLoader__.load({
         '睡着时只会变饿，心情和清洁会慢慢恢复': 'Asleep it only gets hungrier; mood and cleanliness slowly come back',
         '跟着电脑一起睡的，电脑醒来它就起床': 'It fell asleep with the computer and gets up when the computer wakes',
         '它已经在睡了': "It's already asleep", '它本来就醒着': "It's already awake",
+        // [ST0007] updates
+        '有新版本 v{version}': 'New version v{version}',
+        '当前版本 v{current}': 'You have v{current}',
+        '立即更新': 'Update now', '再试一次': 'Try again', '打开下载页面': 'Open the download page',
+        '更新失败：{message}': 'Update failed: {message}',
+        '这份猪猪不能自己更新，请从下载页面下载新版本安装。': 'This copy cannot update itself. Download the new version from the download page.',
+        '正在下载 v{version}… {percent}%': 'Downloading v{version}… {percent}%',
+        '正在安装 v{version}，猪猪马上回来…': 'Installing v{version}, back in a moment…',
+        '检查更新': 'Check for updates', '正在检查更新…': 'Checking for updates…',
+        '检查更新失败': 'Could not check for updates', '已经是最新版本': 'Up to date',
+        '有新版本 v{version} 啦，右键打开面板更新': 'v{version} is out! Right-click to open the panel and update',
       },
     }
     // English singulars, picked when `params.n === 1`. Japanese and Chinese
@@ -506,6 +532,23 @@ window.__ModuleLoader__.load({
     var arr = v => (Array.isArray(v) ? v : [])
     var num = (v, dflt) => (typeof v === 'number' && isFinite(v) ? v : dflt)
     var str = (v, dflt) => (typeof v === 'string' && v !== '' ? v : dflt)
+
+    /** [ST0007] The updater's state, or null for anything that is not one. */
+    function normalizeUpdate(raw) {
+      if (!isObj(raw) || typeof raw.current !== 'string' || UPDATE_STATUSES.indexOf(raw.status) < 0) return null
+      var latest = isObj(raw.latest) && typeof raw.latest.version === 'string'
+        ? { version: raw.latest.version, notes: str(raw.latest.notes, '') }
+        : null
+      return {
+        current: raw.current,
+        status: raw.status,
+        latest: latest,
+        progress: Math.max(0, Math.min(100, num(raw.progress, 0))),
+        canInstall: raw.canInstall === true,
+        error: raw.error === 'check' || raw.error === 'install' ? raw.error : null,
+        message: str(raw.message, ''),
+      }
+    }
 
     /**
      * Map any host payload — current, older, or truncated — onto the exact
@@ -1188,6 +1231,15 @@ window.__ModuleLoader__.load({
       '.dp-alert.dp-sleep{background:#f1effb;border-color:#d3cdef}',
       '.dp-alert.dp-dead{background:var(--ac-bg-disabled);border-color:var(--ac-border-light)}',
       '.dp-alert.dp-legacy{background:#fdf7e2;border-color:#f0dfa8}',
+      // [ST0007] a new version, and the version row under the languages.
+      '.dp-alert.dp-update{background:#e9f6ef;border-color:#b9e0c8}',
+      '.dp-alert.dp-update .dp-actions{margin-top:6px}',
+      '.dp-alert.dp-update .dp-progress{width:100%;height:9px;margin-top:5px}',
+      '.dp-update-notes{white-space:pre-line;max-height:5.6em;overflow:hidden}',
+      // The button never breaks; in a narrow column it moves under the text.
+      '.dp-version{align-items:center;flex-wrap:wrap;margin-top:8px;gap:4px 6px}',
+      '.dp-version span{flex:1 1 9em;min-width:0}',
+      '.dp-version .dp-mini{flex:none;white-space:nowrap}',
 
       /* ---------- buttons: secondary is a cream pill with soft elevation ---- */
       '.dp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}',
@@ -2227,6 +2279,11 @@ window.__ModuleLoader__.load({
       var reactTimer = null
       var stopped = false
       var busy = false
+      // [ST0007] the updater's last state (null: none, or not known yet), whether
+      // the host has one at all, and the versions the pig already announced.
+      var update = null
+      var updateRoute = true
+      var updateTold = {}
 
       // ---- animation ----
       /** The sprite the pig settles back to after a reaction; null = emoji. */
@@ -2966,7 +3023,68 @@ window.__ModuleLoader__.load({
           })(view.langs[i])
         }
         wrap.appendChild(row)
+        if (update !== null) wrap.appendChild(versionRow())
         return wrap
+      }
+
+      /**
+       * [ST0007] A newer version, above every tab: what is new and the update
+       * button, then the download and install progress. Null when there is
+       * nothing to say.
+       */
+      function updateAlert() {
+        if (update === null || update.latest === null) return null
+        var u = update
+        var box = el('div', 'dp-alert dp-update')
+        box.setAttribute('data-update-status', u.status)
+        if (u.status === 'downloading') {
+          box.appendChild(el('b', null, '⬇️ ' + T('正在下载 v{version}… {percent}%', { version: u.latest.version, percent: u.progress })))
+          var track = el('div', 'dp-progress')
+          var fill = document.createElement('i')
+          fill.style.width = u.progress + '%'
+          track.appendChild(fill)
+          box.appendChild(track)
+          return box
+        }
+        if (u.status === 'installing') {
+          box.appendChild(el('b', null, '🔧 ' + T('正在安装 v{version}，猪猪马上回来…', { version: u.latest.version })))
+          return box
+        }
+        if (u.status !== 'available') return null
+        box.appendChild(el('b', null, '⬆️ ' + T('有新版本 v{version}', { version: u.latest.version })))
+        box.appendChild(el('div', 'dp-dim', T('当前版本 v{current}', { current: u.current })))
+        if (u.latest.notes !== '') box.appendChild(el('div', 'dp-line dp-dim dp-update-notes', u.latest.notes))
+        if (u.error === 'install') box.appendChild(el('div', 'dp-line', T('更新失败：{message}', { message: u.message })))
+        if (!u.canInstall) box.appendChild(el('div', 'dp-line dp-dim', T('这份猪猪不能自己更新，请从下载页面下载新版本安装。')))
+        var actions = el('div', 'dp-actions')
+        var go = u.canInstall
+          ? button('dp-btn dp-btn-wide', { 'data-update': 'install' }, function () { updateAct('install') })
+          : button('dp-btn dp-btn-wide', { 'data-update': 'page' }, function () { updateAct('page') })
+        go.appendChild(el('span', null, u.canInstall ? '⬆️' : '🌐'))
+        go.appendChild(el('span', null, u.canInstall
+          ? T(u.error === 'install' ? '再试一次' : '立即更新')
+          : T('打开下载页面')))
+        actions.appendChild(go)
+        box.appendChild(actions)
+        return box
+      }
+
+      /** [ST0007] The running version and a way to look for a newer one. */
+      function versionRow() {
+        var u = update
+        var row = el('div', 'dp-row dp-version')
+        var said = u.status === 'checking' ? T('正在检查更新…')
+          : u.error === 'check' ? T('检查更新失败')
+          : u.latest !== null ? T('有新版本 v{version}', { version: u.latest.version })
+          : u.status === 'latest' ? T('已经是最新版本')
+          : ''
+        row.appendChild(el('span', null, '🔖 v' + u.current + (said === '' ? '' : ' · ' + said)))
+        var busyNow = u.status === 'checking' || u.status === 'downloading' || u.status === 'installing'
+        var again = button('dp-mini', { 'data-update': 'check' }, function () { updateAct('check') })
+        again.textContent = T('检查更新')
+        again.disabled = busyNow
+        row.appendChild(again)
+        return row
       }
 
       /** The pig's bag for one care action: pick what to spend. */
@@ -3725,6 +3843,8 @@ window.__ModuleLoader__.load({
           legacy.appendChild(el('div', null, T('金币、健康、打工、商店这些是新增的，重启 dsh（不是刷新页面）之后才会出现。')))
           content.appendChild(legacy)
         }
+        var updating = updateAlert()
+        if (updating !== null) content.appendChild(updating)
         if (view.pig !== null && view.dead) {
           var dead = el('div', 'dp-alert dp-dead')
           dead.appendChild(el('b', null, '🪦 ' + T(view.pig.soul ? '{name} 走了，灵魂还留在墓碑上 👻' : '{name} 走了',
@@ -3960,6 +4080,51 @@ window.__ModuleLoader__.load({
           if (stopped) return
           showBubble(T('连接不上宿主'), 4000)
         }
+        await pollUpdate()
+      }
+
+      /** [ST0007] Ask the host's updater how things stand; a 404 means it has none. */
+      async function pollUpdate() {
+        if (!updateRoute || stopped) return
+        try {
+          var res = await fetch(UPDATE_URL, { cache: 'no-store' })
+          if (res.status === 404) {
+            updateRoute = false
+            return
+          }
+          if (res.ok) setUpdate(await res.json())
+        } catch (error) { /* the next poll asks again */ }
+      }
+
+      async function updateAct(action) {
+        if (stopped) return
+        try {
+          var res = await fetch(UPDATE_URL, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ action: action }),
+          })
+          if (res.ok) setUpdate(await res.json())
+        } catch (error) {
+          showBubble(T('连接不上宿主'), 4000)
+        }
+      }
+
+      function setUpdate(raw) {
+        var before = JSON.stringify(update)
+        update = normalizeUpdate(raw)
+        if (update !== null && (update.status === 'checking' || update.status === 'downloading' || update.status === 'installing')) {
+          // Moving along: look again soon rather than at the next state poll.
+          window.setTimeout(pollUpdate, 1000)
+        }
+        if (JSON.stringify(update) === before) return
+        // The pig says it once per version, even with the panel closed.
+        if (update !== null && update.status === 'available' && update.latest !== null && !updateTold[update.latest.version]) {
+          updateTold[update.latest.version] = true
+          showBubble(T('有新版本 v{version} 啦，右键打开面板更新', { version: update.latest.version }), 6000)
+        }
+        renderContent()
+        renderSide()
       }
 
       async function send(action, extra) {

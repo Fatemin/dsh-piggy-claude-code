@@ -32,10 +32,8 @@ let tray = null
 let quitting = false
 let trayLang = null
 let panelWin = null
-const updater = createUpdater({
-  translate: (zh, params) => tr(currentLang(), zh, params),
-  onChange: () => refreshTray(true),
-})
+// Shown and driven from the panel, through the server's /pig/update route.
+const updater = createUpdater()
 
 /** The pig's language, read from the save (the panel may have just changed it). */
 function currentLang() {
@@ -77,10 +75,10 @@ function readJson(file, fallback) {
 
 async function openServer(statePath) {
   try {
-    return await startServer({ port: PREFERRED_PORT, statePath })
+    return await startServer({ port: PREFERRED_PORT, statePath, update: updater })
   } catch (error) {
     if (error?.code !== 'EADDRINUSE') throw error
-    return startServer({ port: 0, statePath })
+    return startServer({ port: 0, statePath, update: updater })
   }
 }
 
@@ -296,7 +294,6 @@ function trayMenu() {
       click: item => app.setLoginItemSettings({ openAtLogin: item.checked }),
     },
     { type: 'separator' },
-    ...updater.menuItems(),
     { label: t('退出'), click: () => app.quit() },
   ])
 }
