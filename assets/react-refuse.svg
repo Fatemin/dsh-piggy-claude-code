@@ -11,7 +11,7 @@
     .turn{animation:turn 1.6s ease-in-out infinite;transform-origin:190px 298px}
     .tail{animation-duration:.25s}
     .vein{animation:throb .4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
-    .puff{animation:puff 1.6s ease-out infinite}
+    .puff{animation:puff 1.6s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes turn{0%,100%{transform:scaleX(1)}15%,80%{transform:scaleX(-1)}35%,55%{transform:scaleX(-1) rotate(2deg)}45%{transform:scaleX(-1) rotate(-2deg)}}
     @keyframes throb{50%{transform:scale(1.25)}}
     @keyframes puff{0%,15%{opacity:0;transform:translate(0,0) scale(.6)}35%{opacity:1}70%,100%{opacity:0;transform:translate(26px,-10px) scale(1.3)}}

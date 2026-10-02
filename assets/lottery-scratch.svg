@@ -13,7 +13,7 @@
     .bits{animation:bits .3s ease-out infinite}
     @keyframes lean{50%{transform:rotate(1.5deg) translateY(2px)}}
     @keyframes scratch{0%,100%{transform:translateX(0)}50%{transform:translateX(44px)}}
-    @keyframes bits{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(-10px,20px)}}
+    @keyframes bits{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(-10px,20px)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
   <g class="lean">

@@ -9,7 +9,7 @@
     @keyframes wag{50%{transform:rotate(14deg)}}
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
     .sway{animation:sway 4.4s ease-in-out infinite;transform-origin:190px 298px}
-    .sigh{animation:sigh 4.4s ease-out infinite}
+    .sigh{animation:sigh 4.4s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     .dots{animation:dots 4.4s ease-in-out infinite}
     @keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(1.5deg) translateY(1px)}}
     @keyframes sigh{0%,40%{opacity:0;transform:translate(0,0) scale(.6)}55%{opacity:.9}100%{opacity:0;transform:translate(-26px,8px) scale(1.2)}}

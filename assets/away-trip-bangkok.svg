@@ -16,7 +16,7 @@
     .tuk{animation:tuk .3s ease-in-out infinite}
     .puff{animation:puff 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes tuk{50%{transform:translateY(-3px)}}
-    @keyframes puff{0%{opacity:.8;transform:translate(0,0) scale(.5)}100%{opacity:0;transform:translate(14px,-8px) scale(1.5)}}
+    @keyframes puff{0%{opacity:0;transform:translate(0,0) scale(.5)}15%{opacity:.8}100%{opacity:0;transform:translate(14px,-8px) scale(1.5)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
   <path d="M20 40L62 6L104 40Z" fill="#C9433C"/><path d="M34 14L62 -14L90 14Z" fill="#C9433C"/>
