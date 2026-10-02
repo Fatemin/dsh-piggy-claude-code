@@ -2,7 +2,7 @@
 
 > contract_id: `ART.ASSETS.V1` · status: `CURRENT`
 
-> 实施事实基线：ST0004（2026-10-02，装扮功能）。以后**每一项新美术**在设计阶段就要先归类为行为资产或装饰资产（写进 design handoff），再按本文的接口实现；`test/contracts.test.js` 逐个文件比对 `assets/`。
+> 实施事实基线：ST0004（2026-10-02，装扮功能）；ST0012（发布前修订）把部位 `neck` 改为 `waist`：猪没有脖子，领巾类饰品绑在腰上。V1 尚未发布，故原地修订、不升版本。以后**每一项新美术**在设计阶段就要先归类为行为资产或装饰资产（写进 design handoff），再按本文的接口实现；`test/contracts.test.js` 逐个文件比对 `assets/`。
 
 ## 1. 归属 Ownership
 
@@ -26,16 +26,18 @@
 
 ### 2.1 部位（绘制顺序，后画的在上）
 
+`waist` 是腰部：猪没有脖子，红领巾、围巾这类饰品像绑在身上一样画在前腿与后腿之间。
+
 <!-- contract:wear-slots -->
 ```json
-["face", "neck", "eyes", "head"]
+["face", "waist", "eyes", "head"]
 ```
 
 ### 2.2 装饰键 → 部位
 
 <!-- contract:wear-keys -->
 ```json
-{"bow": "head", "flatcap": "head", "mortarboard": "head", "strawhat": "head", "glasses": "eyes", "sunglasses": "eyes", "scarf": "neck", "whiskers": "face"}
+{"bow": "head", "flatcap": "head", "mortarboard": "head", "strawhat": "head", "glasses": "eyes", "sunglasses": "eyes", "scarf": "waist", "whiskers": "face"}
 ```
 
 解锁条件（`WEARABLES[].unlock`，全部从存档已有进度推导，**不新增解锁存档**）：
@@ -106,12 +108,12 @@
   "away-trip-ulaanbaatar": ["head"],
   "away-trip-xian": ["head"],
   "job-aitrainer": ["eyes"],
-  "job-coach": ["neck"],
+  "job-coach": ["waist"],
   "job-odd": ["head"],
-  "job-office": ["neck"],
+  "job-office": ["waist"],
   "job-rider": ["head"],
   "job-site": ["head"],
-  "job-sorting": ["neck"],
+  "job-sorting": ["waist"],
   "job-tea": ["head"],
   "job-vtuber": ["head"],
   "mood-asleep": ["head"],
@@ -120,7 +122,7 @@
   "react-graduate": ["head"],
   "study-doctor": ["eyes"],
   "study-graduate": ["eyes"],
-  "study-primary": ["neck"]
+  "study-primary": ["waist"]
 }
 ```
 

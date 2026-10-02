@@ -195,7 +195,7 @@ export const LOOKS = Object.freeze(['elder', 'original'])
 // ---------------------------------------------------------------------------
 
 /** Where a decoration sits on the pig, in drawing order (later is on top). */
-export const WEAR_SLOTS = Object.freeze(['face', 'neck', 'eyes', 'head'])
+export const WEAR_SLOTS = Object.freeze(['face', 'waist', 'eyes', 'head'])
 
 /**
  * Every decoration, one slot each; its drawing is assets/wear-<key>.svg.
@@ -216,7 +216,7 @@ export const WEARABLES = Object.freeze([
   WEARABLE({ key: 'strawhat', slot: 'head', label: '草帽', emoji: '👒', unlock: { kind: 'trip' } }),
   WEARABLE({ key: 'glasses', slot: 'eyes', label: '圆眼镜', emoji: '👓', unlock: { kind: 'lessons', stage: null } }),
   WEARABLE({ key: 'sunglasses', slot: 'eyes', label: '墨镜', emoji: '🕶️', unlock: { kind: 'region', region: 'mideast' } }),
-  WEARABLE({ key: 'scarf', slot: 'neck', label: '红领巾', emoji: '🧣', unlock: { kind: 'lessons', stage: 'primary' } }),
+  WEARABLE({ key: 'scarf', slot: 'waist', label: '红领巾', emoji: '🧣', unlock: { kind: 'lessons', stage: 'primary' } }),
   WEARABLE({ key: 'whiskers', slot: 'face', label: '白眉白胡子', emoji: '🧓', unlock: { kind: 'stage', stage: 'elder' } }),
 ])
 
