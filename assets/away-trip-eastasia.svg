@@ -36,8 +36,8 @@
     <path d="M236 58Q206 110 226 168" fill="none" stroke="#4E7FB0" stroke-width="9"/>
     <rect x="238" y="34" width="84" height="92" rx="26" fill="#6FA8DC" transform="rotate(8 280 80)"/>
     <rect x="248" y="86" width="64" height="32" rx="13" fill="#5A93C8" transform="rotate(8 280 80)"/>
-    <ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
-    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/>
+    <g transform="translate(150 58) scale(1.35) translate(-150 -58)"><ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
+    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/></g>
   </g>
   </g>
   <ellipse class="p1" cx="140" cy="-30" rx="7" ry="4" fill="#FFC2D1"/><ellipse class="p2" cx="220" cy="-30" rx="6" ry="4" fill="#FFB0C4"/><ellipse class="p3" cx="300" cy="-30" rx="7" ry="4" fill="#FFC2D1"/>

@@ -6,9 +6,9 @@
   <!-- wear:begin -->
   <g class="w-mortarboard" data-wear="mortarboard" data-slot="head"><style>.w-mortarboard-tassel{animation:w-mortarboard-swing 1.8s ease-in-out infinite;transform-origin:236px 52px}
     @keyframes w-mortarboard-swing{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}</style>
-    <path d="M126 58C124 76 200 82 208 62L206 48L130 52Z" fill="#3A3A48"/>
+    <g transform="translate(168 72) scale(1.35) translate(-168 -72)"><path d="M126 58C124 76 200 82 208 62L206 48L130 52Z" fill="#3A3A48"/>
     <path d="M94 50L168 26L242 46L168 70Z" fill="#2E2E3A"/><circle cx="168" cy="48" r="5" fill="#F5C24C"/>
     <path d="M168 48L236 52" fill="none" stroke="#F5C24C" stroke-width="3"/>
-    <g class="w-mortarboard-tassel"><path d="M236 52V84" fill="none" stroke="#F5C24C" stroke-width="4"/><rect x="230" y="82" width="12" height="16" rx="3" fill="#F5C24C"/></g></g>
+    <g class="w-mortarboard-tassel"><path d="M236 52V84" fill="none" stroke="#F5C24C" stroke-width="4"/><rect x="230" y="82" width="12" height="16" rx="3" fill="#F5C24C"/></g></g></g>
   <!-- wear:end -->
 </svg>
