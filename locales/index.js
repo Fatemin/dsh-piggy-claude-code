@@ -17,8 +17,12 @@ export default {
     '{n} 天': '{n}日',
     // --- host ---------------------------------------------------------------
     '[dsh-pig] 路由注册失败，猪只能用命令访问': '[dsh-pig] ルートを登録できませんでした。コマンドからだけ使えます',
-    '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
-      '[hatch|feed|bathe|play|pet|study <科目>|work <バイト>|trip <行き先>|shop|buy|use|weigh|look <おじいブタ|オリジナル>|lang <zh|ja|en>|about]',
+    '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
+      '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <バイト>|trip <行き先>|shop|buy|use|weigh|look <おじいブタ|オリジナル>|lang <zh|ja|en>|about]',
+    '😴 {name} 去睡觉了。睡着时只会变饿，心情和清洁会慢慢恢复。': '😴 {name}はおやすみ中。ねている間はおなかがへるだけで、きげんときれいさは少しずつもどります。',
+    '☀️ {name} 醒了。': '☀️ {name}がおきた。',
+    '{name} 已经在睡了。': '{name}はもうねています。',
+    '{name} 本来就醒着。': '{name}はもうおきています。',
     '🐖 猪摔了一跤：{error}': '🐖 ブタがころんじゃった：{error}',
     '猪': 'この子',
     // --- care ---------------------------------------------------------------
@@ -85,8 +89,12 @@ export default {
     '{n} 天': '{n} days',
     // --- host ---------------------------------------------------------------
     '[dsh-pig] 路由注册失败，猪只能用命令访问': '[dsh-pig] Could not register the routes; the pig is command-only',
-    '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
-      '[hatch|feed|bathe|play|pet|study <subject>|work <job>|trip <place>|shop|buy|use|weigh|look <elder|original>|lang <zh|ja|en>|about]',
+    '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
+      '[hatch|feed|bathe|play|pet|sleep|wake|study <subject>|work <job>|trip <place>|shop|buy|use|weigh|look <elder|original>|lang <zh|ja|en>|about]',
+    '😴 {name} 去睡觉了。睡着时只会变饿，心情和清洁会慢慢恢复。': '😴 {name} went to bed. Asleep it only gets hungrier; mood and cleanliness slowly come back.',
+    '☀️ {name} 醒了。': '☀️ {name} is awake.',
+    '{name} 已经在睡了。': '{name} is already asleep.',
+    '{name} 本来就醒着。': '{name} is already awake.',
     '🐖 猪摔了一跤：{error}': '🐖 The pig tripped: {error}',
     '猪': 'Your pig',
     // --- care ---------------------------------------------------------------

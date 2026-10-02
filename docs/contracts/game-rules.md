@@ -94,6 +94,7 @@
 5. 每个目的地的 `region` 是已登记地区。
 6. 面向玩家的 `label` 都是中文源串，并在 `locales/data.js` 有 ja 与 en 译文。
 7. 规则只在 `core.js`：快照、面板、终端渲染都不得重算报酬、冷却或价格（见 [HOST.SNAPSHOT.V1](host-snapshot.md) §1）。
+8. 睡觉与外出互斥：睡着时饱食照常下降，心情、清洁按 `SLEEP_RECOVERY_PER_MIN` 回升，疏于照顾累积的生病风险乘 `SLEEP_SICK_RISK_MULTIPLIER`；照顾动作和出门会先叫醒它；电脑唤醒（`auto`）只结束电脑休眠引起的睡眠。
 
 ## 4. 变更规则 Change rules
 

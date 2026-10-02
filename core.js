@@ -44,6 +44,8 @@ import {
   SHOP,
   SICK_RISK_MINUTES,
   SLEEPY_AFTER_MINUTES,
+  SLEEP_RECOVERY_PER_MIN,
+  SLEEP_SICK_RISK_MULTIPLIER,
   STAGE_HEALTH,
   SUBJECTS,
   THRESHOLDS,
@@ -327,6 +329,7 @@ function die(state, nowMs, why) {
   state.health = 0
   state.illness = null
   state.activity = null
+  state.sleep = null
   state.diedAt = nowMs
   state.stats.deaths = (state.stats.deaths ?? 0) + 1
   remember(state, `${word(state, why)} ${GRAVE.emoji}`, nowMs)
@@ -487,6 +490,9 @@ export function layEgg(nowMs) {
     lastTrip: null,
     illness: null,
     activity: null,
+    // [dsh-piggy-claude-code mod] `{ since, auto }` while asleep; `auto` marks
+    // a nap the computer's own sleep started, which its wake-up may end.
+    sleep: null,
     riskMinutes: 0,
     lastFedAt: 0,
     // [dsh-piggy-claude-code mod] when the last scratch card was bought.
@@ -593,6 +599,8 @@ export function migrate(raw) {
     state.activity = sanitizeActivity(raw.activity ?? raw.work)
   }
   state.dead = state.dead === true || state.health <= 0
+  // A pig cannot be asleep at home and out at the same time, nor in its grave.
+  state.sleep = state.activity === null && !state.dead ? sanitizeSleep(raw.sleep) : null
   state.hatched = state.hatched === true || state.xp > 0
   return state
 }
@@ -731,6 +739,13 @@ function sanitizeIllness(raw) {
   }
 }
 
+/** [mod] `{ since, auto }`, or null for awake and for anything malformed. */
+function sanitizeSleep(raw) {
+  const source = asObject(raw)
+  if (source === null || !Number.isFinite(source.since)) return null
+  return { since: source.since, auto: source.auto === true }
+}
+
 /** Accepts both the v4 `activity` record and the v3 `work` record. */
 function sanitizeActivity(raw) {
   const source = asObject(raw)
@@ -864,6 +879,9 @@ export function decay(state, nowMs) {
   // house. Getting this order wrong is what let a day trip come home sick.
   const away = state.activity !== null
   const speed = away ? AWAY_DECAY_MULTIPLIER : 1
+  // [dsh-piggy-claude-code mod] Asleep, only satiety keeps draining; mood and
+  // cleanliness come back, and neglect turns into illness half as fast.
+  const asleep = !away && isAsleep(state)
 
   // Settle whatever the pig was away doing before anything else, so its payout
   // lands in the right order relative to decay.
@@ -882,9 +900,14 @@ export function decay(state, nowMs) {
     return away ? Math.max(next, Math.min(value, AWAY_FLOOR)) : next
   }
   state.satiety = clamp100(drain(state.satiety, SATIETY_DECAY_PER_MIN))
-  // [mod] 佛系 (South & Southeast Asia complete): mood drains a quarter slower.
-  state.happiness = clamp100(drain(state.happiness, HAPPINESS_DECAY_PER_MIN * (hasPerk(state, 'zen') ? 0.75 : 1)))
-  state.cleanliness = clamp100(drain(state.cleanliness, CLEANLINESS_DECAY_PER_MIN))
+  if (asleep) {
+    state.happiness = clamp100(state.happiness + minutes * SLEEP_RECOVERY_PER_MIN.happiness)
+    state.cleanliness = clamp100(state.cleanliness + minutes * SLEEP_RECOVERY_PER_MIN.cleanliness)
+  } else {
+    // [mod] 佛系 (South & Southeast Asia complete): mood drains a quarter slower.
+    state.happiness = clamp100(drain(state.happiness, HAPPINESS_DECAY_PER_MIN * (hasPerk(state, 'zen') ? 0.75 : 1)))
+    state.cleanliness = clamp100(drain(state.cleanliness, CLEANLINESS_DECAY_PER_MIN))
+  }
 
   // Illness only comes from being left at home. A pig that was out living its
   // life has not been neglected, and coming back sick every trip is not a game.
@@ -892,7 +915,8 @@ export function decay(state, nowMs) {
     state.riskMinutes = 0
   } else {
     const neglected = state.satiety < THRESHOLDS.sickSatiety || state.cleanliness < THRESHOLDS.sickCleanliness
-    state.riskMinutes = neglected ? (state.riskMinutes ?? 0) + minutes : 0
+    const risk = minutes * (asleep ? SLEEP_SICK_RISK_MULTIPLIER : 1)
+    state.riskMinutes = neglected ? (state.riskMinutes ?? 0) + risk : 0
     // [mod] 抗寒体质 (Oceania complete): neglect takes twice as long to make it ill.
     if (state.illness === null && state.riskMinutes >= SICK_RISK_MINUTES * (hasPerk(state, 'hardy') ? 2 : 1)) {
       state.riskMinutes = 0
@@ -1261,6 +1285,8 @@ export function act(state, action, nowMs, itemKey) {
     }
   }
 
+  // [mod] Caring for a sleeping pig wakes it up first.
+  if (isAsleep(state)) rouse(state, nowMs, '被叫醒了 🥱')
   state.cooldowns = { ...(state.cooldowns ?? {}), [action]: nowMs }
   if (action === 'feed') { state.stats.feeds += 1; state.lastFedAt = nowMs }
   else if (action === 'bathe') state.stats.baths += 1
@@ -1323,6 +1349,55 @@ export function careOptions(state, action) {
 }
 
 // ---------------------------------------------------------------------------
+// [dsh-piggy-claude-code mod] Sleep
+//
+// The pig sleeps when put to bed, or when the computer itself goes to sleep.
+// What sleeping does to the bars lives in decay(); this is only getting in and
+// out of bed.
+// ---------------------------------------------------------------------------
+
+export function isAsleep(state) {
+  return state !== null && state !== undefined && state.sleep !== null && state.sleep !== undefined
+}
+
+/**
+ * Put the pig to bed. `auto` marks a nap the computer's own sleep started:
+ * only those end when the computer wakes up, so a pig put to bed by hand
+ * sleeps on until somebody wakes it.
+ */
+export function goToSleep(state, nowMs, { auto = false } = {}) {
+  if (state === null || state.hatched !== true) return { ok: false, reason: 'absent' }
+  decay(state, nowMs)
+  if (state.dead) return { ok: false, reason: 'dead' }
+  if (state.activity !== null) return { ok: false, reason: 'away' }
+  if (isAsleep(state)) return { ok: false, reason: 'asleep' }
+  state.sleep = { since: nowMs, auto: auto === true }
+  remember(state, say(state, auto === true ? '电脑休眠了，跟着睡着了 😴' : '去睡觉了 😴'), nowMs)
+  return { ok: true }
+}
+
+/**
+ * Wake the pig. With `auto` (the computer waking up) only a nap the computer
+ * started ends; a pig put to bed by hand answers `manual` and sleeps on.
+ */
+export function wakeUp(state, nowMs, { auto = false } = {}) {
+  if (state === null) return { ok: false, reason: 'absent' }
+  // Settle the night first, so the time asleep is counted as sleep.
+  decay(state, nowMs)
+  if (!isAsleep(state)) return { ok: false, reason: 'awake' }
+  if (auto === true && state.sleep.auto !== true) return { ok: false, reason: 'manual' }
+  rouse(state, nowMs, '睡醒了 ☀️')
+  return { ok: true }
+}
+
+/** Out of bed. Counts as activity, so it does not drop straight into dozing. */
+function rouse(state, nowMs, line) {
+  state.sleep = null
+  state.lastActiveAt = nowMs
+  remember(state, say(state, line), nowMs)
+}
+
+// ---------------------------------------------------------------------------
 // Activities: work · study · trip
 // ---------------------------------------------------------------------------
 
@@ -1362,6 +1437,8 @@ function begin(state, activity, nowMs) {
   decay(state, nowMs)
   const blocked = awayBlockedReason(state)
   if (blocked !== null) return { ok: false, reason: blocked }
+  // [mod] Sent out while asleep: it gets up and goes.
+  if (isAsleep(state)) rouse(state, nowMs, '被叫醒了 🥱')
   state.activity = { ...activity, startedAt: nowMs, endsAt: nowMs + activity.minutes * 60000 }
   state.lastActiveAt = nowMs
   return { ok: true, activity: state.activity }
@@ -1665,6 +1742,8 @@ const AWAY_MOODS = Object.freeze({
 export function mood(state, nowMs) {
   decay(state, nowMs)
   if (state.dead) return { key: 'dead', emoji: '💀', label: word(state, '已经走了'), level: 0 }
+  // [mod] A sleeping pig looks asleep, even when ill; the panel still says so.
+  if (isAsleep(state)) return { key: 'asleep', emoji: '😴', label: word(state, '在睡觉'), level: 0 }
   if (state.illness !== null) {
     const ill = currentIllness(state)
     const level = Math.min(3, Math.max(1, state.illness.stage ?? 1))
@@ -1676,7 +1755,7 @@ export function mood(state, nowMs) {
   }
   if (state.satiety < THRESHOLDS.hungry) return { key: 'hungry', emoji: '🍎', label: word(state, '饿了'), level: moodLevel('hungry', state.satiety) }
   if (state.cleanliness < THRESHOLDS.dirty) return { key: 'dirty', emoji: '🫧', label: word(state, '该洗澡了'), level: moodLevel('dirty', state.cleanliness) }
-  if (nowMs - state.lastActiveAt > SLEEPY_AFTER_MINUTES * 60000) return { key: 'sleepy', emoji: '💤', label: word(state, '睡着了'), level: 0 }
+  if (nowMs - state.lastActiveAt > SLEEPY_AFTER_MINUTES * 60000) return { key: 'sleepy', emoji: '💤', label: word(state, '在打盹'), level: 0 }
   if (state.happiness >= 75) return { key: 'happy', emoji: '❤️', label: word(state, '很开心'), level: 0 }
   if (state.happiness < THRESHOLDS.lonely) return { key: 'lonely', emoji: '🥺', label: word(state, '有点孤单'), level: moodLevel('lonely', state.happiness) }
   return { key: 'fine', emoji: '😊', label: word(state, '还不错'), level: 0 }

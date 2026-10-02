@@ -7,7 +7,7 @@
  * window shows the unmodified upstream panel from it.
  */
 
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, Tray } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, powerMonitor, screen, Tray } from 'electron'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -37,15 +37,31 @@ function currentLang() {
   try { return readSnapshot(userFile('state.json')).lang } catch { return 'zh' }
 }
 
-async function setLang(lang) {
+/** One operation on the pig, through the same route the panel uses. */
+async function postAct(body) {
   try {
     await fetch(server.url + 'dsh-pig/act', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'lang', lang }),
+      body: JSON.stringify(body),
     })
   } catch { /* the next refresh shows whatever stuck */ }
+}
+
+async function setLang(lang) {
+  await postAct({ action: 'lang', lang })
   refreshTray(true)
+}
+
+/**
+ * [dsh-piggy-claude-code mod] The pig sleeps when the computer does. The nap
+ * is marked `auto`, so waking the computer ends only a nap it started: a pig
+ * put to bed by hand sleeps on. Time spent suspended is settled on wake-up,
+ * from timestamps, as sleep.
+ */
+function followSystemSleep() {
+  powerMonitor.on('suspend', () => { postAct({ action: 'sleep', auto: true }) })
+  powerMonitor.on('resume', () => { postAct({ action: 'wake', auto: true }) })
 }
 
 const userFile = name => join(app.getPath('userData'), name)
@@ -296,5 +312,6 @@ if (!app.requestSingleInstanceLock()) {
     server = await openServer(userFile('state.json'))
     createWindow(server.url + 'desk')
     createTray()
+    followSystemSleep()
   })
 }

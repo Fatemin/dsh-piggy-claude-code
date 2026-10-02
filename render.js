@@ -50,6 +50,7 @@ const RULE = '━━━━━━━━━━━━━━━━━━━━━━
 function face(currentMood) {
   switch (currentMood.key) {
     case 'sleepy': return { l: '˘', r: '˘', m: 'ω' }
+    case 'asleep': return { l: '－', r: '－', m: 'ᶻ' }
     case 'hungry': return { l: '◕', r: '◕', m: 'o' }
     case 'dirty': return { l: 'ò', r: 'ó', m: '益' }
     case 'sick': return { l: '×', r: '×', m: '︿' }

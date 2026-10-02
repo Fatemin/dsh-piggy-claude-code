@@ -30,6 +30,7 @@ import {
   TRIPS,
   actionCooldownSeconds,
   activitySecondsLeft,
+  isAsleep,
   awayBlockedReason,
   careView,
   courseView,
@@ -129,6 +130,9 @@ const OPERATIONS = {
   bathe: (store, body) => store.act('bathe', str(body.item)),
   play: (store, body) => store.act('play', str(body.item)),
   pet: store => store.act('pet'),
+  // [dsh-piggy-claude-code mod] bed and back; `auto` is the computer's own sleep.
+  sleep: (store, body) => store.sleep(body.auto === true),
+  wake: (store, body) => store.wake(body.auto === true),
   work: (store, body) => store.startWork(str(body.job)),
   // [mod] `subjects` (a list, for several at once) or the old single `subject`.
   study: (store, body) => store.startStudy(Array.isArray(body.subjects) ? body.subjects.map(str) : str(body.subject), str(body.stage)),
@@ -257,7 +261,7 @@ export function apply(ctx, config = {}) {
     commandCtx.commands.register({
       name: commandName,
       description: 'your pig 🐖: status · study · work · shop · travel · bag',
-      input: { hint: tr(langOf(store.state), '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]') },
+      input: { hint: tr(langOf(store.state), '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]') },
       handler: invocation => {
         try {
           return dispatch(store, commandName, String(invocation.rawInput ?? ''))
@@ -385,6 +389,9 @@ export function snapshot(store, options = {}) {
       moodLevel: current.level ?? 0,
       moodEmoji: current.emoji,
       moodLabel: current.label,
+      // [mod] in bed, and whether the computer's sleep put it there.
+      asleep: isAsleep(state),
+      sleepAuto: isAsleep(state) && state.sleep.auto === true,
       satiety: Math.round(state.satiety),
       happiness: Math.round(state.happiness),
       cleanliness: Math.round(state.cleanliness),
@@ -724,6 +731,17 @@ export function dispatch(store, commandName, rawInput) {
     case 'mo':
       return performAction(store, verb === 'mo' ? 'pet' : verb)
 
+    // [dsh-piggy-claude-code mod] bed and back.
+    case 'sleep':
+    case 'wake': {
+      if (state === null || state.hatched !== true) return { kind: 'error', text: renderNoPig(commandName) }
+      const result = verb === 'sleep' ? store.sleep() : store.wake()
+      if (result.ok) {
+        return { kind: 'success', text: tr(lang, verb === 'sleep' ? '😴 {name} 去睡觉了。睡着时只会变饿，心情和清洁会慢慢恢复。' : '☀️ {name} 醒了。', { name: state.name }) }
+      }
+      return { kind: 'success', text: renderWorkRefusal(state, sleepRefusal(result, state)) }
+    }
+
     case 'work': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
       const key = argument.trim() === '' ? 'odd' : argument.trim()
@@ -835,7 +853,7 @@ export function dispatch(store, commandName, rawInput) {
       return {
         kind: 'error',
         text: tr(lang, '不认识「{sub}」。可用：/{cmd} · {list}', {
-          sub, cmd, list: 'hatch · feed · bathe · play · pet · study · work · trip · shop · buy · use · weigh · name · about',
+          sub, cmd, list: 'hatch · feed · bathe · play · pet · sleep · wake · study · work · trip · shop · buy · use · weigh · name · about',
         }),
       }
   }
@@ -875,6 +893,17 @@ function renameReply(store, state, argument, cmd) {
     case 'dead': return { kind: 'error', text: tr(lang, '{name} 已经走了…', { name: state.name }) }
     case 'absent': return { kind: 'error', text: renderNoPig(cmd) }
     default: return { kind: 'error', text: tr(lang, '用法：/{cmd} name <名字>（16 字以内）', { cmd }) }
+  }
+}
+
+/** [mod] Why the pig cannot go to bed, or get up. */
+function sleepRefusal(result, state) {
+  const lang = langOf(state)
+  const name = state.name
+  switch (result.reason) {
+    case 'asleep': return tr(lang, '{name} 已经在睡了。', { name })
+    case 'awake': return tr(lang, '{name} 本来就醒着。', { name })
+    default: return refusalText(result, state)
   }
 }
 

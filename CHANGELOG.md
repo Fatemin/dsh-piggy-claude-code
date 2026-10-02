@@ -7,6 +7,18 @@ All notable changes to `dsh-pig`. Versions follow the plugin's own
 
 ## [Unreleased]
 
+### Added
+- **睡觉（ST0003）。** 可以手动让猪去睡觉（面板「😴 睡觉」按钮、`pig sleep`），独立桌宠 App 里电脑休眠时猪也会自动睡着。
+  - 睡着时**只掉饱食**（照常速度）；心情每分钟 +0.15、清洁每分钟 +0.1（睡 8 小时约 +72 / +48）；
+    疏于照顾累积的生病风险按**一半速度**计（`SLEEP_SICK_RISK_MULTIPLIER = 0.5`），即同样的饿/脏要两倍时间才会生病。
+  - 叫醒：面板「☀️ 叫醒」、`pig wake`；喂食、洗澡、玩耍、摸摸或出门（打工/上课/旅行）会先叫醒它。外出、死亡时不能睡。
+  - 电脑休眠（Electron `powerMonitor` 的 `suspend`）时发 `sleep {auto:true}`，唤醒（`resume`）时发 `wake {auto:true}`：
+    **电脑只叫醒它自己哄睡的猪**，手动哄睡的猪电脑醒来后继续睡。休眠期间的时间在唤醒时按睡眠规则结算。
+  - 新心情 `asleep`（😴 在睡觉）和新精灵图 `mood-asleep.svg`（睡帽、小被子、慢呼吸、飘 Z、月亮），优先级仅次于死亡；
+    原来闲置 30 分钟的 `sleepy` 心情改名「在打盹」以示区分（ja うとうと / en Dozing），图不变。
+  - 新存档键 `sleep`（`{since, auto}` 或 `null`，可默认，不升存档版本）；快照 `pig` 新增 `asleep`、`sleepAuto`；`/dsh-pig/act` 新增 `sleep`、`wake`。
+  - 只接了 Electron 版的电脑休眠；macOS 原生 SwiftPM 悬浮猪和 Claude Code 版只有手动睡觉。
+
 ### Changed
 - **读书重新设计：小学/大学便宜但限次数，研究生/博士不限次数但涨得慢（ST0002）。**
   目的是控制属性膨胀：以前博士一节课 +7、三门并修，属性可以无限往上堆。
