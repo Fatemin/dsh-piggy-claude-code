@@ -228,8 +228,8 @@ window.__ModuleLoader__.load({
         '上课 × {n}（学费 {total} 🪙）': 'じゅぎょう × {n}（授業料 {total} 🪙）',
         '先选课': 'じゅぎょうをえらんでね', '用来改名': 'なまえを変えるのに使う',
         '✈️ 限定': '✈️ 旅行限定',
-        '纪念品 {have}/{total} → 去「旅行」看看': 'おみやげ {have}/{total} → 「旅行」で見てね',
         '毕业证': '卒業証書', '收藏品': 'コレクション',
+        '消耗品': 'どうぐ', '去「旅行」出发 →': '「旅行」で出かける →', '去「学习」上课 →': '「勉強」で授業へ →', '还没有毕业证。': 'まだ卒業証書はないよ。',
         '再上 {left} 节再发一张': 'あと {left} こまでもう1枚', '上满 {need} 节发证（{done}/{need}）': '{need} こまでもらえる（{done}/{need}）',
         '家': 'おうち', '每跨一个时区 +{cost} 🪙 · +{hours} 小时': '時差1時間ごとに +{cost} 🪙 · +{hours} 時間',
         '刚从{place}回来': '{place}から帰ってきたよ', '新！': 'はじめて！', '还带回了：': 'ほかにも：',
@@ -387,8 +387,8 @@ window.__ModuleLoader__.load({
         '上课 × {n}（学费 {total} 🪙）': 'Study × {n} (tuition {total} 🪙)',
         '先选课': 'Pick lessons first', '用来改名': 'For renaming',
         '✈️ 限定': '✈️ Travel only',
-        '纪念品 {have}/{total} → 去「旅行」看看': 'Souvenirs {have}/{total} → see Travel',
         '毕业证': 'Diplomas', '收藏品': 'Collectible',
+        '消耗品': 'Supplies', '去「旅行」出发 →': 'Go travelling →', '去「学习」上课 →': 'Go to class →', '还没有毕业证。': 'No diplomas yet.',
         '再上 {left} 节再发一张': '{left} more lessons for another', '上满 {need} 节发证（{done}/{need}）': 'Awarded after {need} lessons ({done}/{need})',
         '家': 'Home', '每跨一个时区 +{cost} 🪙 · +{hours} 小时': 'Each time zone crossed: +{cost} 🪙 · +{hours} h',
         '刚从{place}回来': 'Just back from {place}', '新！': 'New!', '还带回了：': 'Also brought: ',
@@ -490,6 +490,8 @@ window.__ModuleLoader__.load({
     ]
     // [dsh-piggy-claude-code mod] which travel region is unfolded; '' = none.
     var REGION_KEY = 'dsh-pig:region'
+    // [dsh-piggy-claude-code mod] which shelf of the bag was last open.
+    var BAG_KEY = 'dsh-pig:bag'
     // A finished trip is announced on the travel tab for this long.
     var LAST_TRIP_MS = 12 * 3600 * 1000
     var NAME_MAX = 16
@@ -2188,6 +2190,8 @@ window.__ModuleLoader__.load({
       var studyPicks = { stage: null, keys: [] }
       // The unfolded travel region: null until the player picks one.
       var openRegion = readStore(REGION_KEY)
+      // The bag's shelf: consumables, travel souvenirs or school diplomas.
+      var bagView = readStore(BAG_KEY)
       // The big panel is always open: there is no floating card to toggle.
       var isOpen = split || readStore(OPEN_KEY) === 'true'
       // [dsh-piggy-claude-code mod] the big panel's skin, the spreadsheet's
@@ -3461,94 +3465,173 @@ window.__ModuleLoader__.load({
         content.appendChild(el('div', 'dp-empty', souvenirs.length === 0 ? T('还没出过远门。') : souvenirs.join(' · ')))
       }
 
+      /**
+       * [dsh-piggy-claude-code mod] The bag, as three shelves: what can be used
+       * up, and the two collections — souvenirs from travel, diplomas from
+       * school — each where it came from.
+       */
       function bagTab() {
-        // [dsh-piggy-claude-code mod] `bag` is everything the pig holds, travel
-        // specialties and rename cards included; an older host only sent the
-        // shop's counts, so read those instead.
-        var owned = view.bag
-        if (owned === null) {
-          owned = []
-          for (var i = 0; i < view.shop.length; i += 1) {
-            var count = num(view.inventory[view.shop[i].key], 0)
-            if (count > 0) owned.push({ key: view.shop[i].key, label: view.shop[i].label, emoji: view.shop[i].emoji, kind: view.shop[i].kind, count: count, exclusive: false, effects: view.shop[i].effects })
-          }
-        }
+        var owned = ownedItems()
         var diplomas = view.pig !== null && Array.isArray(view.pig.diplomas) ? view.pig.diplomas : []
-        var heldDiplomas = diplomas.filter(d => d.count > 0).length
-        if (owned.length === 0 && heldDiplomas === 0) {
-          content.appendChild(el('div', 'dp-empty', T('背包空空的 —— 去「商店」买点东西。')))
-        } else if (owned.length > 0) {
-          var list = el('div', 'dp-list')
-          // [dsh-piggy-claude-code mod] the same shelves as the shop.
-          owned = owned.slice().sort((a, b) => kindRank(a.kind) - kindRank(b.kind))
-          var bagShelf = ''
-          for (var j = 0; j < owned.length; j += 1) {
-            if (owned[j].kind !== bagShelf) {
-              bagShelf = owned[j].kind
-              var bagTitle = KIND_TITLE[bagShelf]
-              list.appendChild(el('div', 'dp-shelf', bagTitle === undefined ? T('其他') : bagTitle[0] + ' ' + T(bagTitle[1])))
-            }
-            (function (item) {
-              var needed = view.shop.some(entry => entry.key === item.key && entry.needed)
-              var row = el('div', 'dp-item' + (needed ? ' dp-wanted' : ''))
-              row.appendChild(el('span', null, item.emoji))
-              var grow = el('div', 'dp-grow')
-              var name = el('div', null, item.label + ' ×' + item.count)
-              if (item.exclusive) name.appendChild(el('span', 'dp-tag', T('✈️ 限定')))
-              grow.appendChild(name)
-              grow.appendChild(el('div', 'dp-dim', needed ? T('对症！') + ' · ' + effectLine(item) : effectLine(item)))
-              row.appendChild(grow)
-              // A rename card is spent by renaming, so it gets no Use button.
-              if (item.kind !== 'card') {
-                var use = button('dp-mini', { 'data-use': item.key }, function () { send('use', { item: item.key }) })
-                use.textContent = T('使用')
-                row.appendChild(use)
-              }
-              list.appendChild(row)
-            })(owned[j])
-          }
-          content.appendChild(list)
+        var trips = souvenirTally()
+        var shelves = [
+          { key: 'items', label: '🎒 ' + T('消耗品') + ' ' + owned.reduce((sum, item) => sum + item.count, 0) },
+          { key: 'travel', label: '🧳 ' + T('纪念品') + ' ' + (trips.total > 0 ? trips.have + '/' + trips.total : trips.have) },
+          { key: 'school', label: '📜 ' + T('毕业证') + ' ' + diplomas.filter(d => d.count > 0).length + '/' + diplomas.length },
+        ]
+        var current = shelves.some(entry => entry.key === bagView) ? bagView : 'items'
+        var seg = el('div', 'dp-seg')
+        for (var s = 0; s < shelves.length; s += 1) {
+          (function (entry) {
+            var btn = button(null, { 'data-bag': entry.key }, function () {
+              bagView = entry.key
+              writeStore(BAG_KEY, bagView)
+              renderContent()
+            })
+            btn.textContent = entry.label
+            btn.setAttribute('data-active', entry.key === current ? 'true' : 'false')
+            seg.appendChild(btn)
+          })(shelves[s])
         }
+        content.appendChild(seg)
+        if (current === 'travel') souvenirShelf()
+        else if (current === 'school') diplomaShelf(diplomas)
+        else itemShelf(owned)
+      }
 
-        // [dsh-piggy-claude-code mod] diplomas: collectibles, nothing to use.
-        if (diplomas.length > 0) {
-          var shelf = el('div', 'dp-list')
-          shelf.appendChild(el('div', 'dp-shelf', '📜 ' + T('毕业证') + ' ' + heldDiplomas + '/' + diplomas.length))
-          for (var k = 0; k < diplomas.length; k += 1) {
-            var d = diplomas[k]
-            var held = d.count > 0
-            var row = el('div', 'dp-item')
-            if (!held) row.style.opacity = '0.5'
-            row.appendChild(el('span', null, held ? d.emoji : '🔒'))
-            var grow = el('div', 'dp-grow')
-            grow.appendChild(el('div', null, d.label + (held ? ' ×' + d.count : '')))
-            var hint = d.next === null
-              ? T('收藏品')
-              : (held ? T('再上 {left} 节再发一张', { left: d.next.need - d.next.done }) : T('上满 {need} 节发证（{done}/{need}）', d.next))
-            grow.appendChild(el('div', 'dp-dim', hint))
-            row.appendChild(grow)
-            shelf.appendChild(row)
-          }
-          content.appendChild(shelf)
+      /**
+       * `bag` is everything the pig holds, travel specialties and rename cards
+       * included; an older host only sent the shop's counts, so read those instead.
+       */
+      function ownedItems() {
+        if (view.bag !== null) return view.bag
+        var owned = []
+        for (var i = 0; i < view.shop.length; i += 1) {
+          var count = num(view.inventory[view.shop[i].key], 0)
+          if (count > 0) owned.push({ key: view.shop[i].key, label: view.shop[i].label, emoji: view.shop[i].emoji, kind: view.shop[i].kind, count: count, exclusive: false, effects: view.shop[i].effects })
         }
+        return owned
+      }
 
+      /** Souvenirs held / to be had; an older host only has the plain names. */
+      function souvenirTally() {
         var w = view.world
-        if (w !== null) {
-          // The collection lives on the travel tab now; the bag only points there.
-          var have = 0
-          var total = 0
-          for (var r = 0; r < w.regions.length; r += 1) { have += w.regions[r].have; total += w.regions[r].total }
-          var link = button('dp-link', { 'data-goto': 'travel' }, function () { select('travel') })
-          link.textContent = '🎁 ' + T('纪念品 {have}/{total} → 去「旅行」看看', { have: have, total: total })
-          content.appendChild(link)
+        if (w === null) return { have: view.pig === null ? 0 : view.pig.souvenirs.length, total: 0 }
+        var have = 0
+        var total = 0
+        for (var r = 0; r < w.regions.length; r += 1) { have += w.regions[r].have; total += w.regions[r].total }
+        return { have: have, total: total }
+      }
+
+      function itemShelf(owned) {
+        if (owned.length === 0) {
+          content.appendChild(el('div', 'dp-empty', T('背包空空的 —— 去「商店」买点东西。')))
           return
         }
-        var souvenirs = view.pig.souvenirs
-        var head = el('div', 'dp-title')
-        head.style.marginTop = '10px'
-        head.appendChild(el('b', null, '🎁 ' + T('纪念品') + ' ' + souvenirs.length))
-        content.appendChild(head)
-        content.appendChild(el('div', 'dp-empty', souvenirs.length === 0 ? T('收藏册还空着。') : souvenirs.join(' · ')))
+        var list = el('div', 'dp-list')
+        // [dsh-piggy-claude-code mod] the same shelves as the shop.
+        owned = owned.slice().sort((a, b) => kindRank(a.kind) - kindRank(b.kind))
+        var bagShelf = ''
+        for (var j = 0; j < owned.length; j += 1) {
+          if (owned[j].kind !== bagShelf) {
+            bagShelf = owned[j].kind
+            var bagTitle = KIND_TITLE[bagShelf]
+            list.appendChild(el('div', 'dp-shelf', bagTitle === undefined ? T('其他') : bagTitle[0] + ' ' + T(bagTitle[1])))
+          }
+          (function (item) {
+            var needed = view.shop.some(entry => entry.key === item.key && entry.needed)
+            var row = el('div', 'dp-item' + (needed ? ' dp-wanted' : ''))
+            row.appendChild(el('span', null, item.emoji))
+            var grow = el('div', 'dp-grow')
+            var name = el('div', null, item.label + ' ×' + item.count)
+            if (item.exclusive) name.appendChild(el('span', 'dp-tag', T('✈️ 限定')))
+            grow.appendChild(name)
+            grow.appendChild(el('div', 'dp-dim', needed ? T('对症！') + ' · ' + effectLine(item) : effectLine(item)))
+            row.appendChild(grow)
+            // A rename card is spent by renaming, so it gets no Use button.
+            if (item.kind !== 'card') {
+              var use = button('dp-mini', { 'data-use': item.key }, function () { send('use', { item: item.key }) })
+              use.textContent = T('使用')
+              row.appendChild(use)
+            }
+            list.appendChild(row)
+          })(owned[j])
+        }
+        content.appendChild(list)
+      }
+
+      /** Travel souvenirs, region by region; the trips themselves stay on the travel tab. */
+      function souvenirShelf() {
+        var w = view.world
+        if (w === null) {
+          var names = view.pig === null ? [] : view.pig.souvenirs
+          content.appendChild(el('div', 'dp-empty', names.length === 0 ? T('收藏册还空着。') : names.join(' · ')))
+          return
+        }
+        var list = el('div', 'dp-list')
+        for (var r = 0; r < w.regions.length; r += 1) {
+          var region = w.regions[r]
+          list.appendChild(el('div', 'dp-shelf', region.emoji + ' ' + region.label + ' ' + region.have + '/' + region.total + (region.done ? ' ✅' : '')))
+          if (region.perk !== null) {
+            var perk = el('div', 'dp-perk', region.perk.emoji + ' ' + region.perk.label + ' · ' + (region.perk.active ? T('已生效') : T('🔒 集齐后解锁')))
+            perk.setAttribute('data-active', region.perk.active ? 'true' : 'false')
+            list.appendChild(perk)
+          }
+          var chips = el('div', 'dp-chips')
+          for (var p = 0; p < region.places.length; p += 1) {
+            var place = region.places[p]
+            for (var k = 0; k < place.souvenirs.length; k += 1) {
+              var souvenir = place.souvenirs[k]
+              var have = souvenir.count > 0
+              var chip = el('span', 'dp-chip', have
+                ? souvenir.emoji + souvenir.label + (souvenir.count > 1 ? ' ×' + souvenir.count : '')
+                : '？')
+              chip.setAttribute('data-souvenir', souvenir.key)
+              chip.setAttribute('data-have', have ? 'true' : 'false')
+              if (!have) chip.title = T('去{place}能带回来', { place: place.label })
+              chips.appendChild(chip)
+            }
+          }
+          list.appendChild(chips)
+        }
+        content.appendChild(list)
+        if (w.oldSouvenirs.length > 0) {
+          var old = el('div', 'dp-note', '🗃 ' + T('以前的纪念品：{list}', { list: w.oldSouvenirs.join(' · ') }))
+          old.style.marginTop = '8px'
+          content.appendChild(old)
+        }
+        var link = button('dp-link', { 'data-goto': 'travel' }, function () { select('travel') })
+        link.textContent = '🧳 ' + T('去「旅行」出发 →')
+        content.appendChild(link)
+      }
+
+      /** School diplomas: collectibles, nothing to use. */
+      function diplomaShelf(diplomas) {
+        if (diplomas.length === 0) {
+          content.appendChild(el('div', 'dp-empty', T('还没有毕业证。')))
+          return
+        }
+        var shelf = el('div', 'dp-list')
+        for (var k = 0; k < diplomas.length; k += 1) {
+          var d = diplomas[k]
+          var held = d.count > 0
+          var row = el('div', 'dp-item')
+          row.setAttribute('data-diploma', d.key)
+          if (!held) row.style.opacity = '0.5'
+          row.appendChild(el('span', null, held ? d.emoji : '🔒'))
+          var grow = el('div', 'dp-grow')
+          grow.appendChild(el('div', null, d.label + (held ? ' ×' + d.count : '')))
+          var hint = d.next === null
+            ? T('收藏品')
+            : (held ? T('再上 {left} 节再发一张', { left: d.next.need - d.next.done }) : T('上满 {need} 节发证（{done}/{need}）', d.next))
+          grow.appendChild(el('div', 'dp-dim', hint))
+          row.appendChild(grow)
+          shelf.appendChild(row)
+        }
+        content.appendChild(shelf)
+        var link = button('dp-link', { 'data-goto': 'study' }, function () { select('study') })
+        link.textContent = '📚 ' + T('去「学习」上课 →')
+        content.appendChild(link)
       }
 
       /** "3 天" / "12 小时" / "40 分钟" for an upcoming stage, in the pig's language. */
