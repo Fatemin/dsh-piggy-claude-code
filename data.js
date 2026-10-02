@@ -199,14 +199,16 @@ export const WEAR_SLOTS = Object.freeze(['face', 'waist', 'eyes', 'head'])
 
 /**
  * Every decoration, one slot each; its drawing is assets/wear-<key>.svg.
- * `unlock` is worked out from progress the save already keeps, so unlocking
- * stores nothing and a pig that grew up before the wardrobe has its things:
+ * `unlock` is mostly worked out from progress the save already keeps, so a pig
+ * that grew up before the wardrobe has its things:
  *   always            from the moment it hatches
  *   stage <key>       it has grown to that life stage (weight only goes up)
  *   lessons <stage>   it has sat a lesson at that school (`null`: any school)
  *   diploma           it holds any diploma
  *   trip              it has come home from a trip
  *   region <key>      it brought a souvenir home from that region
+ *   shop <price>      [ST0012] bought once on the shop's 装扮 shelf; the one
+ *                     kind that is saved (`wardrobeBought`)
  */
 const WEARABLE = fields => Object.freeze({ ...fields, unlock: Object.freeze(fields.unlock) })
 export const WEARABLES = Object.freeze([
@@ -218,9 +220,22 @@ export const WEARABLES = Object.freeze([
   WEARABLE({ key: 'sunglasses', slot: 'eyes', label: '墨镜', emoji: '🕶️', unlock: { kind: 'region', region: 'mideast' } }),
   WEARABLE({ key: 'scarf', slot: 'waist', label: '红领巾', emoji: '🧣', unlock: { kind: 'lessons', stage: 'primary' } }),
   WEARABLE({ key: 'whiskers', slot: 'face', label: '白眉白胡子', emoji: '🧓', unlock: { kind: 'stage', stage: 'elder' } }),
+  // [ST0012] Waist gear on sale: today's trends and old internet memes.
+  WEARABLE({ key: 'hulahoop', slot: 'waist', label: '网红呼啦圈', emoji: '⭕', unlock: { kind: 'shop', price: 66 } }),
+  WEARABLE({ key: 'swimring', slot: 'waist', label: '小黄鸭游泳圈', emoji: '🦆', unlock: { kind: 'shop', price: 88 } }),
+  WEARABLE({ key: 'fannypack', slot: 'waist', label: '多巴胺腰包', emoji: '👝', unlock: { kind: 'shop', price: 168 } }),
+  WEARABLE({ key: 'chainbelt', slot: 'waist', label: '杀马特腰链', emoji: '⛓️', unlock: { kind: 'shop', price: 188 } }),
+  WEARABLE({ key: 'pager', slot: 'waist', label: 'BP机皮带', emoji: '📟', unlock: { kind: 'shop', price: 288 } }),
 ])
 
 export const wearableByKey = key => WEARABLES.find(item => item.key === key) ?? null
+/**
+ * [ST0012] The decorations the shop sells, as its 装扮 shelf lists them. They
+ * are not SHOP items: never in the bag, never used up, bought once each.
+ */
+export const WEAR_FOR_SALE = Object.freeze(WEARABLES.filter(item => item.unlock.kind === 'shop').map(item => Object.freeze({
+  key: item.key, label: item.label, emoji: item.emoji, price: item.unlock.price, kind: 'wear', slot: item.slot,
+})))
 
 /**
  * What a pig wears until its owner dresses it: each life stage's own look, as
@@ -569,7 +584,7 @@ export const SHOP = Object.freeze([
 ])
 
 /** Shop shelves, in the order the panel shows them. */
-export const KIND_ORDER = Object.freeze(['food', 'bath', 'toy', 'medicine', 'revive', 'card'])
+export const KIND_ORDER = Object.freeze(['food', 'bath', 'toy', 'medicine', 'revive', 'card', 'wear'])
 
 export const KIND_LABEL = Object.freeze({
   food: '食物',
@@ -578,6 +593,8 @@ export const KIND_LABEL = Object.freeze({
   medicine: '药品',
   revive: '复活',
   card: '道具',
+  // [ST0012] Not a SHOP item: the shelf lists WEAR_FOR_SALE, bought once each.
+  wear: '装扮',
 })
 
 /** Which care action spends which shelf. */

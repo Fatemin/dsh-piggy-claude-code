@@ -235,6 +235,7 @@ window.__ModuleLoader__.load({
         '好名字！': 'いいなまえ！',
         '这是旅行限定，商店不卖': 'これは旅行限定。おみせでは売ってないよ',
         '更名卡要在「状态」里改名时用': '名前変更カードは「ようす」でなまえを変えるときに使うよ',
+        '装扮': 'きせかえ', '衣柜装扮，买一次一直有': 'クローゼットのきせかえ。一度買えばずっと使える', '已拥有': '持ってる', '已经在衣柜里了': 'もうクローゼットにあるよ',
         '这一段一次最多上 {n} 门课': 'ここでは一度に {n} こまでだよ',
         '可以一起上 {n} 门 · 已选 {k}': '{n} こまで一緒にうけられるよ · えらんだ数 {k}',
         '每门限 {cap} 次': '1科目 {cap} 回まで', '本段 {n}/{cap}': 'ここで {n}/{cap}', '已满': 'うけきった',
@@ -406,6 +407,7 @@ window.__ModuleLoader__.load({
         '好名字！': 'Nice name!',
         '这是旅行限定，商店不卖': "That's travel-only; the Shop doesn't sell it",
         '更名卡要在「状态」里改名时用': 'Rename cards are spent when renaming on the Status tab',
+        '装扮': 'Dress-up', '衣柜装扮，买一次一直有': 'For the wardrobe; buy once, keep for good', '已拥有': 'Owned', '已经在衣柜里了': 'Already in the wardrobe',
         '这一段一次最多上 {n} 门课': 'Up to {n} lessons at once here',
         '可以一起上 {n} 门 · 已选 {k}': 'Take up to {n} together · {k} picked',
         '每门限 {cap} 次': '{cap} per subject', '本段 {n}/{cap}': 'here {n}/{cap}', '已满': 'done',
@@ -514,8 +516,8 @@ window.__ModuleLoader__.load({
       bath: '没有洗浴用品了，去买点吧 🧼',
       toy: '没有玩具了，去商店看看 🪀',
     }
-    var KIND_TITLE = { food: ['🍎', '食物'], bath: ['🧼', '洗浴'], toy: ['🪀', '玩具'], medicine: ['💊', '药品'], revive: ['✨', '复活'], card: ['🪪', '道具'] }
-    var KIND_ORDER = ['food', 'bath', 'toy', 'medicine', 'revive', 'card']
+    var KIND_TITLE = { food: ['🍎', '食物'], bath: ['🧼', '洗浴'], toy: ['🪀', '玩具'], medicine: ['💊', '药品'], revive: ['✨', '复活'], card: ['🪪', '道具'], wear: ['👗', '装扮'] }
+    var KIND_ORDER = ['food', 'bath', 'toy', 'medicine', 'revive', 'card', 'wear']
     // [dsh-piggy-claude-code mod] study and work are sorted by the trait they build or use.
     var TRAIT_TITLE = { intel: ['🧠', '智力'], charm: ['✨', '魅力'], strong: ['💪', '武力'] }
     var TRAIT_KEYS = ['intel', 'charm', 'strong']
@@ -747,6 +749,8 @@ window.__ModuleLoader__.load({
           tier: typeof obj(item).tier === 'number' ? obj(item).tier : null,
           affordable: obj(item).affordable === true,
           needed: obj(item).needed === true,
+          // [ST0012] a decoration already in the wardrobe: not for sale again.
+          owned: obj(item).owned === true,
           effects: normalizeEffects(item),
         })).filter(item => item.key !== ''),
         inventory: obj(d.inventory),
@@ -3369,6 +3373,7 @@ window.__ModuleLoader__.load({
         if (item.kind === 'medicine') return fx.cures.length > 0 ? T('治：{list}', { list: fx.cures.join(' / ') }) : T('药')
         if (item.kind === 'revive') return T('死后用来复活')
         if (item.kind === 'card') return T('用来改名')
+        if (item.kind === 'wear') return T('衣柜装扮，买一次一直有')
         var signed = n => (n > 0 ? '+' : '') + n
         var parts = []
         if (fx.satiety) parts.push(T('饱食 {n}', { n: signed(fx.satiety) }))
@@ -3445,8 +3450,8 @@ window.__ModuleLoader__.load({
             grow.appendChild(el('div', 'dp-dim', effectLine(item)))
             row.appendChild(grow)
             var buy = button('dp-mini', { 'data-buy': item.key }, function () { send('buy', { item: item.key }) })
-            buy.textContent = T('买')
-            buy.disabled = !item.affordable
+            buy.textContent = item.owned ? T('已拥有') : T('买')
+            buy.disabled = item.owned || !item.affordable
             row.appendChild(buy)
             list.appendChild(row)
           })(ordered[i])
@@ -4203,6 +4208,7 @@ window.__ModuleLoader__.load({
               'bad-lang': '不认识这种语言',
               'not-for-sale': '这是旅行限定，商店不卖',
               'use-to-rename': '更名卡要在「状态」里改名时用',
+              owned: '已经在衣柜里了',
               'bad-name': '名字要 1–16 个字',
               'same-name': '和现在的名字一样',
               asleep: '它已经在睡了',

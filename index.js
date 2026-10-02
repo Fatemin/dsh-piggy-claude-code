@@ -48,6 +48,7 @@ import {
   canChooseLook,
   outfitIsAuto,
   wardrobeView,
+  wearUnlocked,
   wornFor,
   langOf,
   hasSoul,
@@ -60,7 +61,7 @@ import {
   growthPercent,
   lotteryWaitSeconds,
 } from './core.js'
-import { ALL_ITEMS, ILLNESS_CHAINS, KIND_LABEL, KIND_ORDER, LOTTERY, PARALLEL_COURSES, RENAME_CARD, WEARABLES, jobByKey, jobMissing, traitBonus } from './data.js'
+import { ALL_ITEMS, ILLNESS_CHAINS, KIND_LABEL, KIND_ORDER, LOTTERY, PARALLEL_COURSES, RENAME_CARD, WEARABLES, WEAR_FOR_SALE, jobByKey, wearableByKey, jobMissing, traitBonus } from './data.js'
 import { FARE, PLACES, REGIONS, WORLD_BONUS, souvenirByKey, placeByKey, systemTimeZone, systemUtcOffset } from './world.js'
 import {
   renderAbout,
@@ -619,13 +620,24 @@ function bagFor(state) {
 
 function shopFor(state) {
   const lang = langOf(state)
-  return SHOP.map(item => ({
+  const shelf = SHOP.map(item => ({
     key: item.key, label: tr(lang, item.label), emoji: item.emoji,
     price: item.price, kind: item.kind, tier: item.tier ?? null,
     affordable: state === null ? false : state.coins >= item.price,
     needed: state?.illness != null && item.kind === 'medicine' && item.tier === state.illness.stage,
+    owned: false,
     ...itemEffects(item, lang),
   }))
+  // [ST0012] the 装扮 shelf: decorations, bought once and then owned.
+  const wear = WEAR_FOR_SALE.map(item => ({
+    key: item.key, label: tr(lang, item.label), emoji: item.emoji,
+    price: item.price, kind: item.kind, tier: null,
+    affordable: state === null ? false : state.coins >= item.price,
+    needed: false,
+    owned: wearUnlocked(state, wearableByKey(item.key)),
+    ...itemEffects(item, lang),
+  }))
+  return [...shelf, ...wear]
 }
 
 /**
@@ -825,10 +837,12 @@ export function dispatch(store, commandName, rawInput) {
     case 'shop': {
       // [mod] one block per shelf, the rename card on its own shelf.
       const shelves = KIND_ORDER.map(kind => {
-        const items = SHOP.filter(item => item.kind === kind)
+        const items = kind === 'wear' ? WEAR_FOR_SALE : SHOP.filter(item => item.kind === kind)
         if (items.length === 0) return ''
-        const lines = items.map(item => `  ${item.emoji} ${tr(lang, item.label)}  ${tr(lang, '{price} 金币', { price: item.price })}`)
+        const owned = item => kind === 'wear' && wearUnlocked(state, wearableByKey(item.key))
+        const lines = items.map(item => `  ${item.emoji} ${tr(lang, item.label)}  ${owned(item) ? tr(lang, '已拥有') : tr(lang, '{price} 金币', { price: item.price })}`)
         if (kind === 'card') lines.push(tr(lang, '    改名用：/{cmd} name <名字>（第一次起名免费）', { cmd }))
+        if (kind === 'wear') lines.push(tr(lang, '    买了就穿上，衣柜里随时换：/{cmd} wear', { cmd }))
         return [tr(lang, '【{shelf}】', { shelf: tr(lang, KIND_LABEL[kind]) }), ...lines].join('\n')
       }).filter(block => block !== '')
       return { kind: 'success', text: tr(lang, '🛒 商店（你有 {coins} 金币）\n{lines}\n\n买：/{cmd} buy <物品>', { coins: state?.coins ?? 0, lines: shelves.join('\n'), cmd }) }
@@ -836,7 +850,7 @@ export function dispatch(store, commandName, rawInput) {
     case 'buy': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
       // [mod] travel-only specialties are found too, so the refusal can say why.
-      const item = findByName(ALL_ITEMS, argument)
+      const item = findByName([...ALL_ITEMS, ...WEAR_FOR_SALE], argument)
       if (item === undefined) return { kind: 'error', text: tr(lang, '没有「{name}」这样东西。/{cmd} shop 看货架。', { name: argument, cmd }) }
       return { kind: 'success', text: renderBuy(store.freshen(), store.buy(item.key), item) }
     }
