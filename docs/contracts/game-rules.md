@@ -56,7 +56,7 @@
 
 <!-- contract:place-keys -->
 ```json
-["beijing", "chengdu", "xian", "tokyo", "seoul", "ulaanbaatar", "bangkok", "singapore", "newdelhi", "paris", "rome", "london", "newyork", "mexicocity", "rio", "dubai", "cairo", "nairobi", "sydney", "auckland", "antarctica"]
+["beijing", "chengdu", "xian", "shanghai", "tokyo", "seoul", "ulaanbaatar", "bangkok", "singapore", "newdelhi", "paris", "rome", "london", "newyork", "mexicocity", "rio", "dubai", "cairo", "nairobi", "sydney", "auckland", "antarctica"]
 ```
 
 ### 2.2 打工表字段

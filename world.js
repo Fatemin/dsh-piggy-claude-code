@@ -8,8 +8,9 @@
  *   price   = 100 coins + 200 per time zone crossed
  *   length  = 1 hour    + 1 hour per time zone crossed
  *
- * Every trip brings back one souvenir (two per destination, six per region).
- * Completing a region's six pays out a one-off boost plus a small passive perk;
+ * Every trip brings back one souvenir (two per destination: six per region,
+ * eight for China's four cities). Completing a region's set pays out a one-off
+ * boost plus a small passive perk;
  * completing all seven makes the pig a 环球旅行家. A trip may also bring back a
  * consumable — sometimes an ordinary one, sometimes a local specialty that the
  * shop never sells.
@@ -29,6 +30,7 @@ export const SPECIALTIES = Object.freeze([
   SPECIAL('duck', '北京烤鸭', '🦆', 'food', { satiety: 70, happiness: 20 }),
   SPECIAL('hotpot', '九宫格火锅', '🍲', 'food', { satiety: 90, happiness: 28, cleanliness: -15 }),
   SPECIAL('biang', 'biangbiang面', '🍜', 'food', { satiety: 80, happiness: 18 }),
+  SPECIAL('xiaolongbao', '蟹粉小笼包', '🥟', 'food', { satiety: 60, happiness: 25 }),
   SPECIAL('onsen', '草津温泉入浴剂', '♨️', 'bath', { cleanliness: 100, happiness: 30 }),
   SPECIAL('chimaek', '初雪炸鸡', '🍗', 'food', { satiety: 65, happiness: 25 }),
   SPECIAL('khorkhog', '手把肉', '🍖', 'food', { satiety: 95, happiness: 15 }),
@@ -68,6 +70,7 @@ export const REGIONS = Object.freeze([
       PLACE('beijing', '北京', '🏯', 8, [['wallbrick', '长城砖（复刻版）', '🧱'], ['tanghulu', '冰糖葫芦签', '🍡']], 'duck'),
       PLACE('chengdu', '成都', '🐼', 8, [['pandabutt', '熊猫屁屁抱枕', '🐼'], ['facemask', '变脸面具', '🎭']], 'hotpot'),
       PLACE('xian', '西安', '🗿', 8, [['terracotta', '兵马俑手办', '🗿'], ['biangcard', '写着「Biáng」的字帖', '📜']], 'biang'),
+      PLACE('shanghai', '上海', '🌃', 8, [['pearltower', '东方明珠水晶球', '🔮'], ['whiterabbit', '大白兔奶糖铁盒', '🐰']], 'xiaolongbao'),
     ]),
     bonus: Object.freeze({ traits: { strong: 3 }, weightG: 5000 }),
     perk: Object.freeze({ key: 'foodie', label: '干饭王', emoji: '🍚', text: '吃东西长肉 +10%' }),

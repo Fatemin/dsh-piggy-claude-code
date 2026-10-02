@@ -885,13 +885,14 @@ test('study is refused when broke, away, sick or dead', () => {
 test('the travel world is well formed', () => {
   assert.equal(REGIONS.length, 7)
   for (const region of REGIONS) {
-    assert.equal(region.places.length, 3)
+    // China has a fourth city, Shanghai; every other region has three.
+    assert.equal(region.places.length, region.key === 'china' ? 4 : 3)
     assert.ok(region.perk.key && region.perk.label)
   }
-  assert.equal(PLACES.length, 21)
-  assert.equal(SOUVENIRS.length, 42)
-  assert.equal(new Set(SOUVENIRS.map(s => s.key)).size, 42, 'souvenir keys are unique')
-  assert.equal(new Set(PLACES.map(p => p.key)).size, 21, 'place keys are unique')
+  assert.equal(PLACES.length, 22)
+  assert.equal(SOUVENIRS.length, 44)
+  assert.equal(new Set(SOUVENIRS.map(s => s.key)).size, 44, 'souvenir keys are unique')
+  assert.equal(new Set(PLACES.map(p => p.key)).size, 22, 'place keys are unique')
   for (const place of PLACES) {
     const specialty = SPECIALTIES.find(item => item.key === place.specialty)
     assert.ok(specialty, `${place.key} has a specialty`)
@@ -943,14 +944,14 @@ test('souvenirs favour the missing one, trips bring specialties, and a full regi
     let clock = T0
     const strongBefore = pig.traits.strong
     const weightBefore = pig.weightG
-    for (const place of ['beijing', 'beijing', 'chengdu', 'chengdu', 'xian', 'xian']) {
+    for (const place of ['beijing', 'beijing', 'chengdu', 'chengdu', 'xian', 'xian', 'shanghai', 'shanghai']) {
       pig.satiety = 100
       assert.equal(startTrip(pig, place, clock, 8).ok, true)
       clock += 61 * MIN
       decay(pig, clock)
     }
-    assert.deepEqual(regionProgress(pig, 'china'), { have: 6, total: 6, done: true }, 'six trips, six different souvenirs')
-    assert.ok(pig.inventory.duck >= 1 && pig.inventory.hotpot >= 1 && pig.inventory.biang >= 1, 'local specialties came home')
+    assert.deepEqual(regionProgress(pig, 'china'), { have: 8, total: 8, done: true }, 'eight trips, eight different souvenirs')
+    assert.ok(pig.inventory.duck >= 1 && pig.inventory.hotpot >= 1 && pig.inventory.biang >= 1 && pig.inventory.xiaolongbao >= 1, 'local specialties came home')
     assert.deepEqual(pig.regionsDone, ['china'])
     assert.equal(pig.traits.strong, strongBefore + 3, 'China: strength +3')
     assert.ok(pig.weightG >= weightBefore + 5000, 'China: +5 kg')
