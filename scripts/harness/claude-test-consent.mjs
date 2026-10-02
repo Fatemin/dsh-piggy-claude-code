@@ -123,9 +123,26 @@ function isSuite(args, depth = 0) {
     return isSuite(tail, depth + 1)
   }
   if (exe === 'node') {
+    if (harnessRunsSuite(tail)) return true
     if (!tail.includes('--test')) return false
     return isWholeSuite(tail.filter((a) => a !== '--test'))
   }
+  return false
+}
+
+// The harness's own entry points that run the complete suite inside them:
+// `verify.mjs --scope full` and `release.mjs publish` (which verifies the frozen tree).
+function harnessRunsSuite(tail) {
+  const script = tail.find((a) => !a.startsWith('-'))
+  if (!script) return false
+  const name = path.basename(script.replace(/\\/g, '/')).toLowerCase()
+  const rest = tail.slice(tail.indexOf(script) + 1)
+  if (name === 'verify.mjs') {
+    const i = rest.indexOf('--scope')
+    const scope = i >= 0 ? rest[i + 1] : rest.find((a) => a.startsWith('--scope='))?.slice(8)
+    return scope === 'full'
+  }
+  if (name === 'release.mjs') return rest[0] === 'publish'
   return false
 }
 
