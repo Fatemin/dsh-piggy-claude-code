@@ -1,7 +1,7 @@
 # 业务契约注册表 · Contract registry
 
 > 状态：current / authoritative。本页是本项目全部业务契约的唯一入口：每个 `contract_id` 指向一份契约文档，契约文档再由 `test/contracts.test.js` 与代码逐项比对。
-> 怎么写、怎么改契约看 [`docs/agent/contracts.md`](../agent/contracts.md)；合入时的机械门看 [`docs/agent/delivery.md`](../agent/delivery.md) §5。
+> 怎么写、怎么改契约的 runbook `docs/agent/contracts.md` 待补（Q0004 后续）；合入时的机械门看 [`docs/agent/delivery.md`](../agent/delivery.md) §5。
 
 ## 注册表
 

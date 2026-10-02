@@ -2,7 +2,7 @@
 
 > `AGENTS.md` points here. These are repository rules, not a platform system prompt.
 > Keep authorization, critical safeguards, and routing here; load methods and commands from [`docs/agent/`](docs/agent/README.md) on demand.
-> Adapted from the business-agnostic part of the RIMINA OPS harness (snapshot in [`harness/`](harness/MANIFEST.md), read-only reference).
+> Adapted from the business-agnostic part of the RIMINA OPS harness (local untracked snapshot in `harness/`, read-only reference; not on every machine).
 
 ## 1. Intent and communication
 
