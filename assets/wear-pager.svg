@@ -7,9 +7,9 @@
   <g class="w-pager" data-wear="pager" data-slot="waist"><style>.w-pager-lcd{animation:w-pager-beep 2.4s steps(1) infinite}
     @keyframes w-pager-beep{0%,60%,100%{fill:#A8C686}65%,75%,85%{fill:#E2F5C8}70%,80%{fill:#A8C686}}</style>
     <clipPath id="w-pager-body"><path d="M110 70C155 46 192 37 231 41C259 43 279 48 298 64C320 83 332 105 332 128C333 146 326 163 319 180C312 197 309 223 308 241C308 254 301 260 289 260C277 260 270 255 269 244L267 230C266 222 261 219 253 220C231 227 213 235 192 240L191 282C191 292 185 298 173 298C159 298 152 293 152 284L151 248C140 248 131 247 123 245L122 271C121 282 116 287 104 287C93 287 88 283 87 273L84 232C63 224 52 210 48 192C42 170 48 148 62 126C69 115 75 106 80 94C87 79 96 68 110 70Z"/></clipPath><mask id="w-pager-ear" maskUnits="userSpaceOnUse" x="0" y="-60" width="400" height="400"><rect x="0" y="-60" width="400" height="400" fill="#fff"/><path d="M187 104C174 110 184 129 193 139C201 147 213 150 220 139C225 131 224 119 222 112" fill="none" stroke="#000" stroke-width="15" stroke-linecap="round"/></mask>
-    <g mask="url(#w-pager-ear)"><g clip-path="url(#w-pager-body)"><path d="M188 30Q222 128 232 244H248Q238 128 204 30Z" fill="#6B4A2E"/>
-    <g transform="translate(228.2 154.1) rotate(-10.2)"><rect x="-15" y="-13" width="30" height="26" rx="5" fill="#F5C24C"/><rect x="-9" y="-7" width="18" height="14" rx="3" fill="#D99A1E"/><path d="M0-11V11" fill="none" stroke="#FFE27A" stroke-width="3"/></g></g></g>
-    <g transform="translate(235.6 202.8) rotate(-7.2)"><rect x="-17" y="-13" width="34" height="26" rx="6" fill="#2E2E3A"/><rect class="w-pager-lcd" x="-12" y="-8" width="24" height="10" rx="2" fill="#A8C686"/>
+    <g mask="url(#w-pager-ear)"><g clip-path="url(#w-pager-body)"><path d="M214 32Q262 124 248 244H264Q278 124 230 32Z" fill="#6B4A2E"/>
+    <g transform="translate(257.3 152.5) rotate(-5.7)"><rect x="-15" y="-13" width="30" height="26" rx="5" fill="#F5C24C"/><rect x="-9" y="-7" width="18" height="14" rx="3" fill="#D99A1E"/><path d="M0-11V11" fill="none" stroke="#FFE27A" stroke-width="3"/></g></g></g>
+    <g transform="translate(259 201.7) rotate(1.4)"><rect x="-17" y="-13" width="34" height="26" rx="6" fill="#2E2E3A"/><rect class="w-pager-lcd" x="-12" y="-8" width="24" height="10" rx="2" fill="#A8C686"/>
     <circle cx="-8" cy="7" r="2.5" fill="#8A8F9E"/><circle cy="7" r="2.5" fill="#8A8F9E"/><circle cx="8" cy="7" r="2.5" fill="#8A8F9E"/></g></g>
   <!-- wear:end -->
 </svg>

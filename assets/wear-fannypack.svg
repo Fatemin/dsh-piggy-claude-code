@@ -7,8 +7,8 @@
   <g class="w-fannypack" data-wear="fannypack" data-slot="waist"><style>.w-fannypack-tab{animation:w-fannypack-jiggle 1.4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
     @keyframes w-fannypack-jiggle{0%,100%{transform:rotate(0)}50%{transform:rotate(18deg)}}</style>
     <clipPath id="w-fannypack-body"><path d="M110 70C155 46 192 37 231 41C259 43 279 48 298 64C320 83 332 105 332 128C333 146 326 163 319 180C312 197 309 223 308 241C308 254 301 260 289 260C277 260 270 255 269 244L267 230C266 222 261 219 253 220C231 227 213 235 192 240L191 282C191 292 185 298 173 298C159 298 152 293 152 284L151 248C140 248 131 247 123 245L122 271C121 282 116 287 104 287C93 287 88 283 87 273L84 232C63 224 52 210 48 192C42 170 48 148 62 126C69 115 75 106 80 94C87 79 96 68 110 70Z"/></clipPath><mask id="w-fannypack-ear" maskUnits="userSpaceOnUse" x="0" y="-60" width="400" height="400"><rect x="0" y="-60" width="400" height="400" fill="#fff"/><path d="M187 104C174 110 184 129 193 139C201 147 213 150 220 139C225 131 224 119 222 112" fill="none" stroke="#000" stroke-width="15" stroke-linecap="round"/></mask>
-    <g mask="url(#w-fannypack-ear)"><g clip-path="url(#w-fannypack-body)"><path d="M190 30Q224 128 234 244H246Q236 128 202 30Z" fill="#7B61FF"/></g></g>
-    <g transform="translate(234.4 193.8) rotate(-7.8)"><rect x="-30" y="-22" width="62" height="42" rx="18" fill="#FF8A3D"/>
+    <g mask="url(#w-fannypack-ear)"><g clip-path="url(#w-fannypack-body)"><path d="M216 32Q264 124 250 244H262Q276 124 228 32Z" fill="#7B61FF"/></g></g>
+    <g transform="translate(259.2 192.6) rotate(0.2)"><rect x="-30" y="-22" width="62" height="42" rx="18" fill="#FF8A3D"/>
     <rect x="-24" y="-4" width="50" height="20" rx="9" fill="#FFD23F"/>
     <path d="M-22-12H24" fill="none" stroke="#2E2E3A" stroke-width="3" stroke-linecap="round"/>
     <g class="w-fannypack-tab"><rect x="-25" y="-18" width="8" height="16" rx="3" fill="#3AC0B5"/></g>
