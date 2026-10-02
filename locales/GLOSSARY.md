@@ -61,6 +61,7 @@ The pig is referred to as "it" in English and by name or 「この子」 in Japa
 | 语言 | 言語 | Language |
 | 开机自动启动 | ログイン時に起動 | Start at login |
 | 退出 | 終了 | Quit |
+| 检查更新 · 立即更新 · 稍后 | アップデートを確認 · 今すぐアップデート · あとで | Check for updates · Update now · Later |
 
 Units stay as they are: `kg`, `px`, `%`. Keep every emoji exactly where it is.
 Durations: 分钟/小时/天 → 分/時間/日 · min/h/day(s).
