@@ -30,10 +30,19 @@ window.__ModuleLoader__.load({
       working: 'away-work', studying: 'away-study', traveling: 'away-trip',
     }
     var LEVELED_MOODS = { sick: true, hungry: true, dirty: true, lonely: true }
+    // Being away at a particular school stage or in a particular region has its own pose.
+    var STUDY_ART = { primary: 'study-primary', college: 'study-college', graduate: 'study-graduate', doctor: 'study-doctor' }
+    var TRIP_ART = {
+      china: 'away-trip-china', eastasia: 'away-trip-eastasia', southasia: 'away-trip-southasia', europe: 'away-trip-europe',
+      americas: 'away-trip-americas', mideast: 'away-trip-mideast', oceania: 'away-trip-oceania',
+    }
+    // A stage that dresses up wears it in every pose: <pose>--<look>.svg. Keyed by
+    // the stage's drawing, so an elder in the original look stays undressed.
+    var STAGE_LOOK = { 'stage-piglet': 'piglet', 'stage-middle': 'middle', 'stage-elder': 'elder' }
     // One-shot poses for the care buttons and verdicts.
     var REACT_ART = {
       feed: 'react-eat', bathe: 'react-bathe', play: 'react-play', pet: 'react-pet',
-      refuse: 'react-refuse', cure: 'react-cure',
+      refuse: 'react-refuse', cure: 'react-cure', graduate: 'react-graduate',
       // The scratch card: scratching, then one of three verdicts.
       scratch: 'lottery-scratch', jackpot: 'lottery-jackpot', win: 'lottery-win', lose: 'lottery-lose',
     }
@@ -723,6 +732,8 @@ window.__ModuleLoader__.load({
           emoji: str(d.activity.emoji, '💼'),
           secondsLeft: num(d.activity.secondsLeft, 0),
           progress: num(d.activity.progress, 0),
+          stage: str(d.activity.stage, ''),
+          region: str(d.activity.region, ''),
         } : null,
         canGoOut: d.canGoOut === true,
         boxStage: isObj(d.boxStage) ? {
@@ -2196,13 +2207,15 @@ window.__ModuleLoader__.load({
       // ---- animation ----
       /** The sprite the pig settles back to after a reaction; null = emoji. */
       var baseArt = null
+      /** '--piglet' / '--middle' / '--elder' while the stage dresses every pose, else ''. */
+      var lookSuffix = ''
 
       /** Show a drawn sprite by name, or fall back to the emoji. */
       function showArt(art, emoji) {
         baseArt = art === null || art === undefined ? null : art
         if (baseArt !== null) {
           // Mid-reaction the reaction pose stays up; the timer restores baseArt.
-          if (!pig.getAttribute('data-react-art') !== null) {
+          if (pig.getAttribute('data-react-art') === null) {
             var src = ART_URL + baseArt + '.svg'
             if (pigArt.getAttribute('src') !== src) pigArt.src = src
           }
@@ -2225,6 +2238,7 @@ window.__ModuleLoader__.load({
         // holds it long enough for one loop to read.
         var pose = pigArt.hidden ? undefined : REACT_ART[kind]
         if (pose !== undefined) {
+          pose += lookSuffix
           pigArt.src = ART_URL + pose + '.svg'
           pig.setAttribute('data-react-art', pose)
           ms = Math.max(ms || 900, 1600)
@@ -3708,6 +3722,7 @@ window.__ModuleLoader__.load({
         }
 
         if (view.hatched !== true) {
+          lookSuffix = ''
           showArt(view.boxStage.art, view.boxStage.emoji)
           pig.setAttribute('data-mood', 'box')
           // Size comes from the host so the box and the pig can never drift.
@@ -3735,6 +3750,14 @@ window.__ModuleLoader__.load({
             var job = view.jobs.filter(j => j.key === view.activity.key)[0]
             if (job !== undefined && job.art !== null) pose = 'job-' + job.art
           }
+          if (pose !== undefined && view.pig.mood === 'studying' && view.activity !== null && view.activity.kind === 'study') {
+            if (STUDY_ART[view.activity.stage] !== undefined) pose = STUDY_ART[view.activity.stage]
+          }
+          if (pose !== undefined && view.pig.mood === 'traveling' && view.activity !== null && view.activity.kind === 'trip') {
+            if (TRIP_ART[view.activity.region] !== undefined) pose = TRIP_ART[view.activity.region]
+          }
+          lookSuffix = STAGE_LOOK[stage.art] !== undefined ? '--' + STAGE_LOOK[stage.art] : ''
+          if (pose !== undefined) pose += lookSuffix
           showArt(pose !== undefined ? pose : stage.art, stage.emoji)
           // Literally grows up: the stage carries its own size.
           host.style.setProperty('--pig-size', stage.size + 'px')
@@ -3773,8 +3796,9 @@ window.__ModuleLoader__.load({
           else if (event.kind === 'death') react('refuse', 700)
           else if (event.kind === 'work') { react('away', 900); burst(['🪙', '💰'], 3) }
           else if (event.kind === 'study') { react('away', 900); burst(['📚', '✨'], 3) }
-          else if (event.kind === 'diploma') { react('levelup', 950); burst(['📜', '🎓', '✨'], 3) }
+          else if (event.kind === 'diploma') { react('graduate', 2600); burst(['📜', '🎓', '✨'], 3) }
           else if (event.kind === 'trip') { react('away', 900); burst(['🧳', '🎁'], 3) }
+          else if (event.kind === 'doctor') { react('graduate', 2600); burst(['🎓', '🎉'], 3) }
         }
 
         relabelChrome()

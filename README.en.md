@@ -55,7 +55,7 @@ Four ways to see your pig:
 | Sleep | — | **Put the pig to bed** (panel button or `pig sleep`); in the standalone desktop app **it also sleeps when the computer does**. Asleep it only gets hungrier, mood and cleanliness slowly come back (about +9 / +6 an hour) and it falls ill half as easily; feeding, bathing, playing, petting or sending it out wakes it |
 | Lifespan | Dies of old age on day 14 | **Never dies of old age**; untreated illness down to 0 health still kills, and the Revival pill still works |
 | Name | Command only | First name is free; each rename after that costs a **Rename card** (shop → items, 1000 🪙) |
-| Travel | Four tiers: outing / mountains / seaside / abroad | **21 destinations in 7 regions**, priced and timed by your computer's time zone; brings back souvenirs and local specialities; **completing a region** grants stat bonuses and a passive perk |
+| Travel | Four tiers: outing / mountains / seaside / abroad | **22 destinations in 7 regions**, priced and timed by your computer's time zone; brings back souvenirs and local specialities; **completing a region** grants stat bonuses and a passive perk |
 | School | Primary → university → graduate, one course at a time | Adds a **doctorate** (12 h, 2400 tuition, +7 stats); **2 parallel courses at university, 3 at graduate and doctorate** |
 | Language | Chinese only | **中文 / 日本語 / English** |
 | Work | Odd jobs / bricks / office | **Grouped by smarts / charm / strength**, each with jobs of different lengths and one **fixed 15-minute gig with random pay**; the top of each group is a **career** that needs trait points: AI trainer, influencer, VTuber (random pay), fitness coach |
@@ -81,7 +81,7 @@ Fare: 100 🪙 + 200 🪙 per time zone crossed; duration: 1 h + 1 h per time zo
 
 | Region | Destinations | Completion reward | Passive perk |
 |---|---|---|---|
-| 🐉 China | Beijing · Chengdu · Xi'an | Strength +3, weight +5 kg | 🍚 Chow king: +10% weight from food |
+| 🐉 China | Beijing · Chengdu · Xi'an · Shanghai | Strength +3, weight +5 kg | 🍚 Chow king: +10% weight from food |
 | 🗾 East Asia | Tokyo · Seoul · Ulaanbaatar | Smarts +2, Charm +2 | 📚 Grind king: classes 20% shorter |
 | 🛺 South & SE Asia | Bangkok · Singapore · New Delhi | Charm +2 | 🧘 Zen mode: mood drops 25% slower |
 | 🏰 Europe | Paris · Rome · London | Smarts +4 | 🖼 Museum pass: +50% mood from trips |

@@ -438,6 +438,9 @@ export function snapshot(store, options = {}) {
       secondsLeft: activitySecondsLeft(state, nowMs),
       // How far along, so the panel can draw the pig actually getting on with it.
       progress: activityProgress(activity, nowMs),
+      // Which school stage / which region, so the pig is drawn at that school or in that place.
+      ...(activity.kind === 'study' && typeof activity.stage === 'string' ? { stage: activity.stage } : {}),
+      ...(activity.kind === 'trip' ? { region: placeByKey(activity.key)?.region ?? null } : {}),
     },
     canGoOut: awayBlockedReason(state) === null,
     awayBlocked: awayBlockedReason(state),

@@ -47,7 +47,7 @@
 | `actions` | core | DERIVED+LIVE | `feed`/`bathe`/`play`/`pet` 的 `ready`、`waitSeconds`、`blocked` |
 | `jobs` / `subjects` / `stages` / `trips` / `world` | task | DERIVED | 打工、学习、旅行标签页 |
 | `shop` / `inventory` / `bag` / `care` / `lottery` | task | DERIVED | 商店、背包、照料选择、刮刮卡；`care` 只在有猪时出现 |
-| `activity` | core | STATE+LIVE | 外出中为对象（`kind`、`key`、`secondsLeft`、`progress` …），否则 `null` |
+| `activity` | core | STATE+LIVE | 外出中为对象（`kind`、`key`、`secondsLeft`、`progress` …；上课另带学段 `stage`，旅行另带地区 `region`，面板据此选外出形象），否则 `null` |
 | `canGoOut` / `awayBlocked` | core | DERIVED | 不能外出的原因键，面板据此置灰 |
 | `pending` | core | STATE | 待展示的事件，取快照时被消费（`drain`） |
 | `reviveItem` / `maxHealth` | core | TABLE | 还魂丹键与健康上限 |
