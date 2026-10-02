@@ -1401,8 +1401,9 @@ test('durations and counts read naturally in each language', async () => {
   assert.equal(tr('zh', '{n} 天', { n: 3 }), '3 天')
 })
 
-// [ST0004] the wardrobe: worn things pressed, locked ones disabled, a click posts the change.
-test('the wardrobe sits on the status tab and posts what to put on or take off', async () => {
+// [ST0004] the wardrobe: a bag shelf right of the consumables; worn things
+// pressed, locked ones disabled, a click posts the change.
+test('the wardrobe is a bag shelf beside the consumables and posts what to put on or take off', async () => {
   const item = (key, emoji, fields) => ({ key, slot: 'head', label: key, emoji, unlocked: true, worn: false, hint: '', ...fields })
   const wardrobe = [item('bow', '🎀', { worn: true }), item('flatcap', '🧢'), item('mortarboard', '🎓', { unlocked: false, hint: '拿到任意一张毕业证后解锁' })]
   const pig = { ...PIG, stage: { ...PIG.stage, art: 'stage-middle' }, mood: 'fine' }
@@ -1415,8 +1416,21 @@ test('the wardrobe sits on the status tab and posts what to put on or take off',
   registration.factory(() => {}).apply({})
   await settle()
   openPanel(dom)
+  assert.equal(findByAttr(contentOf(dom), 'data-wear', 'bow'), undefined, 'not on the status tab')
 
-  assert.ok(contentOf(dom).allText().includes('👗 衣柜'))
+  pickTab(dom, 'bag')
+  const shelves = []
+  const walk = node => {
+    if (node.attributes?.['data-bag'] !== undefined) shelves.push(node.attributes['data-bag'])
+    for (const child of node.children ?? []) walk(child)
+  }
+  walk(contentOf(dom))
+  assert.deepEqual(shelves, ['items', 'wardrobe', 'travel', 'school'], 'right of the consumables')
+  const shelf = findByAttr(contentOf(dom), 'data-bag', 'wardrobe')
+  assert.ok(shelf.textContent.includes('👗 衣柜 2/3'), 'counts what is unlocked')
+  assert.match(shelf.parentNode?.className ?? findByClass(contentOf(dom), 'dp-seg').className, /dp-seg-2/, 'four shelves, two by two')
+  shelf.fire('click')
+  assert.ok(contentOf(dom).allText().includes('🎀bow'), 'says what it is wearing')
   const bow = findByAttr(contentOf(dom), 'data-wear', 'bow')
   const cap = findByAttr(contentOf(dom), 'data-wear', 'flatcap')
   const board = findByAttr(contentOf(dom), 'data-wear', 'mortarboard')
