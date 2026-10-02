@@ -1028,6 +1028,17 @@ test('graduating as a doctor plays the graduation pose in the stage look', async
   assert.equal(img().src, '/dsh-pig/art/stage-middle.svg', 'then back to the stage drawing')
 })
 
+test('any diploma is a graduation too', async () => {
+  const stage = { key: 'young', label: '青年猪', emoji: '🐖', size: 48, art: 'stage-young' }
+  const { registration, dom } = await loadClient({
+    status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'fine' }, pending: [{ kind: 'diploma', text: '猪猪 毕业了，拿到小学毕业证 📃', at: 333 }] },
+  })
+  window.setTimeout = () => 0
+  registration.factory(() => {}).apply({})
+  await settle()
+  assert.equal(findByClass(hostOf(dom), 'dp-pig-img').src, '/dsh-pig/art/react-graduate.svg')
+})
+
 test('being away shows what the pig is doing and how far along it is', async () => {
   const cases = [
     ['work', 'working', '💻'],

@@ -275,7 +275,7 @@ const SPRITES = {
     @keyframes z{0%{opacity:0;transform:translate(0,14px)}30%{opacity:1}100%{opacity:0;transform:translate(24px,-36px)}}
     @keyframes glow{50%{opacity:.65}}
     @keyframes twinkle{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}`,
-    wrap: 'breathe',
+    wrap: 'breathe', hat: true,
     pig: {
       eyes: 'closed',
       face: `<path d="M110 72C120 30 170 4 222 12C250 16 266 34 270 58C252 46 236 42 214 46Z" fill="#7E9BD8"/>

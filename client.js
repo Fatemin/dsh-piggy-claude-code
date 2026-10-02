@@ -3796,7 +3796,7 @@ window.__ModuleLoader__.load({
           else if (event.kind === 'death') react('refuse', 700)
           else if (event.kind === 'work') { react('away', 900); burst(['🪙', '💰'], 3) }
           else if (event.kind === 'study') { react('away', 900); burst(['📚', '✨'], 3) }
-          else if (event.kind === 'diploma') { react('levelup', 950); burst(['📜', '🎓', '✨'], 3) }
+          else if (event.kind === 'diploma') { react('graduate', 2600); burst(['📜', '🎓', '✨'], 3) }
           else if (event.kind === 'trip') { react('away', 900); burst(['🧳', '🎁'], 3) }
           else if (event.kind === 'doctor') { react('graduate', 2600); burst(['🎓', '🎉'], 3) }
         }
