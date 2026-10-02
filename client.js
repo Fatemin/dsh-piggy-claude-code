@@ -163,6 +163,7 @@ window.__ModuleLoader__.load({
         '再长 {kg} kg 就长成下一阶段了': 'あと {kg} kg で次の姿に育つよ',
         // [ST0004] the wardrobe
         '衣柜': 'クローゼット', '跟着阶段': '成長に合わせる', '还没解锁：{hint}': 'まだ使えない：{hint}', '什么也没穿': 'なにも着ていない',
+        '头上': 'あたま', '眼睛': 'め', '腰上': 'こし', '脸上': 'かお',
         '不在家': 'おでかけ中', '{n}s': '{n}秒', '语言': '言語',
         // care item picker
         '喂点什么？': 'なにを食べさせる？', '用哪个洗澡？': 'どれでおふろにする？',
@@ -335,6 +336,7 @@ window.__ModuleLoader__.load({
         '再长 {kg} kg 就长成下一阶段了': '{kg} kg more to grow into the next stage',
         // [ST0004] the wardrobe
         '衣柜': 'Wardrobe', '跟着阶段': 'Match the stage', '还没解锁：{hint}': 'Locked: {hint}', '什么也没穿': 'Nothing on',
+        '头上': 'Head', '眼睛': 'Eyes', '腰上': 'Waist', '脸上': 'Face',
         '不在家': 'out', '{n}s': '{n}s', '语言': 'Language',
         // care item picker
         '喂点什么？': 'What should it eat?', '用哪个洗澡？': 'Bathe with what?',
@@ -518,6 +520,9 @@ window.__ModuleLoader__.load({
     }
     var KIND_TITLE = { food: ['🍎', '食物'], bath: ['🧼', '洗浴'], toy: ['🪀', '玩具'], medicine: ['💊', '药品'], revive: ['✨', '复活'], card: ['🪪', '道具'], wear: ['👗', '装扮'] }
     var KIND_ORDER = ['food', 'bath', 'toy', 'medicine', 'revive', 'card', 'wear']
+    // [ST0012] wardrobe sections, head to toe.
+    var WEAR_SLOT_TITLE = { head: ['🎩', '头上'], eyes: ['👓', '眼睛'], waist: ['🎗️', '腰上'], face: ['🧔', '脸上'] }
+    var WEAR_SLOT_ORDER = ['head', 'eyes', 'waist', 'face']
     // [dsh-piggy-claude-code mod] study and work are sorted by the trait they build or use.
     var TRAIT_TITLE = { intel: ['🧠', '智力'], charm: ['✨', '魅力'], strong: ['💪', '武力'] }
     var TRAIT_KEYS = ['intel', 'charm', 'strong']
@@ -2640,6 +2645,8 @@ window.__ModuleLoader__.load({
        * [ST0004] The bag's wardrobe shelf: every decoration as a pill, worn ones
        * pressed, locked ones dashed with how to earn them. One per slot —
        * putting on a hat takes the other hat off. The pig itself is the preview.
+       * [ST0012] One section per slot, head to toe, so the one-per-slot rule
+       * shows; a slot an older panel does not know goes last, under its key.
        */
       function wardrobeShelf() {
         var p = view.pig
@@ -2652,8 +2659,20 @@ window.__ModuleLoader__.load({
         auto.textContent = T('跟着阶段')
         head.appendChild(auto)
         content.appendChild(head)
+        var slots = WEAR_SLOT_ORDER.filter(slot => p.wardrobe.some(item => item.slot === slot))
+        p.wardrobe.forEach(item => { if (slots.indexOf(item.slot) === -1) slots.push(item.slot) })
+        slots.forEach(slot => wardrobeSection(slot, p.wardrobe.filter(item => item.slot === slot)))
+      }
+
+      /** [ST0012] One slot's decorations, under the slot's name. */
+      function wardrobeSection(slot, items) {
+        var title = WEAR_SLOT_TITLE[slot]
+        var name = el('div', 'dp-shelf', title === undefined ? slot : title[0] + ' ' + T(title[1]))
+        name.setAttribute('data-wear-slot', slot)
+        content.appendChild(name)
         var grid = el('div', 'dp-actions dp-wear')
-        for (var wi = 0; wi < p.wardrobe.length; wi += 1) {
+        grid.setAttribute('data-wear-slot', slot)
+        for (var wi = 0; wi < items.length; wi += 1) {
           (function (item) {
             var pick = button('dp-btn', {
               'data-wear': item.key, 'data-slot': item.slot, 'aria-pressed': String(item.worn),
@@ -2668,7 +2687,7 @@ window.__ModuleLoader__.load({
             pick.appendChild(el('span', null, item.unlocked ? item.emoji : '🔒'))
             pick.appendChild(el('span', null, item.label))
             grid.appendChild(pick)
-          })(p.wardrobe[wi])
+          })(items[wi])
         }
         content.appendChild(grid)
       }
