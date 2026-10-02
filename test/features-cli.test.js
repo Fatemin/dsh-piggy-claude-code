@@ -217,4 +217,20 @@ for (const lang of ['zh', 'en']) {
       assert.equal(store.state.outfit, null)
     })
   })
+
+  test(`${lang}: [ST0012] /pig shop has a 装扮 shelf; /pig buy puts the gear on, once`, () => {
+    withPig(lang, ({ store, run, t }) => {
+      const shop = run('shop').text
+      assert.ok(shop.includes(t('【{shelf}】', { shelf: t('装扮') })), shop)
+      assert.ok(shop.includes(`📟 ${t('BP机皮带')}  ${t('{price} 金币', { price: 288 })}`), shop)
+
+      const bought = run(`buy ${t('BP机皮带')}`)
+      assert.ok(bought.text.includes(t('👗 已经穿上了，衣柜里随时换：/pig wear')), bought.text)
+      assert.deepEqual(store.state.wardrobeBought, ['pager'])
+      assert.ok(run('wear').text.includes(`✅📟${t('BP机皮带')}`), 'worn')
+      assert.ok(run('shop').text.includes(`📟 ${t('BP机皮带')}  ${t('已拥有')}`), 'the shelf says it is owned')
+      assert.equal(run('buy pager').text, t('👗 {emoji} {item} 已经在衣柜里了，不用再买。', { emoji: '📟', item: t('BP机皮带') }))
+      assert.ok(run('wear').text.includes(t('在商店「装扮」货架买，{price} 金币', { price: 66 })), 'the hint says where to buy it')
+    })
+  })
 }

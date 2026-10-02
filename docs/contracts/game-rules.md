@@ -41,7 +41,7 @@
 
 <!-- contract:item-kinds -->
 ```json
-["food", "bath", "toy", "medicine", "revive", "card"]
+["food", "bath", "toy", "medicine", "revive", "card", "wear"]
 ```
 
 <!-- contract:illness-chains -->
@@ -90,12 +90,12 @@
 1. **键只增不删**：存档里的 `activity.key`、背包物品键、纪念品键都引用这些表。删除或改名一个键必须同时在 `migrate()` 给出处理路径（先例：退役的四个旧旅行地点由 `LEGACY_TRIPS` 退款并清除）。
 2. 每个打工的 `trait` ∈ `TRAIT_ORDER`；`pro` 职业有 `requires` 且只引用存在的属性；`random` 区间下界小于上界。
 3. 每条疾病链恰好 4 期；`ILLNESS_STAGE_HOURS`、`STAGE_HEALTH`、`SELF_HEAL_CHANCE` 长度均为 4；每一期都有对症药 `medicineForStage(1..4)`。
-4. 商店物品的 `kind` ∈ `KIND_ORDER`；全部物品（商店 + 特产）键唯一。
+4. 商店物品的 `kind` ∈ `KIND_ORDER`；全部物品（商店 + 特产）键唯一，且不与装饰键重名。`wear` 货架（ST0012）不在 `SHOP` 里：它列出 `WEAR_FOR_SALE`（`unlock.kind === 'shop'` 的装饰），规则见 [ART.ASSETS.V1](art-assets.md) §2.2。
 5. 每个目的地的 `region` 是已登记地区。
 6. 面向玩家的 `label` 都是中文源串，并在 `locales/data.js` 有 ja 与 en 译文。
 7. 规则只在 `core.js`：快照、面板、终端渲染都不得重算报酬、冷却或价格（见 [HOST.SNAPSHOT.V1](host-snapshot.md) §1）。
 8. 睡觉与外出互斥：睡着时饱食照常下降，心情、清洁按 `SLEEP_RECOVERY_PER_MIN` 回升，疏于照顾累积的生病风险乘 `SLEEP_SICK_RISK_MULTIPLIER`；照顾动作和出门会先叫醒它；电脑唤醒（`auto`）只结束电脑休眠引起的睡眠。
-9. **装扮不进玩法**：`data.js` 的 `WEAR_SLOTS` / `WEARABLES` / `STAGE_OUTFIT` 与 `core.js` 的解锁、穿脱只决定外观，由 [ART.ASSETS.V1](art-assets.md) 约束；它们不得带数值字段，也不得被任何结算读取。
+9. **装扮不进玩法**：`data.js` 的 `WEAR_SLOTS` / `WEARABLES` / `STAGE_OUTFIT` 与 `core.js` 的解锁、穿脱只决定外观，由 [ART.ASSETS.V1](art-assets.md) 约束；除 `shop` 装饰的售价（`unlock.price`，只在购买时扣金币）外不得带数值字段，也不得被任何结算读取。
 
 ## 4. 变更规则 Change rules
 

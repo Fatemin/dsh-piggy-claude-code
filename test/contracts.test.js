@@ -137,8 +137,8 @@ test('GAME.RULES.V1: illness invariants', () => {
 
 test('GAME.RULES.V1: items and places invariants', () => {
   for (const item of SHOP) assert.ok(KIND_ORDER.includes(item.kind), `${item.key}: kind ${item.kind}`)
-  const keys = ALL_ITEMS.map(item => item.key)
-  assert.equal(new Set(keys).size, keys.length, 'item keys unique')
+  const keys = [...ALL_ITEMS, ...WEARABLES].map(item => item.key)
+  assert.equal(new Set(keys).size, keys.length, 'item and decoration keys unique: /pig buy finds either')
   const regions = REGIONS.map(r => r.key)
   for (const place of PLACES) assert.ok(regions.includes(place.region), `${place.key}: region ${place.region}`)
 })

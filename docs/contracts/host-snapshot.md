@@ -46,7 +46,7 @@
 | `boxStage` | core | TABLE | 纸盒自己的尺寸与文案，面板不得硬编码 |
 | `actions` | core | DERIVED+LIVE | `feed`/`bathe`/`play`/`pet` 的 `ready`、`waitSeconds`、`blocked` |
 | `jobs` / `subjects` / `stages` / `trips` / `world` | task | DERIVED | 打工、学习、旅行标签页 |
-| `shop` / `inventory` / `bag` / `care` / `lottery` | task | DERIVED | 商店、背包、照料选择、刮刮卡；`care` 只在有猪时出现 |
+| `shop` / `inventory` / `bag` / `care` / `lottery` | task | DERIVED | 商店、背包、照料选择、刮刮卡；`care` 只在有猪时出现。`shop` 每项带 `owned`；`kind: 'wear'` 的是「装扮」货架上的装饰（ST0012），买过的 `owned: true`，不进 `inventory` / `bag` |
 | `activity` | core | STATE+LIVE | 外出中为对象（`kind`、`key`、`secondsLeft`、`progress` …；上课另带学段 `stage`，旅行另带地区 `region`，面板据此选外出形象），否则 `null` |
 | `canGoOut` / `awayBlocked` | core | DERIVED | 不能外出的原因键，面板据此置灰 |
 | `pending` | core | STATE | 待展示的事件，取快照时被消费（`drain`） |
@@ -103,7 +103,7 @@
 ["adopt", "bathe", "buy", "calloff", "dev", "feed", "hatch", "lang", "look", "lottery", "pet", "play", "rename", "reset", "sleep", "study", "trip", "use", "wake", "wear", "work"]
 ```
 
-`wear`：`{item, on}` 穿上（同部位的换下）或脱下一件，`{auto: true}` 回到跟着阶段穿；拒绝原因 `unhatched` / `dead` / `bad-wear` / `wear-locked`。`look` 自 ST0004 起只是戴上 / 摘下 `whiskers` 的旧入口。
+`wear`：`{item, on}` 穿上（同部位的换下）或脱下一件，`{auto: true}` 回到跟着阶段穿；拒绝原因 `unhatched` / `dead` / `bad-wear` / `wear-locked`。`buy` 给装饰键时买下并穿上，另有拒绝原因 `owned`（已经买过）与 `not-for-sale`（不是商店装饰）。`look` 自 ST0004 起只是戴上 / 摘下 `whiskers` 的旧入口。
 
 `/act` 回执 = 最新快照 + 以下操作结论字段（结论在后，覆盖快照的 `ok`）：
 
