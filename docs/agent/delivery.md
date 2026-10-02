@@ -45,6 +45,23 @@ On failure: keep the complete error, classify baseline vs. environment vs. curre
 
 `scripts/harness/claude-test-consent.mjs` is registered in `.claude/settings.json` for `PreToolUse` (Bash/PowerShell), `SessionStart` and `UserPromptSubmit`. It positively recognizes only the complete suite; unknown commands and targeted runs pass through. It never silently approves, and it is an accidental-bypass guard, not a sandbox. Hooks must not run verification themselves. A new or changed hook only applies to sessions started afterwards.
 
+### 3.2 Local pig processes
+
+Every desktop pig is a visible window plus a tray icon, and test pigs run on their own save, so the single-instance lock does not stop them from piling up. `scripts/harness/pigs.mjs` is the only tool for them:
+
+```bash
+node scripts/harness/pigs.mjs list              # real vs test pigs, age, launcher, orphaned or not
+node scripts/harness/pigs.mjs reap --mine       # stop the test pigs this Claude session started
+node scripts/harness/pigs.mjs reap              # stop orphaned test pigs and those older than 120 min
+node scripts/harness/pigs.mjs restart           # replace the real desktop pig with main's `npm start`
+```
+
+- A *test* pig is the desktop app with `PIGGY_USER_DATA`, or `bin/pig.js serve` with `PIG_STATE`; point both into your scratchpad. Everything else (the user's profile, the native `DshPiggyDesk`) is the *real* pig: `reap` never touches it, and only `restart` stops it.
+- A test desktop pig leaves by itself when its launcher process dies (`PIGGY_PARENT_PID`, default the parent; 0 = don't watch) and after `PIGGY_TTL_MIN` minutes (default 30; 0 = no limit). A self-check run (`PIGGY_DEBUG_SNAPSHOT`) quits after writing its report. Builds made before this rule (packaged copies in scratchpads) have none of that; `reap` is the backstop.
+- Launch test pigs in the foreground or as a tracked background task, never with `&`/`nohup`/`open` that drop the launcher: a pig born without a launcher only has its TTL.
+- Before the final reply, `reap --mine`; report anything it could not stop. `--all-tests` stops every test pig, other sessions' included: only on the user's request.
+- `restart` sends the real pig SIGTERM (it saves on the way out), waits, and starts `npm start` from the main checkout detached, logging to `$TMPDIR/dsh-piggy-desk.log`. It never SIGKILLs the real pig; if it does not quit, nothing is started.
+
 ## 4. Precise commits
 
 ```bash
@@ -67,7 +84,7 @@ git -C <main-checkout> status --short        # main must not overlap incoming pa
 git -C <main-checkout> merge --no-ff feature/<name>
 ```
 
-Check first that `origin/main` is not ahead and that main's dirty paths do not overlap the incoming paths; if they do, stop. A conflict is aborted (`git merge --abort`), not guessed through. Merge success does not prove testing; report verification separately. Then restart the desktop app (`CLAUDE.md` §2.7) and stop for user acceptance; do not push.
+Check first that `origin/main` is not ahead and that main's dirty paths do not overlap the incoming paths; if they do, stop. A conflict is aborted (`git merge --abort`), not guessed through. Merge success does not prove testing; report verification separately. Then restart the desktop app (`node scripts/harness/pigs.mjs restart`, `CLAUDE.md` §2.7) and stop for user acceptance; do not push.
 
 ## 6. Cleanup
 

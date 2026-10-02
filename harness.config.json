@@ -236,10 +236,11 @@
   },
   "post_integrate": {
     "restart": {
-      "cwd": "app",
+      "cwd": ".",
       "command": [
-        "npm",
-        "start"
+        "node",
+        "scripts/harness/pigs.mjs",
+        "restart"
       ],
       "reason": "standing user rule: the desktop app must run the merged result"
     }

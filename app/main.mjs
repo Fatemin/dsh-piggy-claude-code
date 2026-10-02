@@ -203,7 +203,8 @@ function createWindow(url) {
   // which changes when the preferred port is taken; ours wins.
   win.webContents.on('did-finish-load', () => { if (pigSpot !== null) placePigInWindow(pigSpot.right, pigSpot.bottom) })
   win.loadURL(url)
-  if (process.env.PIGGY_DEBUG_SNAPSHOT) win.webContents.once('did-finish-load', () => selfCheck(process.env.PIGGY_DEBUG_SNAPSHOT))
+  // A self-check is one shot: report, then leave.
+  if (process.env.PIGGY_DEBUG_SNAPSHOT) win.webContents.once('did-finish-load', () => selfCheck(process.env.PIGGY_DEBUG_SNAPSHOT).finally(() => app.quit()))
 }
 
 ipcMain.on('pig', (event, message) => {
@@ -349,8 +350,28 @@ async function selfCheck(dir) {
 
 // ---- lifecycle --------------------------------------------------------------------
 
+/**
+ * A test pig leaves by itself, so one nobody quit never piles up on the desktop:
+ * when whoever started it is gone (`PIGGY_PARENT_PID`, default the parent
+ * process; 0 = don't watch), and after `PIGGY_TTL_MIN` minutes (default 30,
+ * 0 = no limit). `scripts/harness/pigs.mjs reap` is the backstop for the rest.
+ */
+function leaveWithLauncher() {
+  const configured = Number.parseInt(process.env.PIGGY_PARENT_PID ?? '', 10)
+  const parent = Number.isInteger(configured) ? configured : process.ppid
+  if (parent > 1) {
+    setInterval(() => {
+      try { process.kill(parent, 0) } catch (error) { if (error?.code === 'ESRCH') app.quit() }
+    }, 2000)
+  }
+  const minutes = Number.parseFloat(process.env.PIGGY_TTL_MIN ?? '')
+  const ttl = Number.isFinite(minutes) && minutes >= 0 ? minutes : 30
+  if (ttl > 0) setTimeout(() => app.quit(), ttl * 60_000)
+}
+
 // Tests and self-checks keep their save (and window position) out of the real profile.
-if (process.env.PIGGY_USER_DATA) app.setPath('userData', process.env.PIGGY_USER_DATA)
+const testInstance = Boolean(process.env.PIGGY_USER_DATA)
+if (testInstance) app.setPath('userData', process.env.PIGGY_USER_DATA)
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -358,6 +379,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => win?.showInactive())
   // A plain SIGTERM would skip before-quit and lose the last unsaved moments.
   for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => app.quit())
+  if (testInstance) leaveWithLauncher()
   app.on('window-all-closed', () => { /* stay in the tray */ })
   app.on('before-quit', () => {
     quitting = true
