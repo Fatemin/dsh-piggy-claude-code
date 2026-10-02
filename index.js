@@ -52,6 +52,7 @@ import {
   lifeStageFor,
   mood,
   studyView,
+  diplomaView,
   traitView,
   growthPercent,
   lotteryWaitSeconds,
@@ -383,6 +384,8 @@ export function snapshot(store, options = {}) {
       renameCardPrice: RENAME_CARD.price,
       perks: perksOf(state),
       doctor: state.doctorDone === true,
+      // [mod] the diplomas in the bag, held or not
+      diplomas: diplomaView(state).map(diploma => ({ ...diploma, label: tr(lang, diploma.label) })),
       worldTraveler: state.worldDone === true,
       soul: hasSoul(state, nowMs),
       mood: current.key,

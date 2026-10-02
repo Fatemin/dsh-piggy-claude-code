@@ -55,6 +55,8 @@ import {
   TRIPS,
   ALL_ITEMS,
   DOCTOR_GRADUATION,
+  DIPLOMAS,
+  diplomaCount,
   PARALLEL_COURSES,
   RENAME_CARD,
   LOTTERY,
@@ -845,6 +847,22 @@ export function studyView(state) {
   }))
 }
 
+/**
+ * [mod] Every diploma, held or not: how many the pig has, and how far it is
+ * into the next one (a one-off diploma already held has no next).
+ */
+export function diplomaView(state) {
+  return DIPLOMAS.map(diploma => {
+    const lessons = state?.lessonsByStage?.[diploma.stage] ?? 0
+    const count = diplomaCount(diploma, lessons)
+    return {
+      key: diploma.key, stage: diploma.stage, label: diploma.label, emoji: diploma.emoji,
+      repeat: diploma.repeat, count,
+      next: !diploma.repeat && count > 0 ? null : { done: lessons % diploma.lessons, need: diploma.lessons },
+    }
+  })
+}
+
 /** Trait totals, always including every trait. */
 export function traitView(state) {
   const out = {}
@@ -1016,6 +1034,8 @@ function finishStudy(state, activity, nowMs) {
   const stage = schoolStageByKey(activity.stage)
   const subjects = studyKeys(activity).map(subjectByKey).filter(Boolean)
   if (stage === null || subjects.length === 0) return
+  const diploma = DIPLOMAS.find(entry => entry.stage === stage.key) ?? null
+  const diplomasBefore = diploma === null ? 0 : diplomaCount(diploma, state.lessonsByStage?.[stage.key] ?? 0)
   state.traits = { ...(state.traits ?? {}) }
   state.courses = { ...(state.courses ?? {}) }
   state.lessonsByStage = { ...(state.lessonsByStage ?? {}) }
@@ -1044,11 +1064,24 @@ function finishStudy(state, activity, nowMs) {
   announce(state, 'study', say(state, '{name} 学完{lesson}，{gains} 📚', params))
 
   // [mod] the thesis defence: every 博士 subject once, paid a single time.
-  if (stage.key === 'doctor' && state.doctorDone !== true && (state.lessonsByStage.doctor ?? 0) >= DOCTOR_GRADUATION.lessons) {
+  const thesis = stage.key === 'doctor' && state.doctorDone !== true && (state.lessonsByStage.doctor ?? 0) >= DOCTOR_GRADUATION.lessons
+  if (thesis) {
     state.doctorDone = true
     for (const [trait, points] of Object.entries(DOCTOR_GRADUATION.traits)) state.traits[trait] = (state.traits[trait] ?? 0) + points
     remember(state, say(state, '🎓 博士答辩通过！三项属性各 +1'), nowMs)
     announce(state, 'doctor', say(state, '{name} 博士毕业了！🎓 以后请叫它「{name} 博士」', { name: state.name }))
+  }
+
+  // [mod] a diploma for the bag; the first doctorate is already announced above.
+  const diplomasAfter = diploma === null ? 0 : diplomaCount(diploma, state.lessonsByStage[stage.key])
+  if (diplomasAfter > diplomasBefore) {
+    const params = { name: state.name, emoji: diploma.emoji, diploma: word(state, diploma.label), n: diplomasAfter }
+    remember(state, say(state, diplomasAfter > 1 ? '{emoji} 又拿到一张{diploma}（第 {n} 张）' : '{emoji} 拿到了{diploma}', params), nowMs)
+    if (!thesis) {
+      announce(state, 'diploma', say(state, diplomasAfter > 1
+        ? '{name} 又拿到一张{diploma} {emoji}（第 {n} 张）'
+        : '{name} 毕业了，拿到{diploma} {emoji}', params))
+    }
   }
 }
 

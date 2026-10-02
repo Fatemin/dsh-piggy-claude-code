@@ -125,6 +125,7 @@ export default {
     '🎁 加成  {perks}': '🎁 ボーナス  {perks}',
     '🎓 博士': '🎓 博士',
     '🏅 称号  {titles}': '🏅 称号  {titles}',
+    '📜 毕业证  {list}': '📜 卒業証書  {list}',
 
     // [mod] study: several subjects, the doctorate
     '📈 收获    {gains} · 经验 +{xp}': '📈 せいか      {gains} · けいけんち +{xp}',
@@ -290,6 +291,7 @@ export default {
     '🎁 加成  {perks}': '🎁 Perks  {perks}',
     '🎓 博士': '🎓 Doctor',
     '🏅 称号  {titles}': '🏅 Titles  {titles}',
+    '📜 毕业证  {list}': '📜 Diplomas  {list}',
 
     // [mod] study: several subjects, the doctorate
     '📈 收获    {gains} · 经验 +{xp}': '📈 Gains     {gains} · XP +{xp}',
