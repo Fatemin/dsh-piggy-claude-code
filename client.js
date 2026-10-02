@@ -36,6 +36,16 @@ window.__ModuleLoader__.load({
       china: 'away-trip-china', eastasia: 'away-trip-eastasia', southasia: 'away-trip-southasia', europe: 'away-trip-europe',
       americas: 'away-trip-americas', mideast: 'away-trip-mideast', oceania: 'away-trip-oceania',
     }
+    // [ST0011] ...and every destination has its own, ahead of its region's.
+    var PLACE_ART = {
+      beijing: 'away-trip-beijing', chengdu: 'away-trip-chengdu', xian: 'away-trip-xian', shanghai: 'away-trip-shanghai',
+      tokyo: 'away-trip-tokyo', seoul: 'away-trip-seoul', ulaanbaatar: 'away-trip-ulaanbaatar',
+      bangkok: 'away-trip-bangkok', singapore: 'away-trip-singapore', newdelhi: 'away-trip-newdelhi',
+      paris: 'away-trip-paris', rome: 'away-trip-rome', london: 'away-trip-london',
+      newyork: 'away-trip-newyork', mexicocity: 'away-trip-mexicocity', rio: 'away-trip-rio',
+      dubai: 'away-trip-dubai', cairo: 'away-trip-cairo', nairobi: 'away-trip-nairobi',
+      sydney: 'away-trip-sydney', auckland: 'away-trip-auckland', antarctica: 'away-trip-antarctica',
+    }
     // [ST0004] What the pig wears goes on every pose's URL (`?wear=bow,glasses`);
     // the art route pours those decorations into the pose (ART.ASSETS.V1).
     // One-shot poses for the care buttons and verdicts.
@@ -3999,7 +4009,9 @@ window.__ModuleLoader__.load({
             if (STUDY_ART[view.activity.stage] !== undefined) pose = STUDY_ART[view.activity.stage]
           }
           if (pose !== undefined && view.pig.mood === 'traveling' && view.activity !== null && view.activity.kind === 'trip') {
-            if (TRIP_ART[view.activity.region] !== undefined) pose = TRIP_ART[view.activity.region]
+            // Own keys only: a key like `constructor` must not pick up a prototype member.
+            if (Object.prototype.hasOwnProperty.call(PLACE_ART, view.activity.key)) pose = PLACE_ART[view.activity.key]
+            else if (Object.prototype.hasOwnProperty.call(TRIP_ART, view.activity.region)) pose = TRIP_ART[view.activity.region]
           }
           // A grave or a soul wears nothing; the host already sends none for them.
           wearQuery = stage.key !== 'grave' && view.pig.outfit.worn.length > 0 ? '?wear=' + view.pig.outfit.worn.join(',') : ''

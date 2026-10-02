@@ -11,7 +11,7 @@ import { ALL_ITEMS, DIPLOMAS, PARALLEL_COURSES, RENAME_CARD, diplomaCount, schoo
 import { diplomaView, outfitIsAuto, wardrobeView, wear, wearAuto, wornFor } from '../core.js'
 import { hasDefaultName, perksOf, regionProgress, renamePig, tripQuote } from '../core.js'
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 import {
@@ -1064,12 +1064,14 @@ test('study is refused when broke, away, sick or dead', () => {
 
 // [dsh-piggy-claude-code mod] the travel world: priced by time zones from home.
 // [ST0001] every job, school stage and region has a pose. [ST0004] Decorations
-// are their own files now, so there is one drawing per pose.
-test('every job, school stage and trip region has its sprite', () => {
+// are their own files now, so there is one drawing per pose. [ST0011] Every
+// destination has its own too, and the panel knows each one by name.
+test('every job, school stage, trip region and destination has its sprite', () => {
   const poses = [
     ...JOBS.map(job => `job-${job.art}`),
     ...SCHOOL_STAGES.map(stage => `study-${stage.key}`),
     ...REGIONS.map(region => `away-trip-${region.key}`),
+    ...PLACES.map(place => `away-trip-${place.key}`),
     'react-graduate',
   ]
   assert.ok(JOBS.every(job => typeof job.art === 'string' && job.art !== ''), 'every job names its art')
@@ -1077,6 +1079,8 @@ test('every job, school stage and trip region has its sprite', () => {
     assert.ok(existsSync(new URL(`../assets/${pose}.svg`, import.meta.url)), `assets/${pose}.svg`)
     assert.match(`${pose}.svg`, /^[a-z][a-z0-9-]{0,31}\.svg$/, 'the art route serves it')
   }
+  const client = readFileSync(new URL('../client.js', import.meta.url), 'utf8')
+  for (const place of PLACES) assert.ok(client.includes(`${place.key}: 'away-trip-${place.key}'`), `client.js PLACE_ART names ${place.key}`)
 })
 
 test('the travel world is well formed', () => {

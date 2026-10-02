@@ -6,7 +6,7 @@
 > 每张用内嵌 CSS 自己动），总览见 `tools/sprites.html`。下面保留原始需求作参考。
 >
 > **ST0001 补齐：** 每个工作（`job-<art>`，含 9 个普通工作）、每个学段（`study-primary/college/graduate/doctor`）、
-> 博士毕业（`react-graduate`）、每个旅行地区（`away-trip-<region>`）都有自己的外出形象；
+> 博士毕业（`react-graduate`）、每个旅行地区（`away-trip-<region>`）都有自己的外出形象（ST0011 起每个目的地另有 `away-trip-<place>`，地区图只作回退）；
 > ~~小猪的蝴蝶结、中年猪的鸭舌帽、老年猪的白眉白胡子贯穿所有姿势——每个姿势另外生成
 > `<姿势>--piglet/--middle/--elder.svg`~~（ST0004 起作废，见下）。
 >
