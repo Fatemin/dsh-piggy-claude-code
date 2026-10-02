@@ -214,6 +214,8 @@ window.__ModuleLoader__.load({
         '更名卡要在「状态」里改名时用': '名前変更カードは「ようす」でなまえを変えるときに使うよ',
         '这一段一次最多上 {n} 门课': 'ここでは一度に {n} こまでだよ',
         '可以一起上 {n} 门 · 已选 {k}': '{n} こまで一緒にうけられるよ · えらんだ数 {k}',
+        '每门限 {cap} 次': '1科目 {cap} 回まで', '本段 {n}/{cap}': 'ここで {n}/{cap}', '已满': 'うけきった',
+        '这一段每门课最多上 {n} 次': 'ここは1科目 {n} 回までだよ',
         '上课 × {n}（学费 {total} 🪙）': 'じゅぎょう × {n}（授業料 {total} 🪙）',
         '先选课': 'じゅぎょうをえらんでね', '用来改名': 'なまえを変えるのに使う',
         '✈️ 限定': '✈️ 旅行限定',
@@ -363,6 +365,8 @@ window.__ModuleLoader__.load({
         '更名卡要在「状态」里改名时用': 'Rename cards are spent when renaming on the Status tab',
         '这一段一次最多上 {n} 门课': 'Up to {n} lessons at once here',
         '可以一起上 {n} 门 · 已选 {k}': 'Take up to {n} together · {k} picked',
+        '每门限 {cap} 次': '{cap} per subject', '本段 {n}/{cap}': 'here {n}/{cap}', '已满': 'done',
+        '这一段每门课最多上 {n} 次': 'At most {n} lessons per subject here',
         '上课 × {n}（学费 {total} 🪙）': 'Study × {n} (tuition {total} 🪙)',
         '先选课': 'Pick lessons first', '用来改名': 'For renaming',
         '✈️ 限定': '✈️ Travel only',
@@ -606,6 +610,10 @@ window.__ModuleLoader__.load({
           gain: num(obj(stage).gain, 0),
           // How many subjects one sitting may take; an older host meant one.
           parallel: Math.max(1, Math.floor(num(obj(stage).parallel, 1))),
+          // [mod] lessons per subject this stage allows (null = no limit), and
+          // how many each subject has used; an older host sent neither.
+          cap: typeof obj(stage).cap === 'number' && obj(stage).cap > 0 ? Math.floor(obj(stage).cap) : null,
+          taken: isObj(obj(stage).taken) ? obj(stage).taken : {},
           // The school ladder: a stage with `unlocked === false` is gated behind
           // finishing the previous one, and says by how much.
           unlocked: obj(stage).unlocked !== false,
@@ -2913,7 +2921,7 @@ window.__ModuleLoader__.load({
         if (view.stages.length > 0) return view.stages
         return STAGES.map(entry => ({
           key: entry.key, label: T(entry.label), minutes: 0, tuition: null, gain: 0,
-          unlocked: true, progress: null, parallel: 1, fallback: true,
+          unlocked: true, progress: null, parallel: 1, cap: null, taken: {}, fallback: true,
         }))
       }
 
@@ -2955,7 +2963,8 @@ window.__ModuleLoader__.load({
         var most = detail === null ? 1 : detail.parallel
         if (detail !== null) {
           var note = el('div', 'dp-empty', T('{time} · 学费 {tuition} 🪙 · 属性 +{gain}',
-            { time: formatMinutes(detail.minutes), tuition: detail.tuition, gain: detail.gain }))
+            { time: formatMinutes(detail.minutes), tuition: detail.tuition, gain: detail.gain }) +
+            (detail.cap !== null ? ' · ' + T('每门限 {cap} 次', { cap: detail.cap }) : ''))
           note.style.marginBottom = '7px'
           note.style.marginTop = '0'
           content.appendChild(note)
@@ -2969,7 +2978,9 @@ window.__ModuleLoader__.load({
         // Ticks belong to one stage; switching stage starts over.
         if (studyPicks.stage !== stage) studyPicks = { stage: stage, keys: [] }
         var known = view.subjects.map(sub => sub.key)
-        studyPicks.keys = studyPicks.keys.filter(key => known.indexOf(key) >= 0).slice(0, most)
+        // [mod] a subject that has used up this stage's lessons cannot be picked.
+        var usedUp = key => detail !== null && detail.cap !== null && num(detail.taken[key], 0) >= detail.cap
+        studyPicks.keys = studyPicks.keys.filter(key => known.indexOf(key) >= 0 && !usedUp(key)).slice(0, most)
         var multi = most > 1
 
         if (multi) {
@@ -3011,13 +3022,17 @@ window.__ModuleLoader__.load({
               renderContent()
             })
             if (multi) btn.setAttribute('aria-pressed', picked ? 'true' : 'false')
-            if (locked) btn.disabled = true
+            var full = usedUp(sub.key)
+            if (locked || full) btn.disabled = true
+            btn.setAttribute('data-full', full ? 'true' : 'false')
             btn.style.cursor = 'pointer'
             btn.style.textAlign = 'left'
             btn.appendChild(el('span', null, sub.emoji))
             var grow = el('div', 'dp-grow')
             grow.appendChild(el('div', null, sub.label))
-            grow.appendChild(el('div', 'dp-dim', sub.traitLabel + ' · ' + T('已上 {n} 次', { n: sub.level })))
+            grow.appendChild(el('div', 'dp-dim', sub.traitLabel + ' · ' + (detail !== null && detail.cap !== null
+              ? T('本段 {n}/{cap}', { n: num(detail.taken[sub.key], 0), cap: detail.cap }) + (full ? ' ' + T('已满') : '')
+              : T('已上 {n} 次', { n: sub.level }))))
             btn.appendChild(grow)
             if (multi) btn.appendChild(el('span', 'dp-check', picked ? '✅' : '⬜'))
             grid.appendChild(btn)
@@ -3790,6 +3805,10 @@ window.__ModuleLoader__.load({
             if (next.reason === 'too-many') {
               var most = num(next.max, stageDetail(stage) === null ? 1 : stageDetail(stage).parallel)
               showBubble(T('这一段一次最多上 {n} 门课', { n: most }), 2400)
+              return
+            }
+            if (next.reason === 'capped') {
+              showBubble(T('这一段每门课最多上 {n} 次', { n: num(next.max, 0) }), 2400)
               return
             }
             if (next.reason === 'job-locked') {

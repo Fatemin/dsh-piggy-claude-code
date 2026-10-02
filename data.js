@@ -370,26 +370,46 @@ export const SUBJECTS = Object.freeze([
   Object.freeze({ key: 'labouring', label: '劳动', emoji: '🧺', trait: 'strong' }),
 ])
 
-/** School stages, mirroring the xx- / dx- / yjs- asset prefixes. */
+/**
+ * School stages, mirroring the xx- / dx- / yjs- asset prefixes.
+ *
+ * [dsh-piggy-claude-code mod] Two kinds of school, to keep traits from running
+ * away (ST0002):
+ *
+ *   小学 · 大学     cheap and quick, but each subject may only be taken `cap`
+ *                  times per stage. Together they hand every trait at most
+ *                  3 × 2 × (1 + 2) = 18 points: shifts already at their
+ *                  shortest (12.5 points), the 15-point careers open, wage × 2.2.
+ *   研究生 · 博士   no cap, but slow and dear: the last 12 points to the wage cap
+ *                  (30) cost 600–750 coins and 1.3–2 hours each.
+ *
+ *   stage    coins/point   points/hour (full sitting)
+ *   小学          15            2
+ *   大学          30            4
+ *   研究生       600            0.75
+ *   博士         750            0.5   (overnight; graduation still +1 each)
+ *
+ * `cap` is per subject per stage; `null` means no limit.
+ */
 export const SCHOOL_STAGES = Object.freeze([
   Object.freeze({
     key: 'primary', label: '小学', minutes: MINUTES.half,
-    tuition: 40, gain: 1, xp: 60, satiety: -8, happiness: -2, requires: null,
+    tuition: 15, gain: 1, cap: 2, xp: 60, satiety: -8, happiness: -2, requires: null,
   }),
   Object.freeze({
-    key: 'college', label: '大学', minutes: MINUTES.twoHours,
-    tuition: 220, gain: 2, xp: 320, satiety: -20, happiness: -5,
+    key: 'college', label: '大学', minutes: MINUTES.hour,
+    tuition: 60, gain: 2, cap: 2, xp: 200, satiety: -12, happiness: -3,
     requires: Object.freeze({ stage: 'primary', lessons: 9, label: '小学九门课各上一次' }),
   }),
   Object.freeze({
-    key: 'graduate', label: '研究生', minutes: MINUTES.sixHours,
-    tuition: 900, gain: 4, xp: 1100, satiety: -45, happiness: -11,
+    key: 'graduate', label: '研究生', minutes: MINUTES.fourHours,
+    tuition: 600, gain: 1, cap: null, xp: 800, satiety: -32, happiness: -8,
     requires: Object.freeze({ stage: 'college', lessons: 9, label: '大学九门课各上一次' }),
   }),
   // [dsh-piggy-claude-code mod] a doctorate after graduate school.
   Object.freeze({
     key: 'doctor', label: '博士', minutes: MINUTES.day / 2,
-    tuition: 2400, gain: 7, xp: 3000, satiety: -70, happiness: -18,
+    tuition: 1500, gain: 2, cap: null, xp: 3000, satiety: -70, happiness: -18,
     requires: Object.freeze({ stage: 'graduate', lessons: 9, label: '研究生九门课各上一次' }),
   }),
 ])
