@@ -10,7 +10,7 @@
     @keyframes flick{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(4deg)}}
     .spin{animation:spin 1s ease-in-out infinite;transform-origin:190px 170px}
     .tail{animation-duration:.25s}
-    .c{animation:fall 1.2s linear infinite}
+    .c{animation:fall 1.2s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
     .c2{animation-delay:-.4s}.c3{animation-delay:-.8s}
     .sp{animation:pop 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes spin{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-24px) rotate(-180deg)}100%{transform:translateY(0) rotate(-360deg)}}

@@ -11,7 +11,7 @@
     .haul{animation:haul 1s ease-in-out infinite;transform-origin:190px 298px}
     .bricks{animation:wobble 1s ease-in-out infinite;transform-origin:262px 66px}
     .s1{animation:fling 1s ease-out infinite}.s2{animation:fling 1s ease-out -.5s infinite}
-    .puff{animation:puff 1s ease-out infinite}
+    .puff{animation:puff 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes haul{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(5px) rotate(1deg)}}
     @keyframes wobble{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(2deg)}}
     @keyframes fling{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(-24px,-26px)}}

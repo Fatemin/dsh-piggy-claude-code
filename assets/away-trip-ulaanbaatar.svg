@@ -13,7 +13,7 @@
     .tail{animation-duration:.5s}
     @keyframes walk{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1.5deg)}}
     @keyframes road{to{transform:translateX(120px)}}
-    .eagle{animation:soar 6s ease-in-out infinite}
+    .eagle{animation:soar 6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     .smoke{animation:smoke 2.4s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     .smoke2{animation:smoke 2.4s ease-out -1.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .graze{animation:graze 1.8s ease-in-out infinite;transform-origin:36px 276px}

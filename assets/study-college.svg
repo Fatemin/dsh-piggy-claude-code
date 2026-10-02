@@ -14,7 +14,7 @@
     .flag{animation:flag 1.6s ease-in-out infinite;transform-origin:30px -26px}
     @keyframes tilt{0%,100%{transform:rotate(0)}40%{transform:rotate(-2.5deg)}}
     @keyframes hl{0%{stroke-dashoffset:64}70%,100%{stroke-dashoffset:0}}
-    @keyframes pen{0%{transform:translateX(0)}70%{transform:translateX(56px)}100%{transform:translateX(56px);opacity:0}}
+    @keyframes pen{0%{transform:translateX(0);opacity:0}8%{opacity:1}70%{transform:translateX(56px);opacity:1}100%{transform:translateX(56px);opacity:0}}
     @keyframes flag{50%{transform:rotate(6deg)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>

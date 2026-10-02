@@ -388,7 +388,7 @@ const SPRITES = {
     .think{animation:dream 2.4s ease-in-out infinite}
     .growl{animation:growl 1.2s ease-in-out infinite}
     @keyframes look{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(-4deg)}}
-    @keyframes drip{0%,30%{transform:scaleY(.3);opacity:1}80%{transform:scaleY(1.4);opacity:1}100%{transform:scaleY(1.4) translateY(10px);opacity:0}}
+    @keyframes drip{0%{transform:scaleY(.3);opacity:0}10%,30%{transform:scaleY(.3);opacity:1}80%{transform:scaleY(1.4);opacity:1}100%{transform:scaleY(1.4) translateY(10px);opacity:0}}
     @keyframes dream{50%{transform:translateY(-6px)}}
     @keyframes growl{0%,100%{opacity:0}30%,60%{opacity:1}}`,
     wrap: 'look',
@@ -544,7 +544,7 @@ const SPRITES = {
     .fly2{animation:orbit 1.7s linear -.6s infinite reverse;transform-origin:200px 110px}
     .fly3{animation:orbit 2.6s linear -1.3s infinite;transform-origin:260px 120px}
     .wing{animation:buzz .12s linear infinite;transform-box:fill-box;transform-origin:50% 100%}
-    .stink{animation:stink 2s ease-in-out infinite}.stink2{animation:stink 2s ease-in-out -1s infinite}
+    .stink{animation:stink 2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}.stink2{animation:stink 2s ease-in-out -1s infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes itch{0%,50%,100%{transform:rotate(0)}60%{transform:rotate(-2deg)}70%{transform:rotate(2deg)}80%{transform:rotate(-1deg)}}
     @keyframes orbit{to{transform:rotate(360deg)}}
     @keyframes buzz{50%{transform:scaleY(.4)}}
@@ -566,7 +566,7 @@ const SPRITES = {
   'mood-lonely-1': {
     title: '孤单 · 一级', note: '有点闷：叹一口气，头顶冒个省略号。',
     css: `.sway{animation:sway 4.4s ease-in-out infinite;transform-origin:190px 298px}
-    .sigh{animation:sigh 4.4s ease-out infinite}
+    .sigh{animation:sigh 4.4s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     .dots{animation:dots 4.4s ease-in-out infinite}
     @keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(1.5deg) translateY(1px)}}
     @keyframes sigh{0%,40%{opacity:0;transform:translate(0,0) scale(.6)}55%{opacity:.9}100%{opacity:0;transform:translate(-26px,8px) scale(1.2)}}
@@ -688,7 +688,7 @@ const SPRITES = {
     .tail{animation-duration:.42s}
     @keyframes chomp{0%,100%{transform:rotate(3deg)}50%{transform:rotate(5deg) translateY(3px)}}
     @keyframes puff{50%{transform:scale(1.35)}}
-    @keyframes crumb{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(-18px,-24px)}}`,
+    @keyframes crumb{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}100%{opacity:0;transform:translate(-18px,-24px)}}`,
     wrap: 'chomp',
     pig: { eyes: 'happy', face: `<path d="M96 210L58 244" fill="none" stroke="#F49A4A" stroke-width="16" stroke-linecap="round"/><path d="M66 232l5 5M78 222l5 5" fill="none" stroke="#D97B2E" stroke-width="4" stroke-linecap="round"/>` },
     over: `<path class="c1" d="M66 214h.1M82 204h.1" fill="none" stroke="#F49A4A" stroke-width="8" stroke-linecap="round"/>
@@ -750,7 +750,7 @@ const SPRITES = {
     css: `.turn{animation:turn 1.6s ease-in-out infinite;transform-origin:190px 298px}
     .tail{animation-duration:.25s}
     .vein{animation:throb .4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
-    .puff{animation:puff 1.6s ease-out infinite}
+    .puff{animation:puff 1.6s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes turn{0%,100%{transform:scaleX(1)}15%,80%{transform:scaleX(-1)}35%,55%{transform:scaleX(-1) rotate(2deg)}45%{transform:scaleX(-1) rotate(-2deg)}}
     @keyframes throb{50%{transform:scale(1.25)}}
     @keyframes puff{0%,15%{opacity:0;transform:translate(0,0) scale(.6)}35%{opacity:1}70%,100%{opacity:0;transform:translate(26px,-10px) scale(1.3)}}`,
@@ -764,7 +764,7 @@ const SPRITES = {
     .stand{animation:stand 1.2s ease-out infinite;transform-origin:190px 298px}
     .c1{animation:rise 1.4s ease-out infinite}.c2{animation:rise 1.4s ease-out -.5s infinite}.c3{animation:rise 1.4s ease-out -1s infinite}
     @keyframes glow{0%,100%{opacity:.35;transform:scale(.92)}50%{opacity:.7;transform:scale(1.04)}}
-    @keyframes stand{0%{transform:scale(1.04,.94)}30%{transform:scale(.98,1.04) translateY(-8px)}60%,100%{transform:scale(1)}}
+    @keyframes stand{0%{transform:scale(1)}15%{transform:scale(1.04,.94)}40%{transform:scale(.98,1.04) translateY(-8px)}70%,100%{transform:scale(1)}}
     @keyframes rise{0%{opacity:0;transform:translateY(16px)}30%{opacity:1}100%{opacity:0;transform:translateY(-44px)}}`,
     wrap: 'stand',
     pig: { face: `<path d="M110 96L156 86L160 104L114 114Z" fill="#F6D7A7"/><path d="M128 100l12-3" fill="none" stroke="#E5BD84" stroke-width="6" stroke-linecap="round"/>` },
@@ -869,7 +869,7 @@ const SPRITES = {
     .bits{animation:bits .3s ease-out infinite}
     @keyframes lean{50%{transform:rotate(1.5deg) translateY(2px)}}
     @keyframes scratch{0%,100%{transform:translateX(0)}50%{transform:translateX(44px)}}
-    @keyframes bits{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(-10px,20px)}}`,
+    @keyframes bits{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(-10px,20px)}}`,
     wrap: 'lean',
     over: `<rect x="24" y="206" width="120" height="74" rx="8" fill="#F5C24C"/>
     <rect x="34" y="216" width="100" height="54" rx="5" fill="#C9CED6"/>
@@ -881,7 +881,7 @@ const SPRITES = {
     title: '一等奖', note: '一等奖！高兴得原地转圈，金币哗啦啦往下掉。',
     css: `.spin{animation:spin 1s ease-in-out infinite;transform-origin:190px 170px}
     .tail{animation-duration:.25s}
-    .c{animation:fall 1.2s linear infinite}
+    .c{animation:fall 1.2s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
     .c2{animation-delay:-.4s}.c3{animation-delay:-.8s}
     .sp{animation:pop 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes spin{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-24px) rotate(-180deg)}100%{transform:translateY(0) rotate(-360deg)}}
@@ -897,7 +897,7 @@ const SPRITES = {
     title: '中奖了', note: '中了二三等奖或安慰奖：吹响派对喇叭，彩带撒下来，开心地颠两下。',
     css: `.hop{animation:hop .7s ease-in-out infinite;transform-origin:190px 298px}
     .horn{animation:blow .7s ease-in-out infinite;stroke-dasharray:70;transform-origin:56px 186px}
-    .f{animation:fall 1.6s linear infinite}
+    .f{animation:fall 1.6s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
     .f2{animation-delay:-.5s}.f3{animation-delay:-1.1s}
     @keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
     @keyframes blow{0%,100%{stroke-dashoffset:60}40%,70%{stroke-dashoffset:0}}
@@ -930,11 +930,11 @@ const SPRITES = {
   'job-label': {
     title: 'AI 数据标注', note: '对着笔记本给图片画框打标签，框一画好就蹦出一张小标签。',
     css: `.type{animation:type .4s ease-in-out infinite;transform-origin:190px 298px}
-    .box{stroke-dasharray:124;animation:draw 2s ease-in-out infinite}
+    .box{stroke-dasharray:126;animation:draw 2s ease-in-out infinite}
     .tag{animation:tag 2s ease-out infinite}.tag2{animation:tag 2s ease-out -1s infinite}
     .keys{animation:keys .4s steps(2) infinite}
     @keyframes type{50%{transform:translateY(3px) rotate(.6deg)}}
-    @keyframes draw{0%{stroke-dashoffset:124}45%,100%{stroke-dashoffset:0}}
+    @keyframes draw{0%{stroke-dashoffset:126}45%,100%{stroke-dashoffset:0}}
     @keyframes tag{0%,45%{opacity:0;transform:translate(0,0)}55%{opacity:1}100%{opacity:0;transform:translate(-4px,-80px)}}
     @keyframes keys{50%{opacity:0}}`,
     wrap: 'type',
@@ -952,11 +952,11 @@ const SPRITES = {
   'job-tutor': {
     title: '家教', note: '站在小黑板前讲题，粉笔字一笔一笔写出来，桌上的作业一个个打上红勾。',
     css: `.explain{animation:explain 1s ease-in-out infinite;transform-origin:190px 298px}
-    .chalk{stroke-dasharray:40;animation:write 3s linear infinite}
+    .chalk{stroke-dasharray:80;animation:write 3s linear infinite}
     .tick{stroke-dasharray:40;animation:tick 3s ease-out infinite}
     .wave{animation:wave 1s ease-out infinite}
     @keyframes explain{0%,100%{transform:rotate(0)}30%{transform:rotate(-2deg)}60%{transform:rotate(.5deg)}}
-    @keyframes write{0%{stroke-dashoffset:40}60%,100%{stroke-dashoffset:0}}
+    @keyframes write{0%{stroke-dashoffset:80}60%,100%{stroke-dashoffset:0}}
     @keyframes tick{0%,60%{stroke-dashoffset:40}80%,100%{stroke-dashoffset:0}}
     @keyframes wave{0%{opacity:0;transform:translateX(0)}40%{opacity:1}100%{opacity:0;transform:translateX(-14px)}}`,
     wrap: 'explain',
@@ -1020,7 +1020,7 @@ const SPRITES = {
     title: '打零工', note: '包着头巾，拿大扫帚左一下右一下地扫地，扫得尘土一团团飞。',
     css: `.sway{animation:sway 1s ease-in-out infinite;transform-origin:190px 298px}
     .broom{animation:sweep 1s ease-in-out infinite;transform-origin:30px 120px}
-    .dust{animation:dust 1s ease-out infinite}.dust2{animation:dust 1s ease-out -.5s infinite}
+    .dust{animation:dust 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}.dust2{animation:dust 1s ease-out -.5s infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes sway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.5deg)}}
     @keyframes sweep{0%,100%{transform:rotate(6deg)}50%{transform:rotate(-8deg)}}
     @keyframes dust{0%{opacity:0;transform:translate(0,0) scale(.6)}30%{opacity:.9}100%{opacity:0;transform:translate(-20px,-26px) scale(1.3)}}`,
@@ -1087,7 +1087,7 @@ const SPRITES = {
     css: `.haul{animation:haul 1s ease-in-out infinite;transform-origin:190px 298px}
     .bricks{animation:wobble 1s ease-in-out infinite;transform-origin:262px 66px}
     .s1{animation:fling 1s ease-out infinite}.s2{animation:fling 1s ease-out -.5s infinite}
-    .puff{animation:puff 1s ease-out infinite}
+    .puff{animation:puff 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes haul{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(5px) rotate(1deg)}}
     @keyframes wobble{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(2deg)}}
     @keyframes fling{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(-24px,-26px)}}
@@ -1155,7 +1155,7 @@ const SPRITES = {
     .flag{animation:flag 1.6s ease-in-out infinite;transform-origin:30px -26px}
     @keyframes tilt{0%,100%{transform:rotate(0)}40%{transform:rotate(-2.5deg)}}
     @keyframes hl{0%{stroke-dashoffset:64}70%,100%{stroke-dashoffset:0}}
-    @keyframes pen{0%{transform:translateX(0)}70%{transform:translateX(56px)}100%{transform:translateX(56px);opacity:0}}
+    @keyframes pen{0%{transform:translateX(0);opacity:0}8%{opacity:1}70%{transform:translateX(56px);opacity:1}100%{transform:translateX(56px);opacity:0}}
     @keyframes flag{50%{transform:rotate(6deg)}}`,
     wrap: 'tilt',
     under: `<path d="M24 -30H140" fill="none" stroke="#B0875A" stroke-width="3"/>
@@ -1222,7 +1222,7 @@ const SPRITES = {
     css: `.hop{animation:hop .8s ease-in-out infinite;transform-origin:190px 298px}
     .cap{animation:toss 2.4s cubic-bezier(.3,0,.4,1) infinite;transform-origin:168px 52px}
     .tassel{animation:swing .8s ease-in-out infinite;transform-origin:236px 52px}
-    .f{animation:fall 1.6s linear infinite}.f2{animation-delay:-.5s}.f3{animation-delay:-1.1s}
+    .f{animation:fall 1.6s linear infinite;transform-box:fill-box;transform-origin:50% 50%}.f2{animation-delay:-.5s}.f3{animation-delay:-1.1s}
     @keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
     @keyframes toss{0%,25%,85%,100%{transform:translateY(0) rotate(0)}55%{transform:translateY(-70px) rotate(-200deg)}}
     @keyframes swing{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(12deg)}}
@@ -1252,7 +1252,9 @@ const SPRITES = {
     <path d="M60 19V36" fill="none" stroke="#F5C24C" stroke-width="4" stroke-linecap="round"/></g>`,
   }),
   'away-trip-eastasia': trip('旅行 · 东亚', '远处是雪顶富士山，旁边一座红鸟居，樱花瓣飘下来。', {
-    css: `.p1{animation:petal 3s linear infinite}.p2{animation:petal 3s linear -1s infinite}.p3{animation:petal 3s linear -2s infinite}
+    css: `.p1{animation:petal 3s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .p2{animation:petal 3s linear -1s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .p3{animation:petal 3s linear -2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes petal{0%{opacity:0;transform:translate(0,0) rotate(0)}10%{opacity:1}100%{opacity:0;transform:translate(-70px,300px) rotate(300deg)}}`,
     under: `<path d="M196 44L280 -26L360 44Z" fill="#A9C1DE"/><path d="M262 -11L280 -26L298 -11L290 -4L280 -12L270 -4Z" fill="#FFFFFF"/>
     <g fill="none" stroke="#E5534B" stroke-linecap="round"><path d="M42 -8V58M86 -8V58" stroke-width="8"/><path d="M28 -20Q64 -30 100 -20" stroke-width="10"/><path d="M36 -4H92" stroke-width="6"/></g>`,
@@ -1329,9 +1331,9 @@ const SPRITES = {
   }),
   'away-trip-chengdu': trip('旅行 · 成都', '身边的竹子沙沙地摇，路边坐着一只熊猫，抱着竹子嚼个不停。', {
     css: `.bamboo{animation:sway 3s ease-in-out infinite;transform-origin:44px 140px}
-    .chew{animation:chew .6s ease-in-out infinite}
+    .chew{animation:chew .6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
     @keyframes sway{50%{transform:rotate(3deg)}}
-    @keyframes chew{50%{transform:translateY(2px) rotate(-3deg)}}`,
+    @keyframes chew{50%{transform:translateY(2px) rotate(-7deg)}}`,
     under: `<path d="M196 44Q236 -6 280 26Q312 -4 360 22V44Z" fill="#CFE3C2"/><path d="M240 44Q280 10 320 30Q340 18 360 30V44Z" fill="#B5D6A4"/>
     <g class="bamboo"><path d="M34 140V-36M56 100V-30" fill="none" stroke="#7DBF6A" stroke-width="8"/>
     <path d="M30 100H38M30 50H38M30 0H38M52 60H60M52 14H60" fill="none" stroke="#5E9E4E" stroke-width="3"/>
@@ -1422,7 +1424,7 @@ const SPRITES = {
     <path transform="translate(50 234) scale(.33)" d="M0 0c0-10 13-15 18-5 5-10 18-5 18 5 0 13-18 23-18 23S0 13 0 0Z" fill="#FFFFFF"/></g>`,
   }),
   'away-trip-ulaanbaatar': trip('旅行 · 乌兰巴托', '草原上几座蒙古包冒着炊烟，一只雄鹰在天上盘旋，路边的小羊低头吃草。', {
-    css: `.eagle{animation:soar 6s ease-in-out infinite}
+    css: `.eagle{animation:soar 6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     .smoke{animation:smoke 2.4s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     .smoke2{animation:smoke 2.4s ease-out -1.2s infinite;transform-box:fill-box;transform-origin:50% 50%}
     .graze{animation:graze 1.8s ease-in-out infinite;transform-origin:36px 276px}
@@ -1445,7 +1447,7 @@ const SPRITES = {
     css: `.tuk{animation:tuk .3s ease-in-out infinite}
     .puff{animation:puff 1s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes tuk{50%{transform:translateY(-3px)}}
-    @keyframes puff{0%{opacity:.8;transform:translate(0,0) scale(.5)}100%{opacity:0;transform:translate(14px,-8px) scale(1.5)}}`,
+    @keyframes puff{0%{opacity:0;transform:translate(0,0) scale(.5)}15%{opacity:.8}100%{opacity:0;transform:translate(14px,-8px) scale(1.5)}}`,
     under: `<path d="M20 40L62 6L104 40Z" fill="#C9433C"/><path d="M34 14L62 -14L90 14Z" fill="#C9433C"/>
     <path d="M20 40L62 6L104 40M34 14L62 -14L90 14" fill="none" stroke="#F2B33D" stroke-width="4" stroke-linejoin="round"/>
     <path d="M62 -14V-32M20 40q-6-8 2-12M104 40q6-8-2-12" fill="none" stroke="#F2B33D" stroke-width="4" stroke-linecap="round"/>
@@ -1532,8 +1534,8 @@ const SPRITES = {
 
   // Americas
   'away-trip-newyork': trip('旅行 · 纽约', '一辆黄色出租车开过布鲁克林大桥，后面是帝国大厦和高楼天际线。', {
-    css: `.taxi{animation:taxi 4s linear infinite}
-    @keyframes taxi{to{transform:translateX(300px)}}
+    css: `.taxi{animation:taxi 3.5s linear infinite}
+    @keyframes taxi{75%{opacity:1}100%{opacity:0;transform:translateX(260px)}}
     ${BLINK_CSS}`,
     under: `<g fill="#DCE3EC"><rect x="254" y="4" width="22" height="40"/><rect x="280" y="-6" width="16" height="50"/>
     <path d="M300 44V-6H304V-16H308V-24H312V-16H316V-6H320V44Z"/><rect x="324" y="8" width="18" height="36"/><rect x="344" y="-2" width="16" height="46"/></g>

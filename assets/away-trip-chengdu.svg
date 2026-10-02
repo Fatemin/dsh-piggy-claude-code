@@ -14,9 +14,9 @@
     @keyframes walk{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1.5deg)}}
     @keyframes road{to{transform:translateX(120px)}}
     .bamboo{animation:sway 3s ease-in-out infinite;transform-origin:44px 140px}
-    .chew{animation:chew .6s ease-in-out infinite}
+    .chew{animation:chew .6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
     @keyframes sway{50%{transform:rotate(3deg)}}
-    @keyframes chew{50%{transform:translateY(2px) rotate(-3deg)}}
+    @keyframes chew{50%{transform:translateY(2px) rotate(-7deg)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
   <path d="M196 44Q236 -6 280 26Q312 -4 360 22V44Z" fill="#CFE3C2"/><path d="M240 44Q280 10 320 30Q340 18 360 30V44Z" fill="#B5D6A4"/>

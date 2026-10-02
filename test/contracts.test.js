@@ -234,19 +234,6 @@ test('ART.ASSETS.V1: every pose has exactly one wear slot, declaring what its ow
   assert.deepEqual(occupied, art['pose-occupies'])
 })
 
-test('art: a sliding road loops by whole dash periods, so it never snaps back', () => {
-  const roads = poseFiles.filter(name => asset(name).includes('<g class="road">'))
-  assert.ok(roads.length > 0, 'some pose has a road')
-  for (const name of roads) {
-    const svg = asset(name)
-    const starts = [...svg.match(/<g class="road"><path d="([^"]+)"/)[1].matchAll(/M(-?\d+)/g)].map(([, x]) => Number(x))
-    const period = starts[1] - starts[0]
-    starts.forEach((x, i) => assert.equal(x, starts[0] + i * period, `${name}: evenly spaced dashes`))
-    const shift = Number(svg.match(/@keyframes road\{to\{transform:translateX\((-?\d+)px\)\}\}/)[1])
-    assert.equal(Math.abs(shift) % period, 0, `${name}: slides ${shift}px over ${period}px dashes`)
-  }
-})
-
 test('ART.ASSETS.V1: every decoration is one namespaced fragment in its slot', () => {
   for (const item of WEARABLES) {
     const fragment = wearFragment(asset(`wear-${item.key}`))

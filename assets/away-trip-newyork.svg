@@ -13,8 +13,8 @@
     .tail{animation-duration:.5s}
     @keyframes walk{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1.5deg)}}
     @keyframes road{to{transform:translateX(120px)}}
-    .taxi{animation:taxi 4s linear infinite}
-    @keyframes taxi{to{transform:translateX(300px)}}
+    .taxi{animation:taxi 3.5s linear infinite}
+    @keyframes taxi{75%{opacity:1}100%{opacity:0;transform:translateX(260px)}}
     .tip{animation:tip 1.2s steps(1) infinite}
     @keyframes tip{50%{opacity:.2}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}

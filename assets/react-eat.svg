@@ -14,7 +14,7 @@
     .tail{animation-duration:.42s}
     @keyframes chomp{0%,100%{transform:rotate(3deg)}50%{transform:rotate(5deg) translateY(3px)}}
     @keyframes puff{50%{transform:scale(1.35)}}
-    @keyframes crumb{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(-18px,-24px)}}
+    @keyframes crumb{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}100%{opacity:0;transform:translate(-18px,-24px)}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
   <g class="chomp">

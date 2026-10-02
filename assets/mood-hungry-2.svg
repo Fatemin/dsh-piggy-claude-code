@@ -13,7 +13,7 @@
     .think{animation:dream 2.4s ease-in-out infinite}
     .growl{animation:growl 1.2s ease-in-out infinite}
     @keyframes look{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(-4deg)}}
-    @keyframes drip{0%,30%{transform:scaleY(.3);opacity:1}80%{transform:scaleY(1.4);opacity:1}100%{transform:scaleY(1.4) translateY(10px);opacity:0}}
+    @keyframes drip{0%{transform:scaleY(.3);opacity:0}10%,30%{transform:scaleY(.3);opacity:1}80%{transform:scaleY(1.4);opacity:1}100%{transform:scaleY(1.4) translateY(10px);opacity:0}}
     @keyframes dream{50%{transform:translateY(-6px)}}
     @keyframes growl{0%,100%{opacity:0}30%,60%{opacity:1}}
     @media (prefers-reduced-motion:reduce){*{animation:none!important}}

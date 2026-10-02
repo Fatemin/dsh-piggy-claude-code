@@ -13,7 +13,7 @@
     .fly2{animation:orbit 1.7s linear -.6s infinite reverse;transform-origin:200px 110px}
     .fly3{animation:orbit 2.6s linear -1.3s infinite;transform-origin:260px 120px}
     .wing{animation:buzz .12s linear infinite;transform-box:fill-box;transform-origin:50% 100%}
-    .stink{animation:stink 2s ease-in-out infinite}.stink2{animation:stink 2s ease-in-out -1s infinite}
+    .stink{animation:stink 2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}.stink2{animation:stink 2s ease-in-out -1s infinite;transform-box:fill-box;transform-origin:50% 50%}
     @keyframes itch{0%,50%,100%{transform:rotate(0)}60%{transform:rotate(-2deg)}70%{transform:rotate(2deg)}80%{transform:rotate(-1deg)}}
     @keyframes orbit{to{transform:rotate(360deg)}}
     @keyframes buzz{50%{transform:scaleY(.4)}}
