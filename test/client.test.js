@@ -1454,6 +1454,31 @@ test('the wardrobe is a bag shelf beside the consumables and posts what to put o
   assert.equal(findByClass(hostOf(dom), 'dp-pig-img').src, '/dsh-pig/art/stage-middle.svg?wear=flatcap', 'the pig is the preview')
 })
 
+// [ST0012] one section per slot, head to toe; an unknown slot goes last.
+test('the wardrobe groups decorations by slot, head to toe', async () => {
+  const item = (key, slot, emoji) => ({ key, slot, label: key, emoji, unlocked: true, worn: false, hint: '' })
+  const wardrobe = [item('whiskers', 'face', '🧓'), item('scarf', 'waist', '🧣'), item('bow', 'head', '🎀'), item('glasses', 'eyes', '👓'),
+    item('pager', 'waist', '📟'), item('cape', 'back', '🦸'), item('flatcap', 'head', '🧢')]
+  for (const [lang, waist] of [['zh', '🎗️ 腰上'], ['en', '🎗️ Waist']]) {
+    const { dom } = await loadWithPoll({ status: { ...SNAPSHOT, lang, langs: LANGS, pig: { ...PIG, outfit: { auto: false, worn: [] }, wardrobe } }, storage: { 'dsh-pig:bag': 'wardrobe' } })
+    openPanel(dom)
+    pickTab(dom, 'bag')
+    const sections = []
+    const walk = node => {
+      if (node.attributes?.['data-wear-slot'] !== undefined && /dp-wear/.test(node.className ?? '')) {
+        const keys = []
+        const pills = child => { if (child.attributes?.['data-wear'] !== undefined) keys.push(child.attributes['data-wear']); for (const c of child.children ?? []) pills(c) }
+        pills(node)
+        sections.push([node.attributes['data-wear-slot'], keys])
+      }
+      for (const child of node.children ?? []) walk(child)
+    }
+    walk(contentOf(dom))
+    assert.deepEqual(sections, [['head', ['bow', 'flatcap']], ['eyes', ['glasses']], ['waist', ['scarf', 'pager']], ['face', ['whiskers']], ['back', ['cape']]], lang)
+    assert.ok(contentOf(dom).allText().includes(waist), `${lang}: ${contentOf(dom).allText()}`)
+  }
+})
+
 test('the language switcher sits on the status tab and posts the choice', async () => {
   const { registration, dom, net } = await loadClient({
     status: { ...SNAPSHOT, lang: 'zh', langs: LANGS },
