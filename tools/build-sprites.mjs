@@ -109,6 +109,10 @@ const drop = (x, y, s, fill, cls) =>
 // collide with a pose's own. Poses reuse a few of these as their own gear.
 // ---------------------------------------------------------------------------
 const glasses = stroke => `<g fill="none" stroke="${stroke}" stroke-width="5"><circle cx="91" cy="142" r="20"/><circle cx="165" cy="157" r="20"/><path d="M111 145L145 152M71 138L58 132"/></g>`
+// Hats are drawn at their first size, then scaled up about the point where
+// they sit on the head, so a bigger hat still sits on the same spot.
+const HAT_SCALE = 1.35
+const hat = (cx, cy, svg) => `<g transform="translate(${cx} ${cy}) scale(${HAT_SCALE}) translate(${-cx} ${-cy})">${svg}</g>`
 const WEAR = {
   bow: {
     slot: 'head', title: '蝴蝶结', note: '小猪耳朵上的粉色蝴蝶结。',
@@ -116,21 +120,21 @@ const WEAR = {
   },
   flatcap: {
     slot: 'head', title: '鸭舌帽', note: '中年猪的棕色鸭舌帽。',
-    svg: `<path d="M118 62C124 34 166 22 200 34L204 52C176 46 146 52 118 62Z" fill="#8B6B4E"/><path d="M98 70Q116 56 140 58" fill="none" stroke="#6E5239" stroke-width="10"/>`,
+    svg: hat(160, 56, `<path d="M118 62C124 34 166 22 200 34L204 52C176 46 146 52 118 62Z" fill="#8B6B4E"/><path d="M98 70Q116 56 140 58" fill="none" stroke="#6E5239" stroke-width="10"/>`),
   },
   mortarboard: {
     slot: 'head', title: '学士帽', note: '拿到毕业证才有的学位帽，流苏轻轻晃。',
     css: `.w-mortarboard-tassel{animation:w-mortarboard-swing 1.8s ease-in-out infinite;transform-origin:236px 52px}
     @keyframes w-mortarboard-swing{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}`,
-    svg: `<path d="M126 58C124 76 200 82 208 62L206 48L130 52Z" fill="#3A3A48"/>
+    svg: hat(168, 72, `<path d="M126 58C124 76 200 82 208 62L206 48L130 52Z" fill="#3A3A48"/>
     <path d="M94 50L168 26L242 46L168 70Z" fill="#2E2E3A"/><circle cx="168" cy="48" r="5" fill="#F5C24C"/>
     <path d="M168 48L236 52" fill="none" stroke="#F5C24C" stroke-width="3"/>
-    <g class="w-mortarboard-tassel"><path d="M236 52V84" fill="none" stroke="#F5C24C" stroke-width="4"/><rect x="230" y="82" width="12" height="16" rx="3" fill="#F5C24C"/></g>`,
+    <g class="w-mortarboard-tassel"><path d="M236 52V84" fill="none" stroke="#F5C24C" stroke-width="4"/><rect x="230" y="82" width="12" height="16" rx="3" fill="#F5C24C"/></g>`),
   },
   strawhat: {
     slot: 'head', title: '草帽', note: '旅行时戴的草帽，系一圈红带子。',
-    svg: `<ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
-    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/>`,
+    svg: hat(150, 58, `<ellipse cx="150" cy="54" rx="64" ry="14" fill="#E9C46A" transform="rotate(-14 150 54)"/>
+    <path d="M118 58C110 26 172 10 182 42Z" fill="#F2D488"/><path d="M120 50L180 34" fill="none" stroke="#E5534B" stroke-width="7"/>`),
   },
   glasses: {
     slot: 'eyes', title: '圆眼镜', note: '上课戴的棕框圆眼镜。',
