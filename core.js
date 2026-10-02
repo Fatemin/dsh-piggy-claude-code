@@ -476,6 +476,8 @@ export function layEgg(nowMs) {
     // Finished lessons per school stage. QQ Pet starts every pet at 小学 and
     // `college` / `graduate` sit behind it; this is what opens them.
     lessonsByStage: { primary: 0, college: 0, graduate: 0, doctor: 0 },
+    // [mod] Lessons per subject at each stage: what the 小学 / 大学 caps count.
+    stageCourses: { primary: {}, college: {}, graduate: {}, doctor: {} },
     souvenirs: [],
     // [dsh-piggy-claude-code mod] the travel collection and what it has paid out.
     collected: {},
@@ -545,6 +547,7 @@ export function migrate(raw) {
   state.traits = sanitizeTraits(raw.traits)
   state.courses = sanitizeCourses(raw.courses)
   state.lessonsByStage = sanitizeLessonsByStage(raw.lessonsByStage, raw.courses)
+  state.stageCourses = sanitizeStageCourses(raw.stageCourses, state.lessonsByStage)
   state.souvenirs = Array.isArray(raw.souvenirs) ? raw.souvenirs.filter(s => typeof s === 'string').slice(-40) : []
   // [dsh-piggy-claude-code mod] travel collection, region payouts, doctorate.
   state.collected = sanitizeCollected(raw.collected)
@@ -682,6 +685,37 @@ function sanitizeLessonsByStage(raw, rawCourses) {
   return out
 }
 
+/**
+ * [mod] Lessons per subject at each stage.
+ *
+ * A save from before the caps only knows how many lessons each stage had, not
+ * which subjects. Spread that total evenly over the nine subjects, so a pig
+ * that already went through 小学 many times does not get the cheap lessons a
+ * second time.
+ */
+function sanitizeStageCourses(raw, lessonsByStage) {
+  const source = asObject(raw)
+  const out = {}
+  for (const stage of SCHOOL_STAGES) {
+    out[stage.key] = {}
+    if (source !== null) {
+      for (const [key, n] of Object.entries(asObject(source[stage.key]) ?? {})) {
+        if (Number.isFinite(n) && n > 0 && subjectByKey(key) !== null) out[stage.key][key] = Math.floor(n)
+      }
+      continue
+    }
+    const total = lessonsByStage?.[stage.key] ?? 0
+    SUBJECTS.forEach((subject, i) => {
+      const n = Math.floor(total / SUBJECTS.length) + (i < total % SUBJECTS.length ? 1 : 0)
+      if (n > 0) out[stage.key][subject.key] = n
+    })
+  }
+  return out
+}
+
+/** [mod] How many times `subjectKey` has been taken at `stageKey`. */
+export const stageLessons = (state, stageKey, subjectKey) => state?.stageCourses?.[stageKey]?.[subjectKey] ?? 0
+
 function sanitizeIllness(raw) {
   const source = asObject(raw)
   if (source === null) return null
@@ -788,6 +822,9 @@ export function studyView(state) {
     minutes: stage.minutes,
     tuition: stage.tuition,
     gain: stage.gain,
+    // [mod] per-subject limit at this stage (null = none) and how much of it is used
+    cap: stage.cap,
+    taken: Object.fromEntries(SUBJECTS.map(subject => [subject.key, stageLessons(state, stage.key, subject.key)])),
     unlocked: stageUnlocked(stage, lessons),
     progress: stageProgress(stage, lessons),
   }))
@@ -958,10 +995,12 @@ function finishStudy(state, activity, nowMs) {
   state.traits = { ...(state.traits ?? {}) }
   state.courses = { ...(state.courses ?? {}) }
   state.lessonsByStage = { ...(state.lessonsByStage ?? {}) }
+  state.stageCourses = { ...(state.stageCourses ?? {}), [stage.key]: { ...(state.stageCourses?.[stage.key] ?? {}) } }
   // [mod] several subjects in one sitting: each pays out, each is tiring.
   for (const subject of subjects) {
     state.traits[subject.trait] = (state.traits[subject.trait] ?? 0) + stage.gain
     state.courses[subject.key] = (state.courses[subject.key] ?? 0) + 1
+    state.stageCourses[stage.key][subject.key] = (state.stageCourses[stage.key][subject.key] ?? 0) + 1
     // Counted per stage, because that is what unlocks the next school.
     state.lessonsByStage[stage.key] = (state.lessonsByStage[stage.key] ?? 0) + 1
     state.stats.courses += 1
@@ -1360,7 +1399,8 @@ export function startWork(state, jobKey, nowMs) {
 /**
  * Enrol in one sitting. [mod] `subjectKeys` may be one key or a list: up to two
  * subjects at 大学, three from 研究生 on (PARALLEL_COURSES). Each subject pays its
- * own tuition; the sitting lasts as long as a single lesson.
+ * own tuition; the sitting lasts as long as a single lesson. At a stage with a
+ * `cap`, a subject already taken that many times there is refused.
  */
 export function startStudy(state, subjectKeys, stageKey, nowMs) {
   const keys = [...new Set((Array.isArray(subjectKeys) ? subjectKeys : [subjectKeys]).filter(Boolean))]
@@ -1376,6 +1416,11 @@ export function startStudy(state, subjectKeys, stageKey, nowMs) {
   }
   const most = PARALLEL_COURSES[stage.key] ?? 1
   if (subjects.length > most) return { ok: false, reason: 'too-many', max: most }
+  // [mod] 小学 / 大学 are cheap but capped per subject; the pig is told which are used up.
+  if (stage.cap !== null) {
+    const full = subjects.filter(subject => stageLessons(state, stage.key, subject.key) >= stage.cap)
+    if (full.length > 0) return { ok: false, reason: 'capped', max: stage.cap, full: full.map(subject => subject.key) }
+  }
   const tuition = stage.tuition * subjects.length
   if (state.coins < tuition) return { ok: false, reason: 'poor', price: tuition }
   if (state.satiety < 15) return { ok: false, reason: 'hungry' }

@@ -238,6 +238,8 @@ export function apply(ctx, config = {}) {
             // [mod] what a scratch card paid out; which trait points a career lacks
             prize: result.prize,
             missing: result.missing,
+            // [mod] the subjects a capped stage has used up
+            full: result.full,
           }, { 'cache-control': 'no-store' })
         },
       }))
@@ -738,11 +740,12 @@ export function dispatch(store, commandName, rawInput) {
       if (subjects.length === 0 || stage === undefined) {
         return {
           kind: 'error',
-          text: tr(lang, '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}', {
+          text: tr(lang, '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}\n每门课上限：{caps}（其余不限）', {
             cmd,
             stages: SCHOOL_STAGES.map(s => tr(lang, s.label)).join('|'),
             subjects: SUBJECTS.map(s => tr(lang, s.label)).join(' · '),
             limits: SCHOOL_STAGES.map(s => `${tr(lang, s.label)} ${PARALLEL_COURSES[s.key] ?? 1}`).join(' · '),
+            caps: SCHOOL_STAGES.filter(s => s.cap !== null).map(s => `${tr(lang, s.label)} ${s.cap}`).join(' · '),
           }),
         }
       }
@@ -887,6 +890,10 @@ function refusalText(result, state, context = {}) {
     case 'hungry': return tr(lang, '{name} 太饿了，先喂点东西。', { name })
     case 'poor': return tr(lang, '钱不够，需要 {price} 金币，你只有 {coins}。', { price: result.price, coins: state.coins })
     case 'too-many': return tr(lang, '{stage}一次最多上 {max} 门课。', { stage: tr(lang, context.stage?.label ?? ''), max: result.max })
+    case 'capped': return tr(lang, '{stage}每门课最多上 {max} 次，{subjects}已经上满了。', {
+      stage: tr(lang, context.stage?.label ?? ''), max: result.max,
+      subjects: (result.full ?? []).map(key => tr(lang, SUBJECTS.find(subject => subject.key === key)?.label ?? key)).join(tr(lang, '、')),
+    })
     case 'locked': {
       const need = result.need
       if (need === null || need === undefined) return tr(lang, '{stage}还没解锁。', { stage: tr(lang, context.stage?.label ?? '') })

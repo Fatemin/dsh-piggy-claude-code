@@ -7,7 +7,7 @@
  */
 
 import { PLACES, REGIONS, SOUVENIRS, SPECIALTIES, WORLD_BONUS, fareFor, zonesBetween } from '../world.js'
-import { ALL_ITEMS, PARALLEL_COURSES, RENAME_CARD } from '../data.js'
+import { ALL_ITEMS, PARALLEL_COURSES, RENAME_CARD, schoolStageByKey as schoolStage } from '../data.js'
 import { hasDefaultName, perksOf, regionProgress, renamePig, tripQuote } from '../core.js'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
@@ -411,6 +411,80 @@ test('finishing a lesson counts toward the stage, not just the subject', () => {
 test('a save from before the ladder keeps its lessons as primary', () => {
   const upgraded = migrate({ ...layEgg(T0), version: 4, courses: { chinese: 3, art: 2 } })
   assert.equal(upgraded.lessonsByStage.primary, 5, 'existing lessons are not thrown away')
+})
+
+// [dsh-piggy-claude-code mod] ST0002: cheap capped schools, slow open-ended ones.
+test('小学 and 大学 cap each subject, 研究生 and 博士 do not', () => {
+  const pig = hatchEgg(T0)
+  pig.coins = 1_000_000
+  let clock = T0
+  const sit = (keys, stageKey) => {
+    pig.satiety = 100
+    pig.happiness = 100
+    const result = startStudy(pig, keys, stageKey, clock)
+    if (result.ok) {
+      clock += (schoolStage(stageKey).minutes + 1) * MIN
+      decay(pig, clock)
+    }
+    return result
+  }
+  const primary = SCHOOL_STAGES[0]
+  for (let i = 0; i < primary.cap; i += 1) assert.equal(sit('chinese', 'primary').ok, true)
+  const refused = sit('chinese', 'primary')
+  assert.equal(refused.reason, 'capped')
+  assert.equal(refused.max, primary.cap)
+  assert.deepEqual(refused.full, ['chinese'])
+  assert.equal(pig.stageCourses.primary.chinese, primary.cap)
+  assert.equal(studyView(pig)[0].taken.chinese, primary.cap)
+  assert.equal(sit('mathematics', 'primary').ok, true, 'other subjects still open')
+
+  pig.lessonsByStage = { primary: 9, college: 9, graduate: 9, doctor: 0 }
+  for (let i = 0; i < SCHOOL_STAGES[1].cap; i += 1) assert.equal(sit(['pe', 'art'], 'college').ok, true)
+  const coins = pig.coins
+  assert.equal(sit(['pe', 'music'], 'college').reason, 'capped', 'one used-up subject refuses the sitting')
+  assert.equal(pig.coins, coins, 'a refused sitting costs nothing')
+
+  for (const stageKey of ['graduate', 'doctor']) {
+    assert.equal(schoolStage(stageKey).cap, null)
+    for (let i = 0; i < 4; i += 1) assert.equal(sit('chinese', stageKey).ok, true, `${stageKey} has no cap`)
+  }
+})
+
+test('the capped schools bound each trait, and beat the open ones per coin and per hour', () => {
+  const capped = SCHOOL_STAGES.filter(stage => stage.cap !== null)
+  const open = SCHOOL_STAGES.filter(stage => stage.cap === null)
+  assert.deepEqual(capped.map(stage => stage.key), ['primary', 'college'])
+  assert.deepEqual(open.map(stage => stage.key), ['graduate', 'doctor'])
+  // Three subjects per trait: the most the cheap schools can ever add to one trait.
+  const perTrait = capped.reduce((sum, stage) => sum + 3 * stage.cap * stage.gain, 0)
+  assert.equal(perTrait, 18)
+  assert.ok(perTrait < 30, 'the wage cap still needs the open-ended schools')
+  const coinsPerPoint = stage => stage.tuition / stage.gain
+  const pointsPerHour = stage => (PARALLEL_COURSES[stage.key] * stage.gain) / (stage.minutes / 60)
+  for (const cheap of capped) {
+    for (const dear of open) {
+      assert.ok(coinsPerPoint(cheap) < coinsPerPoint(dear), `${cheap.key} is cheaper per point than ${dear.key}`)
+      assert.ok(pointsPerHour(cheap) > pointsPerHour(dear), `${cheap.key} is faster than ${dear.key}`)
+    }
+  }
+  // The gate to the next school still fits under the cap.
+  for (const stage of SCHOOL_STAGES) {
+    if (stage.requires === null) continue
+    const before = SCHOOL_STAGES.find(s => s.key === stage.requires.stage)
+    if (before.cap !== null) assert.ok(stage.requires.lessons <= before.cap * SUBJECTS.length)
+  }
+})
+
+test('a save from before the caps spreads its lessons over the subjects', () => {
+  const raw = { ...layEgg(T0), lessonsByStage: { primary: 20, college: 4, graduate: 0, doctor: 0 } }
+  delete raw.stageCourses
+  const upgraded = migrate(raw)
+  const primary = Object.values(upgraded.stageCourses.primary)
+  assert.equal(primary.reduce((sum, n) => sum + n, 0), 20, 'every lesson is accounted for')
+  assert.ok(primary.every(n => n >= 2), 'twenty lessons fill the 小学 cap everywhere')
+  assert.equal(Object.values(upgraded.stageCourses.college).reduce((sum, n) => sum + n, 0), 4)
+  assert.deepEqual(migrate(upgraded).stageCourses, upgraded.stageCourses, 'idempotent')
+  assert.deepEqual(hatchEgg(T0).stageCourses, { primary: {}, college: {}, graduate: {}, doctor: {} })
 })
 
 test('long-haul activities really do take hours', () => {

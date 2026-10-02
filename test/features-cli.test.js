@@ -18,7 +18,7 @@ import { test } from 'node:test'
 import { dispatch } from '../index.js'
 import { createStore } from '../store.js'
 import { tripQuote } from '../core.js'
-import { RENAME_CARD } from '../data.js'
+import { RENAME_CARD, schoolStageByKey } from '../data.js'
 import { tr } from '../i18n.js'
 import { PLACES, SOUVENIRS, placeByKey, systemUtcOffset } from '../world.js'
 
@@ -119,7 +119,7 @@ for (const lang of ['zh', 'en']) {
       assert.equal(pair.kind, 'success')
       assert.deepEqual(store.state.activity.keys, ['mathematics', 'art'])
       assert.equal(store.state.activity.stage, 'college')
-      assert.equal(store.state.coins, coins - 2 * 220)
+      assert.equal(store.state.coins, coins - 2 * schoolStageByKey('college').tuition)
       assert.ok(pair.text.includes(t('{stage}{subjects}', { stage: t('大学'), subjects: [t('数学'), t('美术')].join(t('+')) })), pair.text)
       assert.equal(store.callOffActivity().ok, true)
 
@@ -127,6 +127,12 @@ for (const lang of ['zh', 'en']) {
       const many = run(`study ${t('数学')}、${t('美术')}、${t('音乐')} ${t('大学')}`)
       assert.equal(store.state.activity, null)
       assert.ok(many.text.includes(t('{stage}一次最多上 {max} 门课。', { stage: t('大学'), max: 2 })), many.text)
+
+      // [mod] ST0002: a used-up subject at a capped stage is refused by name.
+      store.state.stageCourses = { ...store.state.stageCourses, college: { mathematics: 2 } }
+      const capped = run(`study ${t('数学')}, ${t('美术')} ${t('大学')}`)
+      assert.equal(store.state.activity, null)
+      assert.ok(capped.text.includes(t('{stage}每门课最多上 {max} 次，{subjects}已经上满了。', { stage: t('大学'), max: 2, subjects: t('数学') })), capped.text)
 
       // Stage first, keys instead of labels, the doctorate takes three.
       assert.equal(run('study doctor chinese music wushu').kind, 'success')
