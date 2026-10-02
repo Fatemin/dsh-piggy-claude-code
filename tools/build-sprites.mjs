@@ -114,32 +114,52 @@ const glasses = stroke => `<g fill="none" stroke="${stroke}" stroke-width="5"><c
 const HAT_SCALE = 1.35
 const hat = (cx, cy, svg) => `<g transform="translate(${cx} ${cy}) scale(${HAT_SCALE}) translate(${-cx} ${-cy})">${svg}</g>`
 // [ST0012] Waist gear. The pig has no neck, so anything worn round the middle
-// sits between the front legs and the hind leg, clear of the near ear. A belt
-// is a band clipped to the body (it ends exactly on the outline) that bows
-// toward the head, the way a ring round a turned barrel does; a hoop is the
-// same ring drawn bigger than the body, its far half hidden behind it.
-const WAIST = { top: 28, mid: 135, bottom: 244 }
-/** A band round the waist, `w` wide, its near edge `dx` right of the scarf's. */
+// goes round its waist, following the body: the pig is turned toward us, so a
+// belt round it leans, its top toward the head and its foot toward the rump,
+// bowing a little toward the rump (the line the owner drew). The belt is a
+// band clipped to the body, so it ends exactly on the outline, and it passes
+// behind the near ear. A hoop leans the same way, its far half behind the pig.
+const WAIST = { top: [196, 30], ctrl: [230, 128], bottom: [240, 244] }
+/** The waist line `t` of the way down (0 = the back, 1 = the belly), `dx` to the right. */
+const waistAt = (t, dx = 0) => {
+  const q = i => (1 - t) ** 2 * WAIST.top[i] + 2 * t * (1 - t) * WAIST.ctrl[i] + t ** 2 * WAIST.bottom[i]
+  return [+(q(0) + dx).toFixed(1), +q(1).toFixed(1)]
+}
+/** How far the waist line leans from upright at `t`, in degrees (negative: its foot toward the rump). */
+const waistLean = t => {
+  const d = i => 2 * (1 - t) * (WAIST.ctrl[i] - WAIST.top[i]) + 2 * t * (WAIST.bottom[i] - WAIST.ctrl[i])
+  return +(-Math.atan2(d(0), d(1)) * 180 / Math.PI).toFixed(1)
+}
+/** The waist line as a path, `dx` to the right. */
+const waistLine = (dx = 0) => `M${WAIST.top[0] + dx} ${WAIST.top[1]}Q${WAIST.ctrl[0] + dx} ${WAIST.ctrl[1]} ${WAIST.bottom[0] + dx} ${WAIST.bottom[1]}`
+/** A band `w` wide along the waist line, centred `dx` right of it. */
 const waistBand = (w, dx = 0) => {
-  const [l0, l1, l2] = [238 + dx, 228 + dx, 242 + dx]
-  return `M${l0} ${WAIST.top}Q${l1} ${WAIST.mid} ${l2} ${WAIST.bottom}H${l2 + w}Q${l1 + w * .55} ${WAIST.mid} ${l0 + w} ${WAIST.top}Z`
+  const [l, r] = [dx - w / 2, dx + w / 2]
+  return `${waistLine(l)}H${WAIST.bottom[0] + r}Q${WAIST.ctrl[0] + r} ${WAIST.ctrl[1]} ${WAIST.top[0] + r} ${WAIST.top[1]}Z`
 }
-/** A point on the middle line of a band `w` wide, `t` of the way down. */
-const waistAt = (t, w, dx = 0) => {
-  const q = (a, b, c) => (1 - t) ** 2 * a + 2 * t * (1 - t) * b + t ** 2 * c
-  return [+q(238 + dx + w / 2, 228 + dx + w * .275, 242 + dx + w / 2).toFixed(1), +q(WAIST.top, WAIST.mid, WAIST.bottom).toFixed(1)]
-}
+/** Something fastened on the belt at `t`, drawn about its own 0,0 and turned with the belt. */
+const onWaist = (t, inner, dx = 0) => { const [x, y] = waistAt(t, dx); return `<g transform="translate(${x} ${y}) rotate(${waistLean(t)})">${inner}</g>` }
 const bodyClip = id => `<clipPath id="${id}"><path d="${P.body}"/></clipPath>`
+/** Hides what passes behind the near ear (the ear is nearer us than the waist). */
+const earMask = id => `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="-60" width="400" height="400"><rect x="0" y="-60" width="400" height="400" fill="#fff"/><path d="${P.ear2}" fill="none" stroke="#000" stroke-width="15" stroke-linecap="round"/></mask>`
+/** The belt itself, clipped to the body and tucked behind the ear. */
+const belt = (key, inner) => `${bodyClip(`w-${key}-body`)}${earMask(`w-${key}-ear`)}
+    <g mask="url(#w-${key}-ear)"><g clip-path="url(#w-${key}-body)">${inner}</g></g>`
 /** Paints only outside the body: the far half of a hoop goes behind the pig. */
 const behindBody = id => `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="-60" width="400" height="400"><rect x="0" y="-60" width="400" height="400" fill="#fff"/><path d="${P.body}" fill="#000"/></mask>`
-/** A hoop round the waist: near arc, far arc. */
-const HOOP = { cx: 262, cy: 138, tilt: 10 }
+/** A hoop round the waist, leaning like the belt: its near arc bows toward the rump. */
+const HOOP = { cx: 222, cy: 136, tilt: -14 }
 const HOOP_TILT = `rotate(${HOOP.tilt} ${HOOP.cx} ${HOOP.cy})`
-const hoopArcs = (rx, ry) => [
-  `M${HOOP.cx} ${HOOP.cy - ry}A${rx} ${ry} 0 0 0 ${HOOP.cx} ${HOOP.cy + ry}`,
-  `M${HOOP.cx} ${HOOP.cy - ry}A${rx} ${ry} 0 0 1 ${HOOP.cx} ${HOOP.cy + ry}`,
-]
-const studs = () => [.16, .3, .44, .58, .72].map(t => { const [x, y] = waistAt(t, 16, 2); return `<circle cx="${x}" cy="${y}" r="3.6" fill="#D9DCE3"/>` }).join('')
+const hoopArcs = (rx, ry) => ({
+  near: `M${HOOP.cx} ${HOOP.cy - ry}A${rx} ${ry} 0 0 1 ${HOOP.cx} ${HOOP.cy + ry}`,
+  far: `M${HOOP.cx} ${HOOP.cy - ry}A${rx} ${ry} 0 0 0 ${HOOP.cx} ${HOOP.cy + ry}`,
+})
+/** Where a point `(0, dy)` from the hoop's centre lands once the hoop leans. */
+const hoopPoint = dy => {
+  const a = HOOP.tilt * Math.PI / 180
+  return [+(HOOP.cx - dy * Math.sin(a)).toFixed(1), +(HOOP.cy + dy * Math.cos(a)).toFixed(1)]
+}
+const studs = () => [.14, .28, .42, .56, .7].map(t => { const [x, y] = waistAt(t); return `<circle cx="${x}" cy="${y}" r="3.6" fill="#D9DCE3"/>` }).join('')
 
 const WEAR = {
   bow: {
@@ -172,77 +192,69 @@ const WEAR = {
     slot: 'eyes', title: '墨镜', note: '从中东·非洲晒回来的墨镜。',
     svg: `<path d="M72 134h40v10a16 16 0 0 1-40 0ZM146 148h40v10a16 16 0 0 1-40 0Z" fill="#2E2E3A"/><path d="M112 138L146 152M72 136L58 130" fill="none" stroke="#2E2E3A" stroke-width="5"/>`,
   },
-  // The pig has no neck: the scarf goes round its waist, between the front legs
-  // and the hind leg, clear of the near ear. The band is clipped to the body
-  // so it ends exactly on the outline; it bows toward the head the way a ring
-  // round a turned barrel does. The knot's two ends flutter.
+  // The pig has no neck: the scarf goes round its waist (see WAIST), knotted
+  // low on the near side; the knot's two ends flutter.
   scarf: {
-    slot: 'waist', title: '红领巾', note: '上小学系的红领巾，猪没有脖子，绑在腰上。',
-    css: `.w-scarf-ends{animation:w-scarf-flutter 2.4s ease-in-out infinite;transform-origin:248px 196px}
+    slot: 'waist', title: '红领巾', note: '上小学系的红领巾，猪没有脖子，顺着身体绑在腰上。',
+    css: `.w-scarf-ends{animation:w-scarf-flutter 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
     @keyframes w-scarf-flutter{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}`,
-    svg: `<clipPath id="w-scarf-body"><path d="${P.body}"/></clipPath>
-    <g clip-path="url(#w-scarf-body)"><path d="M238 28Q228 135 242 244H264Q250 135 262 28Z" fill="#E5534B"/>
-    <path d="M259 28Q249 135 263 244" fill="none" stroke="#C9433C" stroke-width="5"/></g>
-    <g class="w-scarf-ends"><path d="M242 198C228 210 214 222 200 236L234 246Z" fill="#E5534B"/><path d="M242 200L220 238" fill="none" stroke="#C9433C" stroke-width="3" stroke-linecap="round"/>
-    <path d="M254 198C268 208 280 220 292 234L260 246Z" fill="#E5534B"/><path d="M254 200L272 238" fill="none" stroke="#C9433C" stroke-width="3" stroke-linecap="round"/></g>
-    <ellipse cx="248" cy="196" rx="14" ry="12" fill="#C9433C"/><path d="M241 192Q248 188 255 192" fill="none" stroke="#F07A72" stroke-width="3" stroke-linecap="round"/>`,
+    svg: `${belt('scarf', `<path d="${waistBand(22)}" fill="#E5534B"/><path d="${waistLine(8)}" fill="none" stroke="#C9433C" stroke-width="5"/>`)}
+    ${onWaist(.8, `<g class="w-scarf-ends"><path d="M-6 2C-20 14-34 26-48 40L-14 50Z" fill="#E5534B"/><path d="M-6 4L-28 42" fill="none" stroke="#C9433C" stroke-width="3" stroke-linecap="round"/>
+    <path d="M6 2C20 12 32 24 44 38L12 50Z" fill="#E5534B"/><path d="M6 4L24 42" fill="none" stroke="#C9433C" stroke-width="3" stroke-linecap="round"/></g>
+    <ellipse rx="14" ry="12" fill="#C9433C"/><path d="M-7-4Q0-8 7-4" fill="none" stroke="#F07A72" stroke-width="3" stroke-linecap="round"/>`)}`,
   },
   // ---- [ST0012] waist gear sold in the shop: trends and old internet memes ----
   hulahoop: {
     slot: 'waist', title: '网红呼啦圈', note: '2021 年居家减肥的智能呼啦圈：配重球甩着转。',
-    css: `.w-hulahoop-hoop{animation:w-hulahoop-wobble 1.2s ease-in-out infinite;transform-origin:262px 138px}
-    .w-hulahoop-ball{animation:w-hulahoop-swing .6s ease-in-out infinite alternate;transform-origin:262px 262px}
+    css: `.w-hulahoop-hoop{animation:w-hulahoop-wobble 1.2s ease-in-out infinite;transform-origin:${HOOP.cx}px ${HOOP.cy}px}
+    .w-hulahoop-ball{animation:w-hulahoop-swing .6s ease-in-out infinite alternate;transform-origin:${hoopPoint(124).join('px ')}px}
     @keyframes w-hulahoop-wobble{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
     @keyframes w-hulahoop-swing{from{transform:rotate(-32deg)}to{transform:rotate(32deg)}}`,
     svg: `${behindBody('w-hulahoop-behind')}
-    <g mask="url(#w-hulahoop-behind)"><g class="w-hulahoop-hoop"><g transform="${HOOP_TILT}"><path d="${hoopArcs(52, 124)[1]}" fill="none" stroke="#E0559A" stroke-width="11"/></g></g></g>
-    <g class="w-hulahoop-hoop"><g transform="${HOOP_TILT}"><path d="${hoopArcs(52, 124)[0]}" fill="none" stroke="#FF6FAE" stroke-width="11"/>
-    <path d="${hoopArcs(52, 124)[0]}" fill="none" stroke="#9B87F5" stroke-width="11" stroke-dasharray="16 16"/></g>
-    <g class="w-hulahoop-ball"><path d="M240 260L262 262V284" fill="none" stroke="#5B5F73" stroke-width="3"/><circle cx="262" cy="290" r="10" fill="#9B87F5"/><circle cx="258" cy="286" r="3" fill="#D4CCFF"/></g></g>`,
+    <g mask="url(#w-hulahoop-behind)"><g class="w-hulahoop-hoop"><g transform="${HOOP_TILT}"><path d="${hoopArcs(48, 124).far}" fill="none" stroke="#E0559A" stroke-width="11"/></g></g></g>
+    <g class="w-hulahoop-hoop"><g transform="${HOOP_TILT}"><path d="${hoopArcs(48, 124).near}" fill="none" stroke="#FF6FAE" stroke-width="11"/>
+    <path d="${hoopArcs(48, 124).near}" fill="none" stroke="#9B87F5" stroke-width="11" stroke-dasharray="16 16"/></g>
+    <g class="w-hulahoop-ball"><path d="M${hoopPoint(124).join(' ')}v28" fill="none" stroke="#5B5F73" stroke-width="3"/><circle cx="${hoopPoint(124)[0]}" cy="${hoopPoint(124)[1] + 34}" r="10" fill="#9B87F5"/><circle cx="${hoopPoint(124)[0] - 4}" cy="${hoopPoint(124)[1] + 30}" r="3" fill="#D4CCFF"/></g></g>`,
   },
   swimring: {
     slot: 'waist', title: '小黄鸭游泳圈', note: '中年肚子上的「游泳圈」，这回是真的：一只小黄鸭。',
-    css: `.w-swimring-duck{animation:w-swimring-bob 1.6s ease-in-out infinite;transform-origin:256px 34px}
+    css: `.w-swimring-duck{animation:w-swimring-bob 1.6s ease-in-out infinite;transform-origin:${hoopPoint(-106).join('px ')}px}
     @keyframes w-swimring-bob{0%,100%{transform:rotate(0)}50%{transform:rotate(-10deg)}}`,
     svg: `${behindBody('w-swimring-behind')}
-    <g mask="url(#w-swimring-behind)"><g transform="${HOOP_TILT}"><path d="${hoopArcs(58, 106)[1]}" fill="none" stroke="#F2C230" stroke-width="30"/></g></g>
-    <g transform="${HOOP_TILT}"><path d="${hoopArcs(58, 106)[0]}" fill="none" stroke="#FFD84D" stroke-width="30"/>
-    <path d="M240 46A44 90 0 0 0 214 118" fill="none" stroke="#FFF3B0" stroke-width="7" stroke-linecap="round"/>
-    <g class="w-swimring-duck"><circle cx="252" cy="14" r="20" fill="#FFD84D"/><path d="M234 12L212 18L234 24Z" fill="#F5862E"/>
-    <circle cx="246" cy="8" r="3.5" fill="#373A32"/></g></g>`,
+    <g mask="url(#w-swimring-behind)"><g transform="${HOOP_TILT}"><path d="${hoopArcs(56, 106).far}" fill="none" stroke="#F2C230" stroke-width="30"/></g></g>
+    <g transform="${HOOP_TILT}"><path d="${hoopArcs(56, 106).near}" fill="none" stroke="#FFD84D" stroke-width="30"/>
+    <path d="M${HOOP.cx + 10} ${HOOP.cy - 94}A44 92 0 0 1 ${HOOP.cx + 44} ${HOOP.cy - 20}" fill="none" stroke="#FFF3B0" stroke-width="7" stroke-linecap="round"/></g>
+    <g class="w-swimring-duck">${(([x, y]) => `<circle cx="${x - 10}" cy="${y - 18}" r="20" fill="#FFD84D"/><path d="M${x - 28} ${y - 20}L${x - 50} ${y - 14}L${x - 28} ${y - 8}Z" fill="#F5862E"/>
+    <circle cx="${x - 16}" cy="${y - 24}" r="3.5" fill="#373A32"/>`)(hoopPoint(-106))}</g>`,
   },
   fannypack: {
     slot: 'waist', title: '多巴胺腰包', note: '2023 年 City Walk 的多巴胺撞色腰包。',
-    css: `.w-fannypack-tab{animation:w-fannypack-jiggle 1.4s ease-in-out infinite;transform-origin:226px 172px}
+    css: `.w-fannypack-tab{animation:w-fannypack-jiggle 1.4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
     @keyframes w-fannypack-jiggle{0%,100%{transform:rotate(0)}50%{transform:rotate(18deg)}}`,
-    svg: `${bodyClip('w-fannypack-body')}
-    <g clip-path="url(#w-fannypack-body)"><path d="${waistBand(12, 2)}" fill="#7B61FF"/></g>
-    <g transform="rotate(-6 246 190)"><rect x="216" y="168" width="62" height="42" rx="18" fill="#FF8A3D"/>
-    <rect x="222" y="186" width="50" height="20" rx="9" fill="#FFD23F"/>
-    <path d="M224 178H270" fill="none" stroke="#2E2E3A" stroke-width="3" stroke-linecap="round"/>
-    <g class="w-fannypack-tab"><rect x="221" y="172" width="8" height="16" rx="3" fill="#3AC0B5"/></g>
-    <circle cx="258" cy="196" r="5" fill="#FF6FAE"/></g>`,
+    svg: `${belt('fannypack', `<path d="${waistBand(12)}" fill="#7B61FF"/>`)}
+    ${onWaist(.78, `<rect x="-30" y="-22" width="62" height="42" rx="18" fill="#FF8A3D"/>
+    <rect x="-24" y="-4" width="50" height="20" rx="9" fill="#FFD23F"/>
+    <path d="M-22-12H24" fill="none" stroke="#2E2E3A" stroke-width="3" stroke-linecap="round"/>
+    <g class="w-fannypack-tab"><rect x="-25" y="-18" width="8" height="16" rx="3" fill="#3AC0B5"/></g>
+    <circle cx="12" cy="6" r="5" fill="#FF6FAE"/>`)}`,
   },
   chainbelt: {
     slot: 'waist', title: '杀马特腰链', note: '2010 年前后非主流的铆钉腰带，挂一串叮当响的链子。',
-    css: `.w-chainbelt-chain{animation:w-chainbelt-swing 1.3s ease-in-out infinite;transform-origin:248px 200px}
+    css: `.w-chainbelt-chain{animation:w-chainbelt-swing 1.3s ease-in-out infinite;transform-box:fill-box;transform-origin:0 0}
     @keyframes w-chainbelt-swing{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}`,
-    svg: `${bodyClip('w-chainbelt-body')}
-    <g clip-path="url(#w-chainbelt-body)"><path d="${waistBand(16, 2)}" fill="#2E2E3A"/>${studs()}</g>
-    <g class="w-chainbelt-chain"><path d="M246 196Q258 248 286 214" fill="none" stroke="#C0C4CC" stroke-width="5" stroke-dasharray="6 4" stroke-linecap="round"/>
-    <path d="M248 204Q246 266 296 226" fill="none" stroke="#C0C4CC" stroke-width="5" stroke-dasharray="6 4" stroke-linecap="round"/>
-    <path d="M262 246c0-6 8-9 11-3 3-6 11-3 11 3 0 8-11 14-11 14s-11-6-11-14Z" fill="#E040A0"/></g>`,
+    svg: `${belt('chainbelt', `<path d="${waistBand(16)}" fill="#2E2E3A"/>${studs()}`)}
+    ${onWaist(.8, `<g class="w-chainbelt-chain"><path d="M0 0Q12 52 40 18" fill="none" stroke="#C0C4CC" stroke-width="5" stroke-dasharray="6 4" stroke-linecap="round"/>
+    <path d="M2 8Q0 70 50 30" fill="none" stroke="#C0C4CC" stroke-width="5" stroke-dasharray="6 4" stroke-linecap="round"/>
+    <path d="M16 50c0-6 8-9 11-3 3-6 11-3 11 3 0 8-11 14-11 14s-11-6-11-14Z" fill="#E040A0"/></g>`)}`,
   },
   pager: {
     slot: 'waist', title: 'BP机皮带', note: '九十年代老板派头：大金扣皮带，腰上别一台 BP 机。',
     css: `.w-pager-lcd{animation:w-pager-beep 2.4s steps(1) infinite}
     @keyframes w-pager-beep{0%,60%,100%{fill:#A8C686}65%,75%,85%{fill:#E2F5C8}70%,80%{fill:#A8C686}}`,
-    svg: `${bodyClip('w-pager-body')}
-    <g clip-path="url(#w-pager-body)"><path d="${waistBand(16, 2)}" fill="#6B4A2E"/></g>
-    <rect x="234" y="130" width="30" height="26" rx="5" fill="#F5C24C"/><rect x="240" y="136" width="18" height="14" rx="3" fill="#D99A1E"/>
-    <path d="M249 132V154" fill="none" stroke="#FFE27A" stroke-width="3"/>
-    <rect x="232" y="182" width="34" height="26" rx="6" fill="#2E2E3A"/><rect class="w-pager-lcd" x="237" y="187" width="24" height="10" rx="2" fill="#A8C686"/>
-    <circle cx="241" cy="202" r="2.5" fill="#8A8F9E"/><circle cx="249" cy="202" r="2.5" fill="#8A8F9E"/><circle cx="257" cy="202" r="2.5" fill="#8A8F9E"/>`,
+    svg: `${belt('pager', `<path d="${waistBand(16)}" fill="#6B4A2E"/>
+    ${onWaist(.6, `<rect x="-15" y="-13" width="30" height="26" rx="5" fill="#F5C24C"/><rect x="-9" y="-7" width="18" height="14" rx="3" fill="#D99A1E"/><path d="M0-11V11" fill="none" stroke="#FFE27A" stroke-width="3"/>`)}`)}
+    ${onWaist(.82, `<rect x="-17" y="-13" width="34" height="26" rx="6" fill="#2E2E3A"/><rect class="w-pager-lcd" x="-12" y="-8" width="24" height="10" rx="2" fill="#A8C686"/>
+    <circle cx="-8" cy="7" r="2.5" fill="#8A8F9E"/><circle cy="7" r="2.5" fill="#8A8F9E"/><circle cx="8" cy="7" r="2.5" fill="#8A8F9E"/>`)}`,
   },
   whiskers: {
     slot: 'face', title: '白眉白胡子', note: '老年猪的灰眉毛和白胡子。',
