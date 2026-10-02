@@ -333,6 +333,38 @@ test('care is refused while working, and the refusal is honest', async () => {
   }
 })
 
+test('sleep and wake work through the route, and the computer wakes only its own naps', async () => {
+  const app = boot(nowMs => hatchEgg(nowMs))
+  try {
+    const bed = await app.post({ action: 'sleep' })
+    assert.equal(bed.ok, true)
+    assert.equal(bed.pig.asleep, true)
+    assert.equal(bed.pig.sleepAuto, false)
+    assert.equal(bed.pig.mood, 'asleep')
+    assert.equal((await app.post({ action: 'sleep' })).reason, 'asleep')
+
+    const computer = await app.post({ action: 'wake', auto: true })
+    assert.equal(computer.ok, false)
+    assert.equal(computer.reason, 'manual')
+    assert.equal(computer.pig.asleep, true)
+    assert.equal((await app.post({ action: 'wake' })).pig.asleep, false)
+
+    const nap = await app.post({ action: 'sleep', auto: true })
+    assert.equal(nap.pig.sleepAuto, true)
+    const up = await app.post({ action: 'wake', auto: true })
+    assert.equal(up.ok, true)
+    assert.equal(up.pig.asleep, false)
+    assert.equal(up.pig.sleepAuto, false)
+
+    assert.match(app.command.handler({ rawInput: 'sleep' }).text, /去睡觉了/)
+    assert.match(app.command.handler({ rawInput: 'sleep' }).text, /已经在睡了/)
+    assert.match(app.command.handler({ rawInput: 'wake' }).text, /醒了/)
+    assert.match(app.command.handler({ rawInput: 'wake' }).text, /本来就醒着/)
+  } finally {
+    app.cleanup()
+  }
+})
+
 test('buying is refused when broke, and the refusal is honest', async () => {
   const app = boot(nowMs => { const pig = hatchEgg(nowMs); pig.coins = 2; return pig })
   try {

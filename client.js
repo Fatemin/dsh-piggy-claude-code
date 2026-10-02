@@ -25,7 +25,7 @@ window.__ModuleLoader__.load({
     // Poses drawn on top of the stage's body. A mood without one (fine) keeps
     // the stage drawing; each file animates itself.
     var MOOD_ART = {
-      sick: 'mood-sick', hungry: 'mood-hungry', dirty: 'mood-dirty', sleepy: 'mood-sleepy',
+      sick: 'mood-sick', hungry: 'mood-hungry', dirty: 'mood-dirty', sleepy: 'mood-sleepy', asleep: 'mood-asleep',
       happy: 'mood-happy', lonely: 'mood-lonely',
       working: 'away-work', studying: 'away-study', traveling: 'away-trip',
     }
@@ -223,10 +223,14 @@ window.__ModuleLoader__.load({
         '更名卡要在「状态」里改名时用': '名前変更カードは「ようす」でなまえを変えるときに使うよ',
         '这一段一次最多上 {n} 门课': 'ここでは一度に {n} こまでだよ',
         '可以一起上 {n} 门 · 已选 {k}': '{n} こまで一緒にうけられるよ · えらんだ数 {k}',
+        '每门限 {cap} 次': '1科目 {cap} 回まで', '本段 {n}/{cap}': 'ここで {n}/{cap}', '已满': 'うけきった',
+        '这一段每门课最多上 {n} 次': 'ここは1科目 {n} 回までだよ',
         '上课 × {n}（学费 {total} 🪙）': 'じゅぎょう × {n}（授業料 {total} 🪙）',
         '先选课': 'じゅぎょうをえらんでね', '用来改名': 'なまえを変えるのに使う',
         '✈️ 限定': '✈️ 旅行限定',
         '纪念品 {have}/{total} → 去「旅行」看看': 'おみやげ {have}/{total} → 「旅行」で見てね',
+        '毕业证': '卒業証書', '收藏品': 'コレクション',
+        '再上 {left} 节再发一张': 'あと {left} こまでもう1枚', '上满 {need} 节发证（{done}/{need}）': '{need} こまでもらえる（{done}/{need}）',
         '家': 'おうち', '每跨一个时区 +{cost} 🪙 · +{hours} 小时': '時差1時間ごとに +{cost} 🪙 · +{hours} 時間',
         '刚从{place}回来': '{place}から帰ってきたよ', '新！': 'はじめて！', '还带回了：': 'ほかにも：',
         '集齐了「{region}」！': '「{region}」コンプリート！', '集齐奖励：{list}': 'コンプリート報酬：{list}',
@@ -256,6 +260,12 @@ window.__ModuleLoader__.load({
         '中了{prize}！+{coins} 🪙': '{prize}！ +{coins} 🪙', '谢谢参与…下次一定': 'はずれ…次こそ',
         '一等奖': '1等', '二等奖': '2等', '三等奖': '3等', '安慰奖': '残念賞', '谢谢参与': 'はずれ',
         '其他': 'そのほか', '成长 {pct}%': '成長 {pct}%',
+        // [dsh-piggy-claude-code mod] sleep
+        '睡觉': 'ねる', '叫醒': 'おこす', '晚安…': 'おやすみ…', '早上好！': 'おはよう！',
+        '{name} 在睡觉': '{name}はおやすみ中',
+        '睡着时只会变饿，心情和清洁会慢慢恢复': 'ねている間はおなかがへるだけ。きげんときれいさは少しずつもどります',
+        '跟着电脑一起睡的，电脑醒来它就起床': 'パソコンといっしょにねたので、パソコンがおきたらおきます',
+        '它已经在睡了': 'もうねています', '它本来就醒着': 'もうおきています',
       },
       en: {
         // tabs
@@ -372,10 +382,14 @@ window.__ModuleLoader__.load({
         '更名卡要在「状态」里改名时用': 'Rename cards are spent when renaming on the Status tab',
         '这一段一次最多上 {n} 门课': 'Up to {n} lessons at once here',
         '可以一起上 {n} 门 · 已选 {k}': 'Take up to {n} together · {k} picked',
+        '每门限 {cap} 次': '{cap} per subject', '本段 {n}/{cap}': 'here {n}/{cap}', '已满': 'done',
+        '这一段每门课最多上 {n} 次': 'At most {n} lessons per subject here',
         '上课 × {n}（学费 {total} 🪙）': 'Study × {n} (tuition {total} 🪙)',
         '先选课': 'Pick lessons first', '用来改名': 'For renaming',
         '✈️ 限定': '✈️ Travel only',
         '纪念品 {have}/{total} → 去「旅行」看看': 'Souvenirs {have}/{total} → see Travel',
+        '毕业证': 'Diplomas', '收藏品': 'Collectible',
+        '再上 {left} 节再发一张': '{left} more lessons for another', '上满 {need} 节发证（{done}/{need}）': 'Awarded after {need} lessons ({done}/{need})',
         '家': 'Home', '每跨一个时区 +{cost} 🪙 · +{hours} 小时': 'Each time zone crossed: +{cost} 🪙 · +{hours} h',
         '刚从{place}回来': 'Just back from {place}', '新！': 'New!', '还带回了：': 'Also brought: ',
         '集齐了「{region}」！': '{region} complete!', '集齐奖励：{list}': 'Complete set: {list}',
@@ -405,6 +419,12 @@ window.__ModuleLoader__.load({
         '中了{prize}！+{coins} 🪙': '{prize}! +{coins} 🪙', '谢谢参与…下次一定': 'No luck… next time',
         '一等奖': '1st prize', '二等奖': '2nd prize', '三等奖': '3rd prize', '安慰奖': 'Consolation prize', '谢谢参与': 'No luck',
         '其他': 'Other', '成长 {pct}%': 'Growth {pct}%',
+        // [dsh-piggy-claude-code mod] sleep
+        '睡觉': 'Sleep', '叫醒': 'Wake up', '晚安…': 'Good night…', '早上好！': 'Good morning!',
+        '{name} 在睡觉': '{name} is sleeping',
+        '睡着时只会变饿，心情和清洁会慢慢恢复': 'Asleep it only gets hungrier; mood and cleanliness slowly come back',
+        '跟着电脑一起睡的，电脑醒来它就起床': 'It fell asleep with the computer and gets up when the computer wakes',
+        '它已经在睡了': "It's already asleep", '它本来就醒着': "It's already awake",
       },
     }
     // English singulars, picked when `params.n === 1`. Japanese and Chinese
@@ -530,6 +550,9 @@ window.__ModuleLoader__.load({
           moodLevel: num(pig.moodLevel, 0),
           moodEmoji: str(pig.moodEmoji, '😊'),
           moodLabel: str(pig.moodLabel, L('还不错')),
+          // [dsh-piggy-claude-code mod] an older host never sends these: awake.
+          asleep: pig.asleep === true,
+          sleepAuto: pig.sleepAuto === true,
           satiety: Math.round(num(pig.satiety, 0)),
           happiness: Math.round(num(pig.happiness, 0)),
           cleanliness: Math.round(num(pig.cleanliness, 0)),
@@ -560,6 +583,15 @@ window.__ModuleLoader__.load({
           renameCardPrice: num(pig.renameCardPrice, 1000),
           perks: arr(pig.perks).filter(k => typeof k === 'string'),
           doctor: pig.doctor === true,
+          // [mod] every diploma, held or not; an older host sent none.
+          diplomas: arr(pig.diplomas).map(d => ({
+            key: str(obj(d).key, ''),
+            label: str(obj(d).label, ''),
+            emoji: str(obj(d).emoji, '📜'),
+            count: Math.max(0, Math.floor(num(obj(d).count, 0))),
+            repeat: obj(d).repeat === true,
+            next: isObj(obj(d).next) ? { done: num(obj(d).next.done, 0), need: num(obj(d).next.need, 0) } : null,
+          })).filter(d => d.key !== ''),
           worldTraveler: pig.worldTraveler === true,
           souvenirs: arr(pig.souvenirs),
           memories: arr(pig.memories).filter(m => typeof m === 'string'),
@@ -615,6 +647,10 @@ window.__ModuleLoader__.load({
           gain: num(obj(stage).gain, 0),
           // How many subjects one sitting may take; an older host meant one.
           parallel: Math.max(1, Math.floor(num(obj(stage).parallel, 1))),
+          // [mod] lessons per subject this stage allows (null = no limit), and
+          // how many each subject has used; an older host sent neither.
+          cap: typeof obj(stage).cap === 'number' && obj(stage).cap > 0 ? Math.floor(obj(stage).cap) : null,
+          taken: isObj(obj(stage).taken) ? obj(stage).taken : {},
           // The school ladder: a stage with `unlocked === false` is gated behind
           // finishing the previous one, and says by how much.
           unlocked: obj(stage).unlocked !== false,
@@ -956,6 +992,7 @@ window.__ModuleLoader__.load({
       '@keyframes dp-cough{0%,100%{transform:translateX(0)}30%{transform:translateX(-4px) rotate(-7deg)}70%{transform:translateX(4px) rotate(6deg)}}',
       '.dp-pig[data-mood="happy"]{animation-duration:1.15s}',
       '.dp-pig[data-mood="sleepy"]{animation-name:dp-breathe;animation-duration:3.6s}',
+      '.dp-pig[data-mood="asleep"]{animation-name:dp-breathe;animation-duration:4.4s}',
       '.dp-pig[data-mood="hungry"]{animation-name:dp-shake;animation-duration:2.4s}',
       '.dp-pig[data-mood="dirty"]{animation-name:dp-breathe;animation-duration:2.6s;filter:sepia(.4) drop-shadow(0 4px 6px rgba(61,52,40,.28))}',
       '.dp-pig[data-mood="sick"]{animation-name:dp-cough;animation-duration:2.2s;filter:hue-rotate(-28deg) saturate(.75) drop-shadow(0 4px 6px rgba(61,52,40,.28))}',
@@ -1132,6 +1169,7 @@ window.__ModuleLoader__.load({
       '.dp-alert b{font-weight:700;color:var(--ac-text)}',
       '.dp-alert.dp-sick{background:#fdeeee;border-color:#f2c2c2}',
       '.dp-alert.dp-work{background:#eef1fb;border-color:#c3cdf0}',
+      '.dp-alert.dp-sleep{background:#f1effb;border-color:#d3cdef}',
       '.dp-alert.dp-dead{background:var(--ac-bg-disabled);border-color:var(--ac-border-light)}',
       '.dp-alert.dp-legacy{background:#fdf7e2;border-color:#f0dfa8}',
 
@@ -2260,6 +2298,9 @@ window.__ModuleLoader__.load({
         buy: { kind: 'pet', ms: 620, fx: ['🪙', '🛒'], count: 2, say: '买到了！' },
         use: { kind: 'pet', ms: 620, fx: ['✨'], count: 2, say: '用掉了。' },
         rename: { kind: 'levelup', ms: 900, fx: ['✏️', '✨'], count: 2, say: '好名字！' },
+        // [dsh-piggy-claude-code mod] bed and back.
+        sleep: { kind: 'sleep', ms: 900, fx: ['💤', '🌙'], count: 2, say: '晚安…' },
+        wake: { kind: 'pet', ms: 620, fx: ['☀️'], count: 1, say: '早上好！' },
       }
 
       function flash(action) {
@@ -2559,6 +2600,18 @@ window.__ModuleLoader__.load({
             grid.appendChild(btn)
           })(MODES[i])
         }
+        // [dsh-piggy-claude-code mod] bed and back, under the four care buttons.
+        var asleep = view.pig !== null && view.pig.asleep
+        var bed = button('dp-btn dp-btn-wide', { 'data-action': asleep ? 'wake' : 'sleep' }, function () {
+          send(asleep ? 'wake' : 'sleep')
+        })
+        bed.appendChild(el('span', 'dp-e', asleep ? '☀️' : '😴'))
+        bed.appendChild(el('span', null, T(asleep ? '叫醒' : '睡觉')))
+        if (view.dead || view.activity !== null) {
+          bed.disabled = true
+          if (view.activity !== null) bed.appendChild(el('span', 'dp-wait', T('不在家')))
+        }
+        grid.appendChild(bed)
         return grid
       }
 
@@ -2927,7 +2980,7 @@ window.__ModuleLoader__.load({
         if (view.stages.length > 0) return view.stages
         return STAGES.map(entry => ({
           key: entry.key, label: T(entry.label), minutes: 0, tuition: null, gain: 0,
-          unlocked: true, progress: null, parallel: 1, fallback: true,
+          unlocked: true, progress: null, parallel: 1, cap: null, taken: {}, fallback: true,
         }))
       }
 
@@ -2969,7 +3022,8 @@ window.__ModuleLoader__.load({
         var most = detail === null ? 1 : detail.parallel
         if (detail !== null) {
           var note = el('div', 'dp-empty', T('{time} · 学费 {tuition} 🪙 · 属性 +{gain}',
-            { time: formatMinutes(detail.minutes), tuition: detail.tuition, gain: detail.gain }))
+            { time: formatMinutes(detail.minutes), tuition: detail.tuition, gain: detail.gain }) +
+            (detail.cap !== null ? ' · ' + T('每门限 {cap} 次', { cap: detail.cap }) : ''))
           note.style.marginBottom = '7px'
           note.style.marginTop = '0'
           content.appendChild(note)
@@ -2983,7 +3037,9 @@ window.__ModuleLoader__.load({
         // Ticks belong to one stage; switching stage starts over.
         if (studyPicks.stage !== stage) studyPicks = { stage: stage, keys: [] }
         var known = view.subjects.map(sub => sub.key)
-        studyPicks.keys = studyPicks.keys.filter(key => known.indexOf(key) >= 0).slice(0, most)
+        // [mod] a subject that has used up this stage's lessons cannot be picked.
+        var usedUp = key => detail !== null && detail.cap !== null && num(detail.taken[key], 0) >= detail.cap
+        studyPicks.keys = studyPicks.keys.filter(key => known.indexOf(key) >= 0 && !usedUp(key)).slice(0, most)
         var multi = most > 1
 
         if (multi) {
@@ -3025,13 +3081,17 @@ window.__ModuleLoader__.load({
               renderContent()
             })
             if (multi) btn.setAttribute('aria-pressed', picked ? 'true' : 'false')
-            if (locked) btn.disabled = true
+            var full = usedUp(sub.key)
+            if (locked || full) btn.disabled = true
+            btn.setAttribute('data-full', full ? 'true' : 'false')
             btn.style.cursor = 'pointer'
             btn.style.textAlign = 'left'
             btn.appendChild(el('span', null, sub.emoji))
             var grow = el('div', 'dp-grow')
             grow.appendChild(el('div', null, sub.label))
-            grow.appendChild(el('div', 'dp-dim', sub.traitLabel + ' · ' + T('已上 {n} 次', { n: sub.level })))
+            grow.appendChild(el('div', 'dp-dim', sub.traitLabel + ' · ' + (detail !== null && detail.cap !== null
+              ? T('本段 {n}/{cap}', { n: num(detail.taken[sub.key], 0), cap: detail.cap }) + (full ? ' ' + T('已满') : '')
+              : T('已上 {n} 次', { n: sub.level }))))
             btn.appendChild(grow)
             if (multi) btn.appendChild(el('span', 'dp-check', picked ? '✅' : '⬜'))
             grid.appendChild(btn)
@@ -3413,9 +3473,11 @@ window.__ModuleLoader__.load({
             if (count > 0) owned.push({ key: view.shop[i].key, label: view.shop[i].label, emoji: view.shop[i].emoji, kind: view.shop[i].kind, count: count, exclusive: false, effects: view.shop[i].effects })
           }
         }
-        if (owned.length === 0) {
+        var diplomas = view.pig !== null && Array.isArray(view.pig.diplomas) ? view.pig.diplomas : []
+        var heldDiplomas = diplomas.filter(d => d.count > 0).length
+        if (owned.length === 0 && heldDiplomas === 0) {
           content.appendChild(el('div', 'dp-empty', T('背包空空的 —— 去「商店」买点东西。')))
-        } else {
+        } else if (owned.length > 0) {
           var list = el('div', 'dp-list')
           // [dsh-piggy-claude-code mod] the same shelves as the shop.
           owned = owned.slice().sort((a, b) => kindRank(a.kind) - kindRank(b.kind))
@@ -3446,6 +3508,28 @@ window.__ModuleLoader__.load({
             })(owned[j])
           }
           content.appendChild(list)
+        }
+
+        // [dsh-piggy-claude-code mod] diplomas: collectibles, nothing to use.
+        if (diplomas.length > 0) {
+          var shelf = el('div', 'dp-list')
+          shelf.appendChild(el('div', 'dp-shelf', '📜 ' + T('毕业证') + ' ' + heldDiplomas + '/' + diplomas.length))
+          for (var k = 0; k < diplomas.length; k += 1) {
+            var d = diplomas[k]
+            var held = d.count > 0
+            var row = el('div', 'dp-item')
+            if (!held) row.style.opacity = '0.5'
+            row.appendChild(el('span', null, held ? d.emoji : '🔒'))
+            var grow = el('div', 'dp-grow')
+            grow.appendChild(el('div', null, d.label + (held ? ' ×' + d.count : '')))
+            var hint = d.next === null
+              ? T('收藏品')
+              : (held ? T('再上 {left} 节再发一张', { left: d.next.need - d.next.done }) : T('上满 {need} 节发证（{done}/{need}）', d.next))
+            grow.appendChild(el('div', 'dp-dim', hint))
+            row.appendChild(grow)
+            shelf.appendChild(row)
+          }
+          content.appendChild(shelf)
         }
 
         var w = view.world
@@ -3567,6 +3651,15 @@ window.__ModuleLoader__.load({
           call.appendChild(el('span', null, T('叫它回来')))
           wrap.appendChild(call)
           content.appendChild(wrap)
+        }
+
+        // [dsh-piggy-claude-code mod] asleep — alongside an illness, if it has one.
+        if (view.pig !== null && !view.dead && view.pig.asleep) {
+          var sleeping = el('div', 'dp-alert dp-sleep')
+          sleeping.appendChild(el('b', null, '😴 ' + T('{name} 在睡觉', { name: view.pig.name })))
+          sleeping.appendChild(el('div', null, T('睡着时只会变饿，心情和清洁会慢慢恢复')))
+          if (view.pig.sleepAuto) sleeping.appendChild(el('div', 'dp-dim', T('跟着电脑一起睡的，电脑醒来它就起床')))
+          content.appendChild(sleeping)
         }
 
         if (view.pig === null) {
@@ -3703,6 +3796,7 @@ window.__ModuleLoader__.load({
           else if (event.kind === 'death') react('refuse', 700)
           else if (event.kind === 'work') { react('away', 900); burst(['🪙', '💰'], 3) }
           else if (event.kind === 'study') { react('away', 900); burst(['📚', '✨'], 3) }
+          else if (event.kind === 'diploma') { react('levelup', 950); burst(['📜', '🎓', '✨'], 3) }
           else if (event.kind === 'trip') { react('away', 900); burst(['🧳', '🎁'], 3) }
           else if (event.kind === 'doctor') { react('graduate', 2600); burst(['🎓', '🎉'], 3) }
         }
@@ -3809,11 +3903,17 @@ window.__ModuleLoader__.load({
               'use-to-rename': '更名卡要在「状态」里改名时用',
               'bad-name': '名字要 1–16 个字',
               'same-name': '和现在的名字一样',
+              asleep: '它已经在睡了',
+              awake: '它本来就醒着',
             }
             // [dsh-piggy-claude-code mod] refusals that carry a number.
             if (next.reason === 'too-many') {
               var most = num(next.max, stageDetail(stage) === null ? 1 : stageDetail(stage).parallel)
               showBubble(T('这一段一次最多上 {n} 门课', { n: most }), 2400)
+              return
+            }
+            if (next.reason === 'capped') {
+              showBubble(T('这一段每门课最多上 {n} 次', { n: num(next.max, 0) }), 2400)
               return
             }
             if (next.reason === 'job-locked') {

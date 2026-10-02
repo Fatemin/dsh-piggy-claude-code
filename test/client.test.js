@@ -705,6 +705,30 @@ test('an active trip shows a countdown banner and a recall button', async () => 
   assert.notEqual(findByAttr(contentOf(dom), 'data-action', 'calloff'), undefined)
 })
 
+test('the sleep button puts the pig to bed, and a sleeping pig shows it and can be woken', async () => {
+  const awake = await loadClient()
+  awake.registration.factory(() => {}).apply({})
+  await settle()
+  openPanel(awake.dom)
+  findByAttr(contentOf(awake.dom), 'data-action', 'sleep').fire('click')
+  await settle()
+  await settle()
+  const post = awake.net.calls.find(call => call.method === 'POST')
+  assert.deepEqual(JSON.parse(post.body), { action: 'sleep' })
+
+  const stage = { key: 'young', label: '青年猪', emoji: '🐖', size: 48, art: 'stage-young' }
+  const asleep = await loadClient({ status: { ...SNAPSHOT, pig: { ...PIG, stage, mood: 'asleep', asleep: true, sleepAuto: true } } })
+  asleep.registration.factory(() => {}).apply({})
+  await settle()
+  assert.equal(findByClass(hostOf(asleep.dom), 'dp-pig-img').src, '/dsh-pig/art/mood-asleep.svg')
+  openPanel(asleep.dom)
+  const text = contentOf(asleep.dom).allText()
+  assert.ok(text.includes('在睡觉'), text)
+  assert.ok(text.includes('电脑醒来'), text)
+  assert.equal(findByAttr(contentOf(asleep.dom), 'data-action', 'sleep'), undefined)
+  assert.notEqual(findByAttr(contentOf(asleep.dom), 'data-action', 'wake'), undefined)
+})
+
 test('a sick pig shows its illness and what it needs', async () => {
   const { registration, dom } = await loadClient({
     status: { ...SNAPSHOT, pig: { ...PIG, illness: { name: '肺炎', cure: '金色消炎药水', stage: 4 } } },

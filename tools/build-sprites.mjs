@@ -259,6 +259,40 @@ const SPRITES = {
     <path class="z2" d="M188 24h22l-22 24h22" stroke-width="7"/>
     <path class="z3" d="M230 0h26l-26 28h26" stroke-width="8"/></g>`,
   },
+  // [dsh-piggy-claude-code mod] Really asleep (put to bed, or the computer slept):
+  // unlike the dozing pose above, it is tucked in for the night.
+  'mood-asleep': {
+    title: '在睡觉', note: '真的睡了：戴着睡帽、盖着小被子，呼吸很慢，被子跟着起伏，睡帽的绒球一晃一晃，头顶飘 Z，身后一弯月亮。',
+    css: `.breathe{animation:breathe 4.4s ease-in-out infinite;transform-origin:190px 298px}
+    .tail{animation:none}.ear2{animation:none}
+    .pom{animation:pom 4.4s ease-in-out infinite}
+    .z1{animation:z 4.4s ease-out infinite}.z2{animation:z 4.4s ease-out -1.47s infinite}.z3{animation:z 4.4s ease-out -2.93s infinite}
+    .moon{animation:glow 4.4s ease-in-out infinite}
+    .sp{animation:twinkle 2.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+    .sp2{animation:twinkle 2.2s ease-in-out -1.1s infinite;transform-box:fill-box;transform-origin:50% 50%}
+    @keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.965)}}
+    @keyframes pom{50%{transform:translateY(6px)}}
+    @keyframes z{0%{opacity:0;transform:translate(0,14px)}30%{opacity:1}100%{opacity:0;transform:translate(24px,-36px)}}
+    @keyframes glow{50%{opacity:.65}}
+    @keyframes twinkle{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}`,
+    wrap: 'breathe',
+    pig: {
+      eyes: 'closed',
+      face: `<path d="M110 72C120 30 170 4 222 12C250 16 266 34 270 58C252 46 236 42 214 46Z" fill="#7E9BD8"/>
+    <path d="M150 36C170 24 196 18 220 20" fill="none" stroke="#A9BDEA" stroke-width="7"/>
+    <path d="M106 76Q160 50 216 44" fill="none" stroke="#F8F4E8" stroke-width="18"/>
+    <circle class="pom" cx="272" cy="62" r="13" fill="#F8F4E8"/>
+    <path d="M36 300V236C36 222 48 214 64 216C130 224 250 222 318 212C334 210 344 220 344 234V300Z" fill="#A9C7F0"/>
+    <path d="M42 232C110 242 250 240 338 226" fill="none" stroke="#DCE9FA" stroke-width="14"/>
+    <g fill="#FFFFFF" opacity=".7"><circle cx="90" cy="266" r="6"/><circle cx="150" cy="282" r="5"/><circle cx="206" cy="262" r="6"/><circle cx="262" cy="284" r="5"/><circle cx="306" cy="258" r="6"/></g>`,
+    },
+    under: `<path class="moon" d="M74 -26a32 32 0 1 0 28 48a26 26 0 1 1 -28 -48Z" fill="#F5D76E"/>
+    ${sparkle(30, 66, 11, '#FFE27A', 'sp')}${sparkle(116, -18, 9, '#FFE27A', 'sp2')}`,
+    over: `<g fill="none" stroke="#8C9BC4" stroke-linecap="round" stroke-linejoin="round">
+    <path class="z1" d="M284 28h18l-18 20h18" stroke-width="6"/>
+    <path class="z2" d="M308 -2h22l-22 24h22" stroke-width="7"/>
+    <path class="z3" d="M330 -32h24l-24 26h24" stroke-width="8"/></g>`,
+  },
   'mood-lonely-2': {
     title: '孤单 · 二级', note: '眼眶含着泪（参考 sample 里的含泪猪），一滴一滴往下掉，头顶一小朵乌云。',
     css: `.sway{animation:sway 4s ease-in-out infinite;transform-origin:190px 298px}

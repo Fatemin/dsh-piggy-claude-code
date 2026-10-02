@@ -44,6 +44,8 @@ import {
   SHOP,
   SICK_RISK_MINUTES,
   SLEEPY_AFTER_MINUTES,
+  SLEEP_RECOVERY_PER_MIN,
+  SLEEP_SICK_RISK_MULTIPLIER,
   STAGE_HEALTH,
   SUBJECTS,
   THRESHOLDS,
@@ -53,6 +55,8 @@ import {
   TRIPS,
   ALL_ITEMS,
   DOCTOR_GRADUATION,
+  DIPLOMAS,
+  diplomaCount,
   PARALLEL_COURSES,
   RENAME_CARD,
   LOTTERY,
@@ -327,6 +331,7 @@ function die(state, nowMs, why) {
   state.health = 0
   state.illness = null
   state.activity = null
+  state.sleep = null
   state.diedAt = nowMs
   state.stats.deaths = (state.stats.deaths ?? 0) + 1
   remember(state, `${word(state, why)} ${GRAVE.emoji}`, nowMs)
@@ -476,6 +481,8 @@ export function layEgg(nowMs) {
     // Finished lessons per school stage. QQ Pet starts every pet at 小学 and
     // `college` / `graduate` sit behind it; this is what opens them.
     lessonsByStage: { primary: 0, college: 0, graduate: 0, doctor: 0 },
+    // [mod] Lessons per subject at each stage: what the 小学 / 大学 caps count.
+    stageCourses: { primary: {}, college: {}, graduate: {}, doctor: {} },
     souvenirs: [],
     // [dsh-piggy-claude-code mod] the travel collection and what it has paid out.
     collected: {},
@@ -485,6 +492,9 @@ export function layEgg(nowMs) {
     lastTrip: null,
     illness: null,
     activity: null,
+    // [dsh-piggy-claude-code mod] `{ since, auto }` while asleep; `auto` marks
+    // a nap the computer's own sleep started, which its wake-up may end.
+    sleep: null,
     riskMinutes: 0,
     lastFedAt: 0,
     // [dsh-piggy-claude-code mod] when the last scratch card was bought.
@@ -545,6 +555,7 @@ export function migrate(raw) {
   state.traits = sanitizeTraits(raw.traits)
   state.courses = sanitizeCourses(raw.courses)
   state.lessonsByStage = sanitizeLessonsByStage(raw.lessonsByStage, raw.courses)
+  state.stageCourses = sanitizeStageCourses(raw.stageCourses, state.lessonsByStage)
   state.souvenirs = Array.isArray(raw.souvenirs) ? raw.souvenirs.filter(s => typeof s === 'string').slice(-40) : []
   // [dsh-piggy-claude-code mod] travel collection, region payouts, doctorate.
   state.collected = sanitizeCollected(raw.collected)
@@ -590,6 +601,8 @@ export function migrate(raw) {
     state.activity = sanitizeActivity(raw.activity ?? raw.work)
   }
   state.dead = state.dead === true || state.health <= 0
+  // A pig cannot be asleep at home and out at the same time, nor in its grave.
+  state.sleep = state.activity === null && !state.dead ? sanitizeSleep(raw.sleep) : null
   state.hatched = state.hatched === true || state.xp > 0
   return state
 }
@@ -682,6 +695,37 @@ function sanitizeLessonsByStage(raw, rawCourses) {
   return out
 }
 
+/**
+ * [mod] Lessons per subject at each stage.
+ *
+ * A save from before the caps only knows how many lessons each stage had, not
+ * which subjects. Spread that total evenly over the nine subjects, so a pig
+ * that already went through 小学 many times does not get the cheap lessons a
+ * second time.
+ */
+function sanitizeStageCourses(raw, lessonsByStage) {
+  const source = asObject(raw)
+  const out = {}
+  for (const stage of SCHOOL_STAGES) {
+    out[stage.key] = {}
+    if (source !== null) {
+      for (const [key, n] of Object.entries(asObject(source[stage.key]) ?? {})) {
+        if (Number.isFinite(n) && n > 0 && subjectByKey(key) !== null) out[stage.key][key] = Math.floor(n)
+      }
+      continue
+    }
+    const total = lessonsByStage?.[stage.key] ?? 0
+    SUBJECTS.forEach((subject, i) => {
+      const n = Math.floor(total / SUBJECTS.length) + (i < total % SUBJECTS.length ? 1 : 0)
+      if (n > 0) out[stage.key][subject.key] = n
+    })
+  }
+  return out
+}
+
+/** [mod] How many times `subjectKey` has been taken at `stageKey`. */
+export const stageLessons = (state, stageKey, subjectKey) => state?.stageCourses?.[stageKey]?.[subjectKey] ?? 0
+
 function sanitizeIllness(raw) {
   const source = asObject(raw)
   if (source === null) return null
@@ -695,6 +739,13 @@ function sanitizeIllness(raw) {
     since: Number.isFinite(source.since) ? source.since : Date.now(),
     progressMs: Number.isFinite(source.progressMs) ? Math.max(0, source.progressMs) : 0,
   }
+}
+
+/** [mod] `{ since, auto }`, or null for awake and for anything malformed. */
+function sanitizeSleep(raw) {
+  const source = asObject(raw)
+  if (source === null || !Number.isFinite(source.since)) return null
+  return { since: source.since, auto: source.auto === true }
 }
 
 /** Accepts both the v4 `activity` record and the v3 `work` record. */
@@ -788,9 +839,28 @@ export function studyView(state) {
     minutes: stage.minutes,
     tuition: stage.tuition,
     gain: stage.gain,
+    // [mod] per-subject limit at this stage (null = none) and how much of it is used
+    cap: stage.cap,
+    taken: Object.fromEntries(SUBJECTS.map(subject => [subject.key, stageLessons(state, stage.key, subject.key)])),
     unlocked: stageUnlocked(stage, lessons),
     progress: stageProgress(stage, lessons),
   }))
+}
+
+/**
+ * [mod] Every diploma, held or not: how many the pig has, and how far it is
+ * into the next one (a one-off diploma already held has no next).
+ */
+export function diplomaView(state) {
+  return DIPLOMAS.map(diploma => {
+    const lessons = state?.lessonsByStage?.[diploma.stage] ?? 0
+    const count = diplomaCount(diploma, lessons)
+    return {
+      key: diploma.key, stage: diploma.stage, label: diploma.label, emoji: diploma.emoji,
+      repeat: diploma.repeat, count,
+      next: !diploma.repeat && count > 0 ? null : { done: lessons % diploma.lessons, need: diploma.lessons },
+    }
+  })
 }
 
 /** Trait totals, always including every trait. */
@@ -827,6 +897,9 @@ export function decay(state, nowMs) {
   // house. Getting this order wrong is what let a day trip come home sick.
   const away = state.activity !== null
   const speed = away ? AWAY_DECAY_MULTIPLIER : 1
+  // [dsh-piggy-claude-code mod] Asleep, only satiety keeps draining; mood and
+  // cleanliness come back, and neglect turns into illness half as fast.
+  const asleep = !away && isAsleep(state)
 
   // Settle whatever the pig was away doing before anything else, so its payout
   // lands in the right order relative to decay.
@@ -845,9 +918,14 @@ export function decay(state, nowMs) {
     return away ? Math.max(next, Math.min(value, AWAY_FLOOR)) : next
   }
   state.satiety = clamp100(drain(state.satiety, SATIETY_DECAY_PER_MIN))
-  // [mod] 佛系 (South & Southeast Asia complete): mood drains a quarter slower.
-  state.happiness = clamp100(drain(state.happiness, HAPPINESS_DECAY_PER_MIN * (hasPerk(state, 'zen') ? 0.75 : 1)))
-  state.cleanliness = clamp100(drain(state.cleanliness, CLEANLINESS_DECAY_PER_MIN))
+  if (asleep) {
+    state.happiness = clamp100(state.happiness + minutes * SLEEP_RECOVERY_PER_MIN.happiness)
+    state.cleanliness = clamp100(state.cleanliness + minutes * SLEEP_RECOVERY_PER_MIN.cleanliness)
+  } else {
+    // [mod] 佛系 (South & Southeast Asia complete): mood drains a quarter slower.
+    state.happiness = clamp100(drain(state.happiness, HAPPINESS_DECAY_PER_MIN * (hasPerk(state, 'zen') ? 0.75 : 1)))
+    state.cleanliness = clamp100(drain(state.cleanliness, CLEANLINESS_DECAY_PER_MIN))
+  }
 
   // Illness only comes from being left at home. A pig that was out living its
   // life has not been neglected, and coming back sick every trip is not a game.
@@ -855,7 +933,8 @@ export function decay(state, nowMs) {
     state.riskMinutes = 0
   } else {
     const neglected = state.satiety < THRESHOLDS.sickSatiety || state.cleanliness < THRESHOLDS.sickCleanliness
-    state.riskMinutes = neglected ? (state.riskMinutes ?? 0) + minutes : 0
+    const risk = minutes * (asleep ? SLEEP_SICK_RISK_MULTIPLIER : 1)
+    state.riskMinutes = neglected ? (state.riskMinutes ?? 0) + risk : 0
     // [mod] 抗寒体质 (Oceania complete): neglect takes twice as long to make it ill.
     if (state.illness === null && state.riskMinutes >= SICK_RISK_MINUTES * (hasPerk(state, 'hardy') ? 2 : 1)) {
       state.riskMinutes = 0
@@ -955,13 +1034,17 @@ function finishStudy(state, activity, nowMs) {
   const stage = schoolStageByKey(activity.stage)
   const subjects = studyKeys(activity).map(subjectByKey).filter(Boolean)
   if (stage === null || subjects.length === 0) return
+  const diploma = DIPLOMAS.find(entry => entry.stage === stage.key) ?? null
+  const diplomasBefore = diploma === null ? 0 : diplomaCount(diploma, state.lessonsByStage?.[stage.key] ?? 0)
   state.traits = { ...(state.traits ?? {}) }
   state.courses = { ...(state.courses ?? {}) }
   state.lessonsByStage = { ...(state.lessonsByStage ?? {}) }
+  state.stageCourses = { ...(state.stageCourses ?? {}), [stage.key]: { ...(state.stageCourses?.[stage.key] ?? {}) } }
   // [mod] several subjects in one sitting: each pays out, each is tiring.
   for (const subject of subjects) {
     state.traits[subject.trait] = (state.traits[subject.trait] ?? 0) + stage.gain
     state.courses[subject.key] = (state.courses[subject.key] ?? 0) + 1
+    state.stageCourses[stage.key][subject.key] = (state.stageCourses[stage.key][subject.key] ?? 0) + 1
     // Counted per stage, because that is what unlocks the next school.
     state.lessonsByStage[stage.key] = (state.lessonsByStage[stage.key] ?? 0) + 1
     state.stats.courses += 1
@@ -981,11 +1064,24 @@ function finishStudy(state, activity, nowMs) {
   announce(state, 'study', say(state, '{name} 学完{lesson}，{gains} 📚', params))
 
   // [mod] the thesis defence: every 博士 subject once, paid a single time.
-  if (stage.key === 'doctor' && state.doctorDone !== true && (state.lessonsByStage.doctor ?? 0) >= DOCTOR_GRADUATION.lessons) {
+  const thesis = stage.key === 'doctor' && state.doctorDone !== true && (state.lessonsByStage.doctor ?? 0) >= DOCTOR_GRADUATION.lessons
+  if (thesis) {
     state.doctorDone = true
     for (const [trait, points] of Object.entries(DOCTOR_GRADUATION.traits)) state.traits[trait] = (state.traits[trait] ?? 0) + points
     remember(state, say(state, '🎓 博士答辩通过！三项属性各 +1'), nowMs)
     announce(state, 'doctor', say(state, '{name} 博士毕业了！🎓 以后请叫它「{name} 博士」', { name: state.name }))
+  }
+
+  // [mod] a diploma for the bag; the first doctorate is already announced above.
+  const diplomasAfter = diploma === null ? 0 : diplomaCount(diploma, state.lessonsByStage[stage.key])
+  if (diplomasAfter > diplomasBefore) {
+    const params = { name: state.name, emoji: diploma.emoji, diploma: word(state, diploma.label), n: diplomasAfter }
+    remember(state, say(state, diplomasAfter > 1 ? '{emoji} 又拿到一张{diploma}（第 {n} 张）' : '{emoji} 拿到了{diploma}', params), nowMs)
+    if (!thesis) {
+      announce(state, 'diploma', say(state, diplomasAfter > 1
+        ? '{name} 又拿到一张{diploma} {emoji}（第 {n} 张）'
+        : '{name} 毕业了，拿到{diploma} {emoji}', params))
+    }
   }
 }
 
@@ -1222,6 +1318,8 @@ export function act(state, action, nowMs, itemKey) {
     }
   }
 
+  // [mod] Caring for a sleeping pig wakes it up first.
+  if (isAsleep(state)) rouse(state, nowMs, '被叫醒了 🥱')
   state.cooldowns = { ...(state.cooldowns ?? {}), [action]: nowMs }
   if (action === 'feed') { state.stats.feeds += 1; state.lastFedAt = nowMs }
   else if (action === 'bathe') state.stats.baths += 1
@@ -1284,6 +1382,55 @@ export function careOptions(state, action) {
 }
 
 // ---------------------------------------------------------------------------
+// [dsh-piggy-claude-code mod] Sleep
+//
+// The pig sleeps when put to bed, or when the computer itself goes to sleep.
+// What sleeping does to the bars lives in decay(); this is only getting in and
+// out of bed.
+// ---------------------------------------------------------------------------
+
+export function isAsleep(state) {
+  return state !== null && state !== undefined && state.sleep !== null && state.sleep !== undefined
+}
+
+/**
+ * Put the pig to bed. `auto` marks a nap the computer's own sleep started:
+ * only those end when the computer wakes up, so a pig put to bed by hand
+ * sleeps on until somebody wakes it.
+ */
+export function goToSleep(state, nowMs, { auto = false } = {}) {
+  if (state === null || state.hatched !== true) return { ok: false, reason: 'absent' }
+  decay(state, nowMs)
+  if (state.dead) return { ok: false, reason: 'dead' }
+  if (state.activity !== null) return { ok: false, reason: 'away' }
+  if (isAsleep(state)) return { ok: false, reason: 'asleep' }
+  state.sleep = { since: nowMs, auto: auto === true }
+  remember(state, say(state, auto === true ? '电脑休眠了，跟着睡着了 😴' : '去睡觉了 😴'), nowMs)
+  return { ok: true }
+}
+
+/**
+ * Wake the pig. With `auto` (the computer waking up) only a nap the computer
+ * started ends; a pig put to bed by hand answers `manual` and sleeps on.
+ */
+export function wakeUp(state, nowMs, { auto = false } = {}) {
+  if (state === null) return { ok: false, reason: 'absent' }
+  // Settle the night first, so the time asleep is counted as sleep.
+  decay(state, nowMs)
+  if (!isAsleep(state)) return { ok: false, reason: 'awake' }
+  if (auto === true && state.sleep.auto !== true) return { ok: false, reason: 'manual' }
+  rouse(state, nowMs, '睡醒了 ☀️')
+  return { ok: true }
+}
+
+/** Out of bed. Counts as activity, so it does not drop straight into dozing. */
+function rouse(state, nowMs, line) {
+  state.sleep = null
+  state.lastActiveAt = nowMs
+  remember(state, say(state, line), nowMs)
+}
+
+// ---------------------------------------------------------------------------
 // Activities: work · study · trip
 // ---------------------------------------------------------------------------
 
@@ -1323,6 +1470,8 @@ function begin(state, activity, nowMs) {
   decay(state, nowMs)
   const blocked = awayBlockedReason(state)
   if (blocked !== null) return { ok: false, reason: blocked }
+  // [mod] Sent out while asleep: it gets up and goes.
+  if (isAsleep(state)) rouse(state, nowMs, '被叫醒了 🥱')
   state.activity = { ...activity, startedAt: nowMs, endsAt: nowMs + activity.minutes * 60000 }
   state.lastActiveAt = nowMs
   return { ok: true, activity: state.activity }
@@ -1360,7 +1509,8 @@ export function startWork(state, jobKey, nowMs) {
 /**
  * Enrol in one sitting. [mod] `subjectKeys` may be one key or a list: up to two
  * subjects at 大学, three from 研究生 on (PARALLEL_COURSES). Each subject pays its
- * own tuition; the sitting lasts as long as a single lesson.
+ * own tuition; the sitting lasts as long as a single lesson. At a stage with a
+ * `cap`, a subject already taken that many times there is refused.
  */
 export function startStudy(state, subjectKeys, stageKey, nowMs) {
   const keys = [...new Set((Array.isArray(subjectKeys) ? subjectKeys : [subjectKeys]).filter(Boolean))]
@@ -1376,6 +1526,11 @@ export function startStudy(state, subjectKeys, stageKey, nowMs) {
   }
   const most = PARALLEL_COURSES[stage.key] ?? 1
   if (subjects.length > most) return { ok: false, reason: 'too-many', max: most }
+  // [mod] 小学 / 大学 are cheap but capped per subject; the pig is told which are used up.
+  if (stage.cap !== null) {
+    const full = subjects.filter(subject => stageLessons(state, stage.key, subject.key) >= stage.cap)
+    if (full.length > 0) return { ok: false, reason: 'capped', max: stage.cap, full: full.map(subject => subject.key) }
+  }
   const tuition = stage.tuition * subjects.length
   if (state.coins < tuition) return { ok: false, reason: 'poor', price: tuition }
   if (state.satiety < 15) return { ok: false, reason: 'hungry' }
@@ -1620,6 +1775,8 @@ const AWAY_MOODS = Object.freeze({
 export function mood(state, nowMs) {
   decay(state, nowMs)
   if (state.dead) return { key: 'dead', emoji: '💀', label: word(state, '已经走了'), level: 0 }
+  // [mod] A sleeping pig looks asleep, even when ill; the panel still says so.
+  if (isAsleep(state)) return { key: 'asleep', emoji: '😴', label: word(state, '在睡觉'), level: 0 }
   if (state.illness !== null) {
     const ill = currentIllness(state)
     const level = Math.min(3, Math.max(1, state.illness.stage ?? 1))
@@ -1631,7 +1788,7 @@ export function mood(state, nowMs) {
   }
   if (state.satiety < THRESHOLDS.hungry) return { key: 'hungry', emoji: '🍎', label: word(state, '饿了'), level: moodLevel('hungry', state.satiety) }
   if (state.cleanliness < THRESHOLDS.dirty) return { key: 'dirty', emoji: '🫧', label: word(state, '该洗澡了'), level: moodLevel('dirty', state.cleanliness) }
-  if (nowMs - state.lastActiveAt > SLEEPY_AFTER_MINUTES * 60000) return { key: 'sleepy', emoji: '💤', label: word(state, '睡着了'), level: 0 }
+  if (nowMs - state.lastActiveAt > SLEEPY_AFTER_MINUTES * 60000) return { key: 'sleepy', emoji: '💤', label: word(state, '在打盹'), level: 0 }
   if (state.happiness >= 75) return { key: 'happy', emoji: '❤️', label: word(state, '很开心'), level: 0 }
   if (state.happiness < THRESHOLDS.lonely) return { key: 'lonely', emoji: '🥺', label: word(state, '有点孤单'), level: moodLevel('lonely', state.happiness) }
   return { key: 'fine', emoji: '😊', label: word(state, '还不错'), level: 0 }

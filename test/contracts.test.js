@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url'
 import { apply, snapshot } from '../index.js'
 import { STATE_VERSION, migrate } from '../core.js'
 import {
-  ALL_ITEMS, ILLNESS_CHAINS, ILLNESS_STAGE_HOURS, JOBS, KIND_ORDER, SCHOOL_STAGES, SELF_HEAL_CHANCE,
+  ALL_ITEMS, DIPLOMAS, ILLNESS_CHAINS, ILLNESS_STAGE_HOURS, JOBS, KIND_ORDER, SCHOOL_STAGES, SELF_HEAL_CHANCE,
   SHOP, STAGE_HEALTH, SUBJECTS, TRAITS, TRAIT_ORDER, medicineForStage,
 } from '../data.js'
 import { PLACES, REGIONS } from '../world.js'
@@ -184,7 +184,7 @@ test('I18N.TERMS.V1: every module has ja and en with the same keys and placehold
 
 test('I18N.TERMS.V1: every player-facing table label is translated', async () => {
   const data = (await import('../locales/data.js')).default
-  const labels = [...JOBS, ...SUBJECTS, ...SCHOOL_STAGES, ...SHOP, ...PLACES, ...REGIONS].map(entry => entry.label)
+  const labels = [...JOBS, ...SUBJECTS, ...SCHOOL_STAGES, ...DIPLOMAS, ...SHOP, ...PLACES, ...REGIONS].map(entry => entry.label)
   for (const lang of ['ja', 'en']) {
     assert.deepEqual(labels.filter(label => !Object.hasOwn(data[lang], label)), [], `untranslated in ${lang}`)
   }

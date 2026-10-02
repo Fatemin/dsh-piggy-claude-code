@@ -17,8 +17,12 @@ export default {
     '{n} 天': '{n}日',
     // --- host ---------------------------------------------------------------
     '[dsh-pig] 路由注册失败，猪只能用命令访问': '[dsh-pig] ルートを登録できませんでした。コマンドからだけ使えます',
-    '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
-      '[hatch|feed|bathe|play|pet|study <科目>|work <バイト>|trip <行き先>|shop|buy|use|weigh|look <おじいブタ|オリジナル>|lang <zh|ja|en>|about]',
+    '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
+      '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <バイト>|trip <行き先>|shop|buy|use|weigh|look <おじいブタ|オリジナル>|lang <zh|ja|en>|about]',
+    '😴 {name} 去睡觉了。睡着时只会变饿，心情和清洁会慢慢恢复。': '😴 {name}はおやすみ中。ねている間はおなかがへるだけで、きげんときれいさは少しずつもどります。',
+    '☀️ {name} 醒了。': '☀️ {name}がおきた。',
+    '{name} 已经在睡了。': '{name}はもうねています。',
+    '{name} 本来就醒着。': '{name}はもうおきています。',
     '🐖 猪摔了一跤：{error}': '🐖 ブタがころんじゃった：{error}',
     '猪': 'この子',
     // --- care ---------------------------------------------------------------
@@ -28,7 +32,7 @@ export default {
     '这里已经住着 {name} 了 🐖': 'ここにはもう{name}が住んでいるよ 🐖',
     // --- going out ----------------------------------------------------------
     '没有「{key}」这份工作。/{cmd} work 看有哪些。': '「{key}」というバイトはないよ。/{cmd} work で確認してね。',
-    '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}': '使い方：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\nいちどに受けられる数：{limits}',
+    '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}\n每门课上限：{caps}（其余不限）': '使い方：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\nいちどに受けられる数：{limits}\n1科目の上限：{caps}（ほかは無制限）',
     '没有「{key}」这个目的地。/{cmd} trip 看有哪些。': '「{key}」という行き先はないよ。/{cmd} trip で確認してね。',
     '{name} 没在外面。': '{name}はおでかけしていないよ。',
     '{name} 提前回来了，退回 {coins} 金币。': '{name}が早めに帰ってきた。{coins} コインもどってきた。',
@@ -59,6 +63,7 @@ export default {
     '现在没法出门。': '今は出かけられない。',
     '{name} 身体太虚了，先把病治好、养养身体。': '{name}は体が弱りすぎ。先に病気を治して、休ませてあげてね。',
     '{stage}一次最多上 {max} 门课。': '{stage}はいちどに {max} 科目までだよ。',
+    '{stage}每门课最多上 {max} 次，{subjects}已经上满了。': '{stage}は1科目 {max} 回まで。{subjects}はもう受けきったよ。',
     '{stage}还没解锁。': '{stage}はまだ解放されていないよ。',
     '{stage}还没解锁：要先「{label}」（{done}/{need}）。': '{stage}はまだ解放されていないよ：先に「{label}」（{done}/{need}）。',
     // --- world map (snapshot) -----------------------------------------------
@@ -84,8 +89,12 @@ export default {
     '{n} 天': '{n} days',
     // --- host ---------------------------------------------------------------
     '[dsh-pig] 路由注册失败，猪只能用命令访问': '[dsh-pig] Could not register the routes; the pig is command-only',
-    '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
-      '[hatch|feed|bathe|play|pet|study <subject>|work <job>|trip <place>|shop|buy|use|weigh|look <elder|original>|lang <zh|ja|en>|about]',
+    '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]':
+      '[hatch|feed|bathe|play|pet|sleep|wake|study <subject>|work <job>|trip <place>|shop|buy|use|weigh|look <elder|original>|lang <zh|ja|en>|about]',
+    '😴 {name} 去睡觉了。睡着时只会变饿，心情和清洁会慢慢恢复。': '😴 {name} went to bed. Asleep it only gets hungrier; mood and cleanliness slowly come back.',
+    '☀️ {name} 醒了。': '☀️ {name} is awake.',
+    '{name} 已经在睡了。': '{name} is already asleep.',
+    '{name} 本来就醒着。': '{name} is already awake.',
     '🐖 猪摔了一跤：{error}': '🐖 The pig tripped: {error}',
     '猪': 'Your pig',
     // --- care ---------------------------------------------------------------
@@ -95,7 +104,7 @@ export default {
     '这里已经住着 {name} 了 🐖': '{name} already lives here 🐖',
     // --- going out ----------------------------------------------------------
     '没有「{key}」这份工作。/{cmd} work 看有哪些。': 'No job called "{key}". See /{cmd} work.',
-    '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}': 'Usage: /{cmd} study <subject>[,subject…] <{stages}>\nSubjects: {subjects}\nMost at once: {limits}',
+    '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}\n每门课上限：{caps}（其余不限）': 'Usage: /{cmd} study <subject>[,subject…] <{stages}>\nSubjects: {subjects}\nMost at once: {limits}\nLessons per subject: {caps} (no limit elsewhere)',
     '没有「{key}」这个目的地。/{cmd} trip 看有哪些。': 'No place called "{key}". See /{cmd} trip.',
     '{name} 没在外面。': "{name} isn't out.",
     '{name} 提前回来了，退回 {coins} 金币。': '{name} came back early; {coins} coins refunded.',
@@ -126,6 +135,7 @@ export default {
     '现在没法出门。': "Can't go out right now.",
     '{name} 身体太虚了，先把病治好、养养身体。': '{name} is too weak. Cure it and let it rest first.',
     '{stage}一次最多上 {max} 门课。': '{stage}: at most {max} subjects at once.',
+    '{stage}每门课最多上 {max} 次，{subjects}已经上满了。': '{stage} allows {max} lessons per subject; {subjects} already used them up.',
     '{stage}还没解锁。': "{stage} isn't unlocked yet.",
     '{stage}还没解锁：要先「{label}」（{done}/{need}）。': "{stage} isn't unlocked yet: first {label} ({done}/{need}).",
     // --- world map (snapshot) -----------------------------------------------

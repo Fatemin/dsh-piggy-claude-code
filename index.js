@@ -30,6 +30,7 @@ import {
   TRIPS,
   actionCooldownSeconds,
   activitySecondsLeft,
+  isAsleep,
   awayBlockedReason,
   careView,
   courseView,
@@ -51,6 +52,7 @@ import {
   lifeStageFor,
   mood,
   studyView,
+  diplomaView,
   traitView,
   growthPercent,
   lotteryWaitSeconds,
@@ -129,6 +131,9 @@ const OPERATIONS = {
   bathe: (store, body) => store.act('bathe', str(body.item)),
   play: (store, body) => store.act('play', str(body.item)),
   pet: store => store.act('pet'),
+  // [dsh-piggy-claude-code mod] bed and back; `auto` is the computer's own sleep.
+  sleep: (store, body) => store.sleep(body.auto === true),
+  wake: (store, body) => store.wake(body.auto === true),
   work: (store, body) => store.startWork(str(body.job)),
   // [mod] `subjects` (a list, for several at once) or the old single `subject`.
   study: (store, body) => store.startStudy(Array.isArray(body.subjects) ? body.subjects.map(str) : str(body.subject), str(body.stage)),
@@ -238,6 +243,8 @@ export function apply(ctx, config = {}) {
             // [mod] what a scratch card paid out; which trait points a career lacks
             prize: result.prize,
             missing: result.missing,
+            // [mod] the subjects a capped stage has used up
+            full: result.full,
           }, { 'cache-control': 'no-store' })
         },
       }))
@@ -255,7 +262,7 @@ export function apply(ctx, config = {}) {
     commandCtx.commands.register({
       name: commandName,
       description: 'your pig 🐖: status · study · work · shop · travel · bag',
-      input: { hint: tr(langOf(store.state), '[hatch|feed|bathe|play|pet|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]') },
+      input: { hint: tr(langOf(store.state), '[hatch|feed|bathe|play|pet|sleep|wake|study <科目>|work <job>|trip <目的地>|shop|buy|use|weigh|look <老年|原版>|lang <zh|ja|en>|about]') },
       handler: invocation => {
         try {
           return dispatch(store, commandName, String(invocation.rawInput ?? ''))
@@ -377,12 +384,17 @@ export function snapshot(store, options = {}) {
       renameCardPrice: RENAME_CARD.price,
       perks: perksOf(state),
       doctor: state.doctorDone === true,
+      // [mod] the diplomas in the bag, held or not
+      diplomas: diplomaView(state).map(diploma => ({ ...diploma, label: tr(lang, diploma.label) })),
       worldTraveler: state.worldDone === true,
       soul: hasSoul(state, nowMs),
       mood: current.key,
       moodLevel: current.level ?? 0,
       moodEmoji: current.emoji,
       moodLabel: current.label,
+      // [mod] in bed, and whether the computer's sleep put it there.
+      asleep: isAsleep(state),
+      sleepAuto: isAsleep(state) && state.sleep.auto === true,
       satiety: Math.round(state.satiety),
       happiness: Math.round(state.happiness),
       cleanliness: Math.round(state.cleanliness),
@@ -725,6 +737,17 @@ export function dispatch(store, commandName, rawInput) {
     case 'mo':
       return performAction(store, verb === 'mo' ? 'pet' : verb)
 
+    // [dsh-piggy-claude-code mod] bed and back.
+    case 'sleep':
+    case 'wake': {
+      if (state === null || state.hatched !== true) return { kind: 'error', text: renderNoPig(commandName) }
+      const result = verb === 'sleep' ? store.sleep() : store.wake()
+      if (result.ok) {
+        return { kind: 'success', text: tr(lang, verb === 'sleep' ? '😴 {name} 去睡觉了。睡着时只会变饿，心情和清洁会慢慢恢复。' : '☀️ {name} 醒了。', { name: state.name }) }
+      }
+      return { kind: 'success', text: renderWorkRefusal(state, sleepRefusal(result, state)) }
+    }
+
     case 'work': {
       if (state === null) return { kind: 'error', text: renderNoPig(commandName) }
       const key = argument.trim() === '' ? 'odd' : argument.trim()
@@ -741,11 +764,12 @@ export function dispatch(store, commandName, rawInput) {
       if (subjects.length === 0 || stage === undefined) {
         return {
           kind: 'error',
-          text: tr(lang, '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}', {
+          text: tr(lang, '用法：/{cmd} study <科目>[,科目…] <{stages}>\n科目：{subjects}\n一次最多：{limits}\n每门课上限：{caps}（其余不限）', {
             cmd,
             stages: SCHOOL_STAGES.map(s => tr(lang, s.label)).join('|'),
             subjects: SUBJECTS.map(s => tr(lang, s.label)).join(' · '),
             limits: SCHOOL_STAGES.map(s => `${tr(lang, s.label)} ${PARALLEL_COURSES[s.key] ?? 1}`).join(' · '),
+            caps: SCHOOL_STAGES.filter(s => s.cap !== null).map(s => `${tr(lang, s.label)} ${s.cap}`).join(' · '),
           }),
         }
       }
@@ -835,7 +859,7 @@ export function dispatch(store, commandName, rawInput) {
       return {
         kind: 'error',
         text: tr(lang, '不认识「{sub}」。可用：/{cmd} · {list}', {
-          sub, cmd, list: 'hatch · feed · bathe · play · pet · study · work · trip · shop · buy · use · weigh · name · about',
+          sub, cmd, list: 'hatch · feed · bathe · play · pet · sleep · wake · study · work · trip · shop · buy · use · weigh · name · about',
         }),
       }
   }
@@ -878,6 +902,17 @@ function renameReply(store, state, argument, cmd) {
   }
 }
 
+/** [mod] Why the pig cannot go to bed, or get up. */
+function sleepRefusal(result, state) {
+  const lang = langOf(state)
+  const name = state.name
+  switch (result.reason) {
+    case 'asleep': return tr(lang, '{name} 已经在睡了。', { name })
+    case 'awake': return tr(lang, '{name} 本来就醒着。', { name })
+    default: return refusalText(result, state)
+  }
+}
+
 /** Why the pig cannot go out; `context.stage` names the school stage for study refusals. */
 function refusalText(result, state, context = {}) {
   const lang = langOf(state)
@@ -890,6 +925,10 @@ function refusalText(result, state, context = {}) {
     case 'hungry': return tr(lang, '{name} 太饿了，先喂点东西。', { name })
     case 'poor': return tr(lang, '钱不够，需要 {price} 金币，你只有 {coins}。', { price: result.price, coins: state.coins })
     case 'too-many': return tr(lang, '{stage}一次最多上 {max} 门课。', { stage: tr(lang, context.stage?.label ?? ''), max: result.max })
+    case 'capped': return tr(lang, '{stage}每门课最多上 {max} 次，{subjects}已经上满了。', {
+      stage: tr(lang, context.stage?.label ?? ''), max: result.max,
+      subjects: (result.full ?? []).map(key => tr(lang, SUBJECTS.find(subject => subject.key === key)?.label ?? key)).join(tr(lang, '、')),
+    })
     case 'locked': {
       const need = result.need
       if (need === null || need === undefined) return tr(lang, '{stage}还没解锁。', { stage: tr(lang, context.stage?.label ?? '') })

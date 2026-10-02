@@ -52,6 +52,7 @@ Four ways to see your pig:
 | Looks | Box → piglet → young → middle-aged → elder | One sprite per stage, plus its own pose and animation for each mood (hungry / dirty / sleepy / happy / lonely / sick), outing (work / school / trip) and care reaction (eat / bathe / play / pet / refuse / cured) — see `tools/sprites.html`. From 80 kg the elder look **can be switched back to "original"** (the middle-aged look) |
 | Where weight comes from | A fixed few grams per event and per meal | **Only from fullness actually eaten**: ~98 g per point, ~50 g after 80 kg. Feeding a full pig adds nothing |
 | Time to grow up | — | With normal care: about 1 week to 80 kg, about 2 weeks to 120 kg |
+| Sleep | — | **Put the pig to bed** (panel button or `pig sleep`); in the standalone desktop app **it also sleeps when the computer does**. Asleep it only gets hungrier, mood and cleanliness slowly come back (about +9 / +6 an hour) and it falls ill half as easily; feeding, bathing, playing, petting or sending it out wakes it |
 | Lifespan | Dies of old age on day 14 | **Never dies of old age**; untreated illness down to 0 health still kills, and the Revival pill still works |
 | Name | Command only | First name is free; each rename after that costs a **Rename card** (shop → items, 1000 🪙) |
 | Travel | Four tiers: outing / mountains / seaside / abroad | **22 destinations in 7 regions**, priced and timed by your computer's time zone; brings back souvenirs and local specialities; **completing a region** grants stat bonuses and a passive perk |
@@ -190,6 +191,7 @@ Self-check: launch with `PIGGY_DEBUG_SNAPSHOT=<dir>` and the app writes window r
 
 - Mac: universal `.dmg` (Intel + Apple silicon); Windows: one-click `Setup.exe` (x64, no admin needed)
 - Right-click for the menu, left-click to pet, drag to move, click-through outside the pig; tray / menu-bar icon to hide, reset position, launch at login and quit
+- The pig falls asleep when the computer sleeps and gets up when it wakes; a pig you put to bed yourself is not woken by the computer
 - Saves live in the system app-data folder (Mac `~/Library/Application Support/DSH Piggy/`, Windows `%APPDATA%\DSH Piggy\`), separate from the Claude Code pig
 
 ```bash
@@ -210,7 +212,7 @@ Output goes to `app/dist/`. Builds are unsigned: on Mac, the first launch needs 
 
 ```
 pig                                  status card
-pig hatch | feed | bathe | play | pet
+pig hatch | feed | bathe | play | pet | sleep | wake
 pig study <subject> <小学|大学|研究生>  pig work <odd|site|office>    pig trip <suburb|mountain|sea|abroad>
 pig shop | buy <item> | use <item> | calloff | weigh | name <name>
 pig look 老年 | 原版                  after 80 kg: elder / original look

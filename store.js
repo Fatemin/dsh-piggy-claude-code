@@ -23,6 +23,8 @@ import {
   act as coreAct,
   buy as coreBuy,
   setLook as coreSetLook,
+  goToSleep as coreGoToSleep,
+  wakeUp as coreWakeUp,
   setLang as coreSetLang,
   callOffActivity as coreCallOff,
   decay,
@@ -161,6 +163,12 @@ export function createStore(filePath = defaultStatePath(), options = {}) {
 
     /** Send the pig travelling. */
     startTrip: tripKey => mutate(live => coreStartTrip(live, tripKey, now())),
+
+    /** [mod] Put the pig to bed; `auto` when the computer is going to sleep. */
+    sleep: auto => mutate(live => coreGoToSleep(live, now(), { auto: auto === true })),
+
+    /** [mod] Wake the pig; with `auto`, only a nap the computer started ends. */
+    wake: auto => mutate(live => coreWakeUp(live, now(), { auto: auto === true })),
 
     /** Bring the pig home early (work forfeits pay; study/trips are refunded). */
     callOffActivity: () => mutate(live => coreCallOff(live, now())),

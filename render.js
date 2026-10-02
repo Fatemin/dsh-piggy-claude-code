@@ -29,12 +29,14 @@ import {
   activitySecondsLeft,
   bar,
   courseView,
+  stageLessons,
   formatWeight,
   healthPercent,
   lessonLabel,
   lifeStageFor,
   mood,
   perksOf,
+  diplomaView,
   regionProgress,
   traitView,
   tripQuote,
@@ -49,6 +51,7 @@ const RULE = '━━━━━━━━━━━━━━━━━━━━━━
 function face(currentMood) {
   switch (currentMood.key) {
     case 'sleepy': return { l: '˘', r: '˘', m: 'ω' }
+    case 'asleep': return { l: '－', r: '－', m: 'ᶻ' }
     case 'hungry': return { l: '◕', r: '◕', m: 'o' }
     case 'dirty': return { l: 'ò', r: 'ó', m: '益' }
     case 'sick': return { l: '×', r: '×', m: '︿' }
@@ -197,6 +200,13 @@ function collectionLines(lang, state) {
   if (perks.length > 0) {
     lines.push(tr(lang, '🎁 加成  {perks}', { perks: perks.map(perk => `${perk.emoji}${tr(lang, perk.label)}`).join(' · ') }))
   }
+  // [mod] diplomas held, with a count for the ones that can be earned again.
+  const diplomas = diplomaView(state).filter(diploma => diploma.count > 0)
+  if (diplomas.length > 0) {
+    lines.push(tr(lang, '📜 毕业证  {list}', {
+      list: diplomas.map(diploma => `${diploma.emoji}${tr(lang, diploma.label)}${diploma.count > 1 ? ` ×${diploma.count}` : ''}`).join(' · '),
+    }))
+  }
   if (state.doctorDone === true || state.worldDone === true) {
     const titles = []
     if (state.doctorDone === true) titles.push(tr(lang, '🎓 博士'))
@@ -337,6 +347,13 @@ export function renderStudyReport(state, nowMs, subjects, stage) {
     tr(lang, '📈 收获    {gains} · 经验 +{xp}', { gains: gainsText(lang, list, stage), xp: stage.xp * n }),
     tr(lang, '🍚 消耗    饱食 {satiety} · 心情 {happiness}', { satiety: stage.satiety * n, happiness: stage.happiness * n }),
   ]
+  // [mod] a capped stage says which of its lessons this is.
+  if (stage.cap !== null && stage.cap !== undefined) {
+    lines.push(tr(lang, '📒 次数    {list}（本段每门限 {cap} 次）', {
+      list: list.map(subject => `${tr(lang, subject.label)} ${stageLessons(state, stage.key, subject.key) + 1}/${stage.cap}`).join(tr(lang, '、')),
+      cap: stage.cap,
+    }))
+  }
   if (stage.key === 'doctor' && state.doctorDone !== true) {
     lines.push(tr(lang, '🎓 答辩    {done}/{need} 节博士课', {
       done: state.lessonsByStage?.doctor ?? 0, need: DOCTOR_GRADUATION.lessons,
@@ -539,8 +556,9 @@ export function renderAbout(commandName, state = null) {
   })
   const jobs = JOBS.map(job => outing(job.emoji, job.label, job.minutes, job.coins)).join('\n')
   const courses = SUBJECTS.map(s => `${s.emoji}${tr(lang, s.label)}`).join(' ')
-  const stages = SCHOOL_STAGES.map(s => tr(lang, '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain} · 一次最多 {parallel} 门）', {
+  const stages = SCHOOL_STAGES.map(s => tr(lang, '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain} · 一次最多 {parallel} 门 · {cap}）', {
     stage: tr(lang, s.label), minutes: s.minutes, tuition: s.tuition, gain: s.gain, parallel: PARALLEL_COURSES[s.key] ?? 1,
+    cap: s.cap === null ? tr(lang, '不限次数') : tr(lang, '每门限 {cap} 次', { cap: s.cap }),
   })).join('\n')
   const trips = [
     tr(lang, '  票价 {base} 金币 + 每个时区 {perZone} · 时长 1 小时 + 每个时区 1 小时', { base: FARE.baseCost, perZone: FARE.costPerZone }),

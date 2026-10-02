@@ -7,7 +7,8 @@
  */
 
 import { PLACES, REGIONS, SOUVENIRS, SPECIALTIES, WORLD_BONUS, fareFor, zonesBetween } from '../world.js'
-import { ALL_ITEMS, PARALLEL_COURSES, RENAME_CARD } from '../data.js'
+import { ALL_ITEMS, DIPLOMAS, PARALLEL_COURSES, RENAME_CARD, diplomaCount, schoolStageByKey as schoolStage } from '../data.js'
+import { diplomaView } from '../core.js'
 import { hasDefaultName, perksOf, regionProgress, renamePig, tripQuote } from '../core.js'
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
@@ -65,8 +66,11 @@ import {
   traitView,
   useItem,
   workSecondsLeft,
+  goToSleep,
+  isAsleep,
+  wakeUp,
 } from '../core.js'
-import { LIFESPAN_DAYS, DEFAULT_TOY, ILLNESS_CHAINS, illnessStageMs, SICK_RISK_MINUTES, illnessAt, medicineForStage } from '../data.js'
+import { LIFESPAN_DAYS, DEFAULT_TOY, ILLNESS_CHAINS, illnessStageMs, SICK_RISK_MINUTES, SLEEP_RECOVERY_PER_MIN, illnessAt, medicineForStage } from '../data.js'
 
 const T0 = 1_700_000_000_000
 const MIN = 60_000
@@ -412,6 +416,119 @@ test('finishing a lesson counts toward the stage, not just the subject', () => {
 test('a save from before the ladder keeps its lessons as primary', () => {
   const upgraded = migrate({ ...layEgg(T0), version: 4, courses: { chinese: 3, art: 2 } })
   assert.equal(upgraded.lessonsByStage.primary, 5, 'existing lessons are not thrown away')
+})
+
+// [dsh-piggy-claude-code mod] ST0002: cheap capped schools, slow open-ended ones.
+test('小学 and 大学 cap each subject, 研究生 and 博士 do not', () => {
+  const pig = hatchEgg(T0)
+  pig.coins = 1_000_000
+  let clock = T0
+  const sit = (keys, stageKey) => {
+    pig.satiety = 100
+    pig.happiness = 100
+    const result = startStudy(pig, keys, stageKey, clock)
+    if (result.ok) {
+      clock += (schoolStage(stageKey).minutes + 1) * MIN
+      decay(pig, clock)
+    }
+    return result
+  }
+  const primary = SCHOOL_STAGES[0]
+  for (let i = 0; i < primary.cap; i += 1) assert.equal(sit('chinese', 'primary').ok, true)
+  const refused = sit('chinese', 'primary')
+  assert.equal(refused.reason, 'capped')
+  assert.equal(refused.max, primary.cap)
+  assert.deepEqual(refused.full, ['chinese'])
+  assert.equal(pig.stageCourses.primary.chinese, primary.cap)
+  assert.equal(studyView(pig)[0].taken.chinese, primary.cap)
+  assert.equal(sit('mathematics', 'primary').ok, true, 'other subjects still open')
+
+  pig.lessonsByStage = { primary: 9, college: 9, graduate: 9, doctor: 0 }
+  for (let i = 0; i < SCHOOL_STAGES[1].cap; i += 1) assert.equal(sit(['pe', 'art'], 'college').ok, true)
+  const coins = pig.coins
+  assert.equal(sit(['pe', 'music'], 'college').reason, 'capped', 'one used-up subject refuses the sitting')
+  assert.equal(pig.coins, coins, 'a refused sitting costs nothing')
+
+  for (const stageKey of ['graduate', 'doctor']) {
+    assert.equal(schoolStage(stageKey).cap, null)
+    for (let i = 0; i < 4; i += 1) assert.equal(sit('chinese', stageKey).ok, true, `${stageKey} has no cap`)
+  }
+})
+
+test('the capped schools bound each trait, and beat the open ones per coin and per hour', () => {
+  const capped = SCHOOL_STAGES.filter(stage => stage.cap !== null)
+  const open = SCHOOL_STAGES.filter(stage => stage.cap === null)
+  assert.deepEqual(capped.map(stage => stage.key), ['primary', 'college'])
+  assert.deepEqual(open.map(stage => stage.key), ['graduate', 'doctor'])
+  // Three subjects per trait: the most the cheap schools can ever add to one trait.
+  const perTrait = capped.reduce((sum, stage) => sum + 3 * stage.cap * stage.gain, 0)
+  assert.equal(perTrait, 18)
+  assert.ok(perTrait < 30, 'the wage cap still needs the open-ended schools')
+  const coinsPerPoint = stage => stage.tuition / stage.gain
+  const pointsPerHour = stage => (PARALLEL_COURSES[stage.key] * stage.gain) / (stage.minutes / 60)
+  for (const cheap of capped) {
+    for (const dear of open) {
+      assert.ok(coinsPerPoint(cheap) < coinsPerPoint(dear), `${cheap.key} is cheaper per point than ${dear.key}`)
+      assert.ok(pointsPerHour(cheap) > pointsPerHour(dear), `${cheap.key} is faster than ${dear.key}`)
+    }
+  }
+  // The gate to the next school still fits under the cap.
+  for (const stage of SCHOOL_STAGES) {
+    if (stage.requires === null) continue
+    const before = SCHOOL_STAGES.find(s => s.key === stage.requires.stage)
+    if (before.cap !== null) assert.ok(stage.requires.lessons <= before.cap * SUBJECTS.length)
+  }
+})
+
+test('every school hands out a diploma; graduate degrees and doctorates come again', () => {
+  assert.deepEqual(DIPLOMAS.map(d => [d.stage, d.repeat]), [['primary', false], ['college', false], ['graduate', true], ['doctor', true]])
+  const once = DIPLOMAS[0]
+  const again = DIPLOMAS[2]
+  assert.deepEqual([0, 8, 9, 18].map(n => diplomaCount(once, n)), [0, 0, 1, 1])
+  assert.deepEqual([0, 8, 9, 17, 18, 27].map(n => diplomaCount(again, n)), [0, 0, 1, 1, 2, 3])
+
+  const pig = hatchEgg(T0)
+  pig.coins = 1_000_000
+  assert.ok(diplomaView(pig).every(d => d.count === 0), 'a fresh pig has none')
+  pig.lessonsByStage = { primary: 8, college: 0, graduate: 8, doctor: 0 }
+  pig.satiety = 100
+  pig.happiness = 100
+  assert.equal(startStudy(pig, 'chinese', 'primary', T0).ok, true)
+  advance(pig, SCHOOL_STAGES[0].minutes + 1)
+  assert.equal(diplomaView(pig)[0].count, 1)
+  assert.equal(diplomaView(pig)[0].next, null, 'a one-off diploma has no next')
+  assert.ok(pig.pending.some(e => e.kind === 'diploma'))
+
+  pig.lessonsByStage.college = 9
+  for (let round = 1; round <= 2; round += 1) {
+    pig.pending = []
+    pig.satiety = 100
+    pig.happiness = 100
+    assert.equal(startStudy(pig, ['chinese', 'music', 'pe'], 'graduate', pig.lastSeenAt).ok, true)
+    advance(pig, SCHOOL_STAGES[2].minutes + 1)
+    if (round === 1) assert.equal(diplomaView(pig)[2].count, 1, '8 + 3 lessons: the first degree')
+  }
+  // 8 + 6 = 14 lessons: still one, five into the next.
+  assert.deepEqual(diplomaView(pig)[2].next, { done: 5, need: 9 })
+  pig.lessonsByStage.graduate = 17
+  pig.pending = []
+  pig.satiety = 100
+  startStudy(pig, 'art', 'graduate', pig.lastSeenAt)
+  advance(pig, SCHOOL_STAGES[2].minutes + 1)
+  assert.equal(diplomaView(pig)[2].count, 2, 'the second degree')
+  assert.ok(pig.pending.some(e => e.kind === 'diploma' && e.text.includes('第 2 张')))
+})
+
+test('a save from before the caps spreads its lessons over the subjects', () => {
+  const raw = { ...layEgg(T0), lessonsByStage: { primary: 20, college: 4, graduate: 0, doctor: 0 } }
+  delete raw.stageCourses
+  const upgraded = migrate(raw)
+  const primary = Object.values(upgraded.stageCourses.primary)
+  assert.equal(primary.reduce((sum, n) => sum + n, 0), 20, 'every lesson is accounted for')
+  assert.ok(primary.every(n => n >= 2), 'twenty lessons fill the 小学 cap everywhere')
+  assert.equal(Object.values(upgraded.stageCourses.college).reduce((sum, n) => sum + n, 0), 4)
+  assert.deepEqual(migrate(upgraded).stageCourses, upgraded.stageCourses, 'idempotent')
+  assert.deepEqual(hatchEgg(T0).stageCourses, { primary: {}, college: {}, graduate: {}, doctor: {} })
 })
 
 test('long-haul activities really do take hours', () => {
@@ -1407,4 +1524,114 @@ test('bad moods come in three strengths, illness by its stage', () => {
   assert.deepEqual([34, 19, 7].map(v => at({ happiness: v }).level), [1, 2, 3], 'lonely')
   assert.deepEqual([1, 2, 3, 4].map(stage => at({ illness: { chain: 0, stage, since: T0, progressMs: 0 } }).level), [1, 2, 3, 3], 'sick')
   assert.equal(at({}).level, 0, 'fine has no strength')
+})
+
+// ===========================================================================
+// [dsh-piggy-claude-code mod] Sleep
+// ===========================================================================
+
+test('asleep, only satiety drops; mood and cleanliness come back', () => {
+  const awake = hatchEgg(T0)
+  const asleep = hatchEgg(T0)
+  for (const pig of [awake, asleep]) Object.assign(pig, { satiety: 80, happiness: 40, cleanliness: 40 })
+  assert.deepEqual(goToSleep(asleep, T0), { ok: true })
+  advance(awake, 120)
+  advance(asleep, 120)
+  assert.equal(asleep.satiety, awake.satiety, 'satiety drains at the usual rate')
+  assert.ok(asleep.satiety < 80)
+  assert.ok(Math.abs(asleep.happiness - (40 + 120 * SLEEP_RECOVERY_PER_MIN.happiness)) < 1e-9)
+  assert.ok(Math.abs(asleep.cleanliness - (40 + 120 * SLEEP_RECOVERY_PER_MIN.cleanliness)) < 1e-9)
+  assert.ok(awake.happiness < 40 && awake.cleanliness < 40, 'awake they drain as before')
+  advance(asleep, 24 * 60)
+  assert.equal(asleep.happiness, 100, 'recovery stops at the top')
+  assert.equal(asleep.cleanliness, 100)
+})
+
+test('asleep, neglect makes the pig ill half as fast', () => {
+  const pig = hatchEgg(T0)
+  pig.satiety = 5
+  goToSleep(pig, T0)
+  advance(pig, SICK_RISK_MINUTES + 1)
+  assert.equal(pig.illness, null, 'what makes an awake pig ill only half-counts asleep')
+  advance(pig, SICK_RISK_MINUTES)
+  assert.notEqual(pig.illness, null, 'twice as long and it falls ill all the same')
+  assert.equal(isAsleep(pig), true, 'falling ill does not wake it')
+})
+
+test("the computer's wake-up ends only the naps the computer started", () => {
+  const pig = hatchEgg(T0)
+  assert.deepEqual(goToSleep(pig, T0, { auto: true }), { ok: true })
+  assert.equal(pig.sleep.auto, true)
+  assert.deepEqual(wakeUp(pig, T0 + 60 * MIN, { auto: true }), { ok: true })
+  assert.equal(isAsleep(pig), false)
+  assert.equal(pig.lastActiveAt, T0 + 60 * MIN, 'getting up counts as activity')
+
+  goToSleep(pig, T0 + 61 * MIN)
+  assert.equal(pig.sleep.auto, false)
+  assert.deepEqual(wakeUp(pig, T0 + 90 * MIN, { auto: true }), { ok: false, reason: 'manual' })
+  assert.equal(isAsleep(pig), true, 'put to bed by hand, it sleeps on')
+  assert.deepEqual(goToSleep(pig, T0 + 91 * MIN, { auto: true }), { ok: false, reason: 'asleep' })
+  assert.equal(pig.sleep.auto, false, 'the computer sleeping too does not take the nap over')
+  assert.deepEqual(wakeUp(pig, T0 + 92 * MIN), { ok: true })
+  assert.deepEqual(wakeUp(pig, T0 + 93 * MIN), { ok: false, reason: 'awake' })
+})
+
+test('a pig cannot go to bed while out, dead or still in its box', () => {
+  assert.equal(goToSleep(null, T0).reason, 'absent')
+  assert.equal(goToSleep(layEgg(T0), T0).reason, 'absent')
+  const out = hatchEgg(T0)
+  out.satiety = 90
+  assert.equal(startWork(out, 'odd', T0).ok, true)
+  assert.deepEqual(goToSleep(out, T0 + MIN), { ok: false, reason: 'away' })
+  const dead = hatchEgg(T0)
+  dead.dead = true
+  assert.deepEqual(goToSleep(dead, T0), { ok: false, reason: 'dead' })
+})
+
+test('caring for a sleeping pig, or sending it out, wakes it first', () => {
+  const fed = hatchEgg(T0)
+  goToSleep(fed, T0)
+  assert.equal(act(fed, 'pet', T0 + MIN).ok, true)
+  assert.equal(isAsleep(fed), false)
+  assert.match(fed.memories.at(-2), /被叫醒了/)
+
+  const refused = hatchEgg(T0)
+  goToSleep(refused, T0)
+  assert.equal(act(refused, 'nonsense', T0 + MIN).ok, false)
+  assert.equal(isAsleep(refused), true, 'a refused action leaves it asleep')
+
+  const worker = hatchEgg(T0)
+  worker.satiety = 90
+  goToSleep(worker, T0)
+  assert.equal(startWork(worker, 'odd', T0 + MIN).ok, true)
+  assert.equal(isAsleep(worker), false)
+  assert.notEqual(worker.activity, null)
+})
+
+test('mood: a sleeping pig looks asleep; an idle one only dozes', () => {
+  const pig = hatchEgg(T0)
+  goToSleep(pig, T0)
+  pig.illness = { chain: 0, stage: 1, since: T0, progressMs: 0 }
+  assert.equal(mood(pig, T0).key, 'asleep', 'asleep even when ill')
+  assert.equal(mood(pig, T0).label, '在睡觉')
+  const idle = hatchEgg(T0)
+  Object.assign(idle, { satiety: 90, cleanliness: 90, happiness: 60 })
+  const dozing = mood(idle, T0 + 31 * MIN)
+  assert.equal(dozing.key, 'sleepy')
+  assert.equal(dozing.label, '在打盹')
+  const died = hatchEgg(T0)
+  goToSleep(died, T0)
+  died.dead = true
+  assert.equal(mood(died, T0).key, 'dead')
+})
+
+test('migrate keeps a night in bed and drops a bad or impossible one', () => {
+  assert.equal(migrate({}).sleep, null)
+  assert.deepEqual(migrate({ hatched: true, sleep: { since: T0, auto: true } }).sleep, { since: T0, auto: true })
+  assert.deepEqual(migrate({ hatched: true, sleep: { since: T0, auto: 'yes' } }).sleep, { since: T0, auto: false })
+  assert.equal(migrate({ hatched: true, sleep: 'zzz' }).sleep, null)
+  assert.equal(migrate({ hatched: true, sleep: { auto: true } }).sleep, null)
+  assert.equal(migrate({ hatched: true, dead: true, sleep: { since: T0 } }).sleep, null)
+  const out = { hatched: true, activity: { kind: 'work', key: JOBS[0].key, endsAt: T0 + MIN }, sleep: { since: T0 } }
+  assert.equal(migrate(out).sleep, null, 'it cannot be in bed and at work')
 })

@@ -125,6 +125,7 @@ export default {
     '🎁 加成  {perks}': '🎁 ボーナス  {perks}',
     '🎓 博士': '🎓 博士',
     '🏅 称号  {titles}': '🏅 称号  {titles}',
+    '📜 毕业证  {list}': '📜 卒業証書  {list}',
 
     // [mod] study: several subjects, the doctorate
     '📈 收获    {gains} · 经验 +{xp}': '📈 せいか      {gains} · けいけんち +{xp}',
@@ -155,7 +156,10 @@ export default {
     '   🧳 纪念品 {have}/{total} · 集齐地区 {regions}/{all}': '   🧳 おみやげ {have}/{total} · コンプリート地域 {regions}/{all}',
 
     // [mod] about
-    '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain} · 一次最多 {parallel} 门）': '{stage}（{minutes} 分 · 授業料 {tuition} · +{gain} · いちどに {parallel} 科目まで）',
+    '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain} · 一次最多 {parallel} 门 · {cap}）': '{stage}（{minutes} 分 · 授業料 {tuition} · +{gain} · いちどに {parallel} 科目まで · {cap}）',
+    '不限次数': '回数無制限',
+    '每门限 {cap} 次': '1科目 {cap} 回まで',
+    '📒 次数    {list}（本段每门限 {cap} 次）': '📒 回数    {list}（ここは1科目 {cap} 回まで）',
     '  票价 {base} 金币 + 每个时区 {perZone} · 时长 1 小时 + 每个时区 1 小时': '  運賃 {base} コイン + 時差1時間ごとに {perZone} · 所要 1 時間 + 時差1時間ごとに 1 時間',
     '  {emoji} {region}：{places}': '  {emoji} {region}：{places}',
     '  每个地区 6 件纪念品，集齐解锁加成；七个地区都集齐成为「{title}」{emoji}': '  各地域におみやげ6つ。コンプリートでボーナス、7地域ぜんぶで「{title}」{emoji}',
@@ -287,6 +291,7 @@ export default {
     '🎁 加成  {perks}': '🎁 Perks  {perks}',
     '🎓 博士': '🎓 Doctor',
     '🏅 称号  {titles}': '🏅 Titles  {titles}',
+    '📜 毕业证  {list}': '📜 Diplomas  {list}',
 
     // [mod] study: several subjects, the doctorate
     '📈 收获    {gains} · 经验 +{xp}': '📈 Gains     {gains} · XP +{xp}',
@@ -317,7 +322,10 @@ export default {
     '   🧳 纪念品 {have}/{total} · 集齐地区 {regions}/{all}': '   🧳 Souvenirs {have}/{total} · regions done {regions}/{all}',
 
     // [mod] about
-    '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain} · 一次最多 {parallel} 门）': '{stage} ({minutes} min · tuition {tuition} · +{gain} · up to {parallel} at once)',
+    '{stage}（{minutes} 分钟 · 学费 {tuition} · +{gain} · 一次最多 {parallel} 门 · {cap}）': '{stage} ({minutes} min · tuition {tuition} · +{gain} · up to {parallel} at once · {cap})',
+    '不限次数': 'no lesson limit',
+    '每门限 {cap} 次': '{cap} lessons per subject',
+    '📒 次数    {list}（本段每门限 {cap} 次）': '📒 Lessons  {list} ({cap} per subject here)',
     '  票价 {base} 金币 + 每个时区 {perZone} · 时长 1 小时 + 每个时区 1 小时': '  Fare {base} coins + {perZone} per time zone · 1 h + 1 h per time zone',
     '  {emoji} {region}：{places}': '  {emoji} {region}: {places}',
     '  每个地区 6 件纪念品，集齐解锁加成；七个地区都集齐成为「{title}」{emoji}': '  6 souvenirs per region; complete one for a perk, all seven to become a {title} {emoji}',
