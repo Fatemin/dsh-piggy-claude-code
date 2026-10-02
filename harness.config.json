@@ -80,6 +80,19 @@
     },
     {
       "paths": [
+        "art.js",
+        "tools/build-sprites.mjs",
+        "assets/**"
+      ],
+      "tests": [
+        "test/contracts.test.js",
+        "test/cc.test.js",
+        "test/client.test.js",
+        "test/core.test.js"
+      ]
+    },
+    {
+      "paths": [
         "render.js"
       ],
       "tests": [
@@ -176,7 +189,7 @@
           ]
         },
         {
-          "id": "STORE.SAVE.V5",
+          "id": "STORE.SAVE.V6",
           "doc": "docs/contracts/save-format.md",
           "triggers": [
             "store.js",
@@ -189,6 +202,15 @@
           "triggers": [
             "i18n.js",
             "locales/GLOSSARY.md"
+          ]
+        },
+        {
+          "id": "ART.ASSETS.V1",
+          "doc": "docs/contracts/art-assets.md",
+          "triggers": [
+            "art.js",
+            "tools/build-sprites.mjs",
+            "assets/**"
           ]
         }
       ]

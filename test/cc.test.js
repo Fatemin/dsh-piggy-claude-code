@@ -120,6 +120,13 @@ test('server serves the shell, the client and upstream routes', async () => {
 
     const art = await fetch(new URL('dsh-pig/art/stage-piglet.svg', server.url))
     assert.equal(art.status, 200)
+    // [ST0004] the art route dresses a pose; unknown keys are dropped, never echoed.
+    const dressed = await (await fetch(new URL('dsh-pig/art/stage-piglet.svg?wear=bow,../../x,glasses', server.url))).text()
+    assert.match(dressed, /data-wear="bow"/)
+    assert.match(dressed, /data-wear="glasses"/)
+    assert.doesNotMatch(dressed, /\.\.\/\.\.\/x/)
+    const covered = await (await fetch(new URL('dsh-pig/art/away-trip.svg?wear=bow', server.url))).text()
+    assert.doesNotMatch(covered, /data-wear="bow"/, 'the straw hat of the road covers the bow')
 
     const desk = await (await fetch(new URL('desk', server.url))).text()
     assert.match(desk, /__pigHit/)

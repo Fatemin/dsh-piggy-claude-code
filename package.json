@@ -28,6 +28,7 @@
     "data.js",
     "store.js",
     "render.js",
+    "art.js",
     "client.js",
     "cordis.patch.yml",
     "README.md",

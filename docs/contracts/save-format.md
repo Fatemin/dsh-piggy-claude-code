@@ -1,8 +1,8 @@
-# STORE.SAVE.V5 · 存档格式与迁移
+# STORE.SAVE.V6 · 存档格式与迁移
 
-> contract_id: `STORE.SAVE.V5` · status: `CURRENT`
+> contract_id: `STORE.SAVE.V6` · status: `CURRENT`
 
-> 实施事实基线：`main` `678e7e4`（2026-10-02），`STATE_VERSION = 5`。契约 ID 的 `V5` 跟随存档版本：存档升到 6 时新开 `STORE.SAVE.V6`。
+> 实施事实基线：ST0004（2026-10-02，装扮功能），`STATE_VERSION = 6`。契约 ID 的 `V6` 跟随存档版本：存档升到 7 时新开 `STORE.SAVE.V7`。上一版 [STORE.SAVE.V5](save-format-v5.md) 已退役。
 
 ## 1. 归属 Ownership
 
@@ -18,14 +18,14 @@
 
 <!-- contract:state-version -->
 ```json
-5
+6
 ```
 
 `migrate({})` 产出的全部键（新增键必须同分支登记）：
 
 <!-- contract:state-keys -->
 ```json
-["activity", "bornAt", "cleanliness", "coins", "collected", "cooldowns", "courses", "dead", "diedAt", "doctorDone", "happiness", "hatched", "health", "illness", "inventory", "lang", "lastActiveAt", "lastFedAt", "lastLotteryAt", "lastSeenAt", "lastTrip", "lessonsByStage", "memories", "name", "pending", "regionsDone", "riskMinutes", "satiety", "sleep", "souvenirs", "stage", "stageCourses", "stats", "traits", "version", "weightG", "worldDone", "xp"]
+["activity", "bornAt", "cleanliness", "coins", "collected", "cooldowns", "courses", "dead", "diedAt", "doctorDone", "happiness", "hatched", "health", "illness", "inventory", "lang", "lastActiveAt", "lastFedAt", "lastLotteryAt", "lastSeenAt", "lastTrip", "lessonsByStage", "memories", "name", "outfit", "pending", "regionsDone", "riskMinutes", "satiety", "sleep", "souvenirs", "stage", "stageCourses", "stats", "traits", "version", "weightG", "worldDone", "xp"]
 ```
 
 | 组 | 键 | 说明 |
@@ -35,6 +35,7 @@
 | 资产 | `coins`, `inventory` | `coins` 为非负整数 |
 | 养成 | `traits`, `courses`, `lessonsByStage`, `stageCourses`, `doctorDone` | `stageCourses` 是各学段每门课的次数（小学/大学上限按它算）；缺失时按 `lessonsByStage` 平均摊到九门课 |
 | 旅行 | `souvenirs`, `collected`, `regionsDone`, `worldDone`, `lastTrip` | |
+| 外观 | `outfit` | `null`（跟着阶段穿）或装饰键数组（玩家搭配，每部位至多一件，按部位顺序）；含义与解锁见 [ART.ASSETS.V1](art-assets.md) §2.3。迁移时只留已登记键 |
 | 进行中 | `activity`, `illness`, `sleep`, `cooldowns`, `riskMinutes` | `activity.key` 引用 [GAME.RULES.V1](game-rules.md) 的表键；`sleep` 为 `{since, auto}` 或 `null`（外出、死亡时迁移成 `null`；`auto` 表示电脑休眠触发） |
 | 记录 | `memories`（最多 8 条）, `pending`（加载时清空）, `stats` | |
 | 时间戳 | `lastFedAt`, `lastLotteryAt`, `lastActiveAt`, `lastSeenAt` | 毫秒时间戳 |
@@ -45,6 +46,7 @@
 2. **迁移幂等**：`migrate(migrate(x))` 与 `migrate(x)` 相同。
 3. **不丢进度**：金币、经验、背包、属性、课程、纪念品在迁移中保留；退役内容必须给出补偿（先例：旧旅行退款、v5 起始金币补足到 500）。
 4. **一次性修正以磁盘上的旧版本号为键**：例如“`version < 5` 时补金币”，保证只执行一次。
+   v6（ST0004）：旧键 `look` 删除；`version < 6` 且 `look === 'original'`、没有 `outfit` 的存档迁成 `outfit: []`（主人摘掉过胡子，就保持不戴），其余为 `null`（跟着阶段，与之前的样子一致）。
 5. **原子写盘**：写临时文件 → `fsync` → `rename`，不会出现半个文件。
 6. **单写者**：同一存档同一时刻只有一个进程写（`lib/lock.js`，目录锁，持有者已死时可接管）。
 
@@ -61,5 +63,5 @@
 ## 5. 验证 Verification
 
 - `test/contracts.test.js`：`STATE_VERSION` 与 `state-version` 块相等；`migrate({})` 的键与 `state-keys` 块相等；全函数与幂等断言。
-- `test/core.test.js`：v1 → v5 迁移、退役内容补偿。
+- `test/core.test.js`：v1 → v6 迁移、退役内容补偿、`look` → `outfit`。
 - `test/cc.test.js`：多进程锁。

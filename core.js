@@ -28,6 +28,10 @@ import {
   LIFE_STAGES,
   LOOKS,
   LIFESPAN_DAYS,
+  STAGE_OUTFIT,
+  WEARABLES,
+  WEAR_SLOTS,
+  wearableByKey,
   SOUL,
   SOUL_AFTER_DAYS,
   ILLNESS_CHAINS,
@@ -90,7 +94,7 @@ import {
 } from './world.js'
 
 /** Bumped when the saved shape changes in a way migrate() must handle. */
-export const STATE_VERSION = 5
+export const STATE_VERSION = 6
 
 const BIRTH_WEIGHT_G = 1200
 const HATCH_WEIGHT_G = 160
@@ -207,22 +211,110 @@ function stageForWeight(weightG) {
   return stage
 }
 
-/** Can the owner pick between the elder drawing and the original one yet? */
+/**
+ * Can the owner pick between the elder look and the original one yet?
+ * [ST0004] The old `look` switch: it only puts the beard on or takes it off.
+ */
 export const canChooseLook = state =>
-  state !== null && state.hatched === true && state.dead !== true && state.weightG >= GROWTH.elderKg * 1000
+  state !== null && state.hatched === true && state.dead !== true && wearUnlocked(state, wearableByKey('whiskers'))
 
 /**
  * Which stage the pig is at right now: a box, a pig of some weight, or a grave.
- * [dsh-piggy-claude-code mod] Weight decides the stage and the size; an elder
- * pig whose owner chose the original look wears the plain pig, no beard or cane.
+ * [dsh-piggy-claude-code mod] Weight decides the stage and the size. [ST0004]
+ * The stage drawing is only the pose; what the pig wears is `wornFor`.
  */
 export function lifeStageFor(state, nowMs) {
   if (state === null) return LIFE_STAGES[0]
   if (state.dead === true) return GRAVE
   if (state.hatched !== true) return LIFE_STAGES[0]
   const stage = stageForWeight(state.weightG)
-  const art = stage.key === 'elder' && state.look === 'original' ? 'stage-young' : stage.art
-  return { ...stage, art, size: sizeForWeight(state.weightG) }
+  return { ...stage, size: sizeForWeight(state.weightG) }
+}
+
+// ---------------------------------------------------------------------------
+// [ST0004] Wardrobe: what the pig has unlocked and what it wears. Purely how it
+// looks — nothing here touches a number the game is played with.
+// ---------------------------------------------------------------------------
+
+const stageRank = key => LIFE_STAGES.findIndex(stage => stage.key === key)
+
+/** Has this pig earned `item` (a WEARABLES entry)? Derived, never saved. */
+export function wearUnlocked(state, item) {
+  if (state === null || item === null || state.hatched !== true) return false
+  const unlock = item.unlock
+  const lessons = state.lessonsByStage ?? {}
+  const collected = Object.keys(state.collected ?? {})
+  switch (unlock.kind) {
+    case 'always': return true
+    case 'stage': return stageRank(stageForWeight(state.weightG).key) >= stageRank(unlock.stage)
+    case 'lessons': return unlock.stage === null ? Object.values(lessons).some(n => n > 0) : (lessons[unlock.stage] ?? 0) > 0
+    case 'diploma': return diplomaView(state).some(diploma => diploma.count > 0)
+    case 'trip': return (state.stats?.trips ?? 0) > 0 || collected.length > 0
+    case 'region': return collected.some(key => souvenirByKey(key)?.region === unlock.region)
+    default: return false
+  }
+}
+
+/** Known keys only, at most one per slot (the first wins), in slot order. */
+function sanitizeOutfit(raw) {
+  if (!Array.isArray(raw)) return null
+  const items = raw.map(wearableByKey).filter(item => item !== null)
+  return WEAR_SLOTS.map(slot => items.find(item => item.slot === slot)?.key).filter(key => key !== undefined)
+}
+
+/** Is the pig following its stage's look (no outfit of the owner's own)? */
+export const outfitIsAuto = state => !Array.isArray(state?.outfit)
+
+/**
+ * What the pig wears right now, in drawing order: the owner's outfit, or the
+ * stage's own look until there is one. Locked things are never worn; a box or
+ * a grave wears nothing.
+ */
+export function wornFor(state) {
+  if (state === null || state.hatched !== true || state.dead === true) return []
+  const keys = outfitIsAuto(state) ? STAGE_OUTFIT[stageForWeight(state.weightG).key] ?? [] : state.outfit
+  return (sanitizeOutfit(keys) ?? []).filter(key => wearUnlocked(state, wearableByKey(key)))
+}
+
+/** Every decoration with whether this pig has it and wears it. */
+export function wardrobeView(state) {
+  const worn = wornFor(state)
+  return WEARABLES.map(item => ({
+    key: item.key, slot: item.slot, label: item.label, emoji: item.emoji, unlock: item.unlock,
+    unlocked: wearUnlocked(state, item), worn: worn.includes(item.key),
+  }))
+}
+
+function wearRefusal(state) {
+  if (state.hatched !== true) return 'unhatched'
+  if (state.dead === true) return 'dead'
+  return null
+}
+
+/**
+ * Put `key` on (taking off whatever was in its slot) or take it off. The
+ * first change turns the stage's look into the owner's own outfit.
+ * @returns {{ok: boolean, reason?: string}}
+ */
+export function wear(state, key, on, nowMs) {
+  const refusal = wearRefusal(state)
+  if (refusal !== null) return { ok: false, reason: refusal }
+  const item = wearableByKey(key)
+  if (item === null) return { ok: false, reason: 'bad-wear' }
+  if (!wearUnlocked(state, item)) return { ok: false, reason: 'wear-locked' }
+  const kept = wornFor(state).filter(other => other !== key && (on !== true || wearableByKey(other).slot !== item.slot))
+  state.outfit = sanitizeOutfit(on === true ? [key, ...kept] : kept)
+  state.lastActiveAt = nowMs
+  return { ok: true }
+}
+
+/** Forget the owner's outfit: the pig follows its stage's look again. */
+export function wearAuto(state, nowMs) {
+  const refusal = wearRefusal(state)
+  if (refusal !== null) return { ok: false, reason: refusal }
+  state.outfit = null
+  state.lastActiveAt = nowMs
+  return { ok: true }
 }
 
 /** The next rung, or null once the pig is as grown as it gets. */
@@ -303,14 +395,14 @@ export function daysToNextStage(state, nowMs) {
 }
 
 /**
- * Switch an elder pig between the elder drawing and the original one.
+ * Switch an elder pig between the elder look and the original one.
  * @returns {{ok: boolean, reason?: string, look?: string}}
  */
 export function setLook(state, look, nowMs) {
   if (!LOOKS.includes(look)) return { ok: false, reason: 'bad-look' }
   if (!canChooseLook(state)) return { ok: false, reason: state.dead === true ? 'dead' : 'too-light' }
-  state.look = look
-  state.lastActiveAt = nowMs
+  // [ST0004] the elder look is the beard in the wardrobe now.
+  wear(state, 'whiskers', look === 'elder', nowMs)
   return { ok: true, look }
 }
 
@@ -495,6 +587,8 @@ export function layEgg(nowMs) {
     // [dsh-piggy-claude-code mod] `{ since, auto }` while asleep; `auto` marks
     // a nap the computer's own sleep started, which its wake-up may end.
     sleep: null,
+    // [ST0004] the owner's outfit as wardrobe keys, or null: wear the stage's look.
+    outfit: null,
     riskMinutes: 0,
     lastFedAt: 0,
     // [dsh-piggy-claude-code mod] when the last scratch card was bought.
@@ -604,6 +698,12 @@ export function migrate(raw) {
   // A pig cannot be asleep at home and out at the same time, nor in its grave.
   state.sleep = state.activity === null && !state.dead ? sanitizeSleep(raw.sleep) : null
   state.hatched = state.hatched === true || state.xp > 0
+  // [ST0004] v6: the elder look moved into the wardrobe. A pig whose owner had
+  // taken the beard off ('original') keeps it off; every other pig follows its
+  // stage's look until it is dressed by hand.
+  state.outfit = sanitizeOutfit(raw.outfit)
+  if ((typeof raw.version !== 'number' || raw.version < 6) && raw.outfit === undefined && raw.look === 'original') state.outfit = []
+  delete state.look
   return state
 }
 

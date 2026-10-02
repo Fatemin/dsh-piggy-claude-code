@@ -24,7 +24,7 @@
 | `core` | 只要快照存在就必须有；`normalize()` 必须给出不为 `undefined` / `NaN` 的默认值 |
 | `task` | 某个标签页或动作需要；缺失时该标签页给出可见降级（例如「重启 dsh 之后才会出现」），不能空白 |
 | `deep` | 只在展开或详情中出现 |
-| `internal` | 只存在于存档（见 [STORE.SAVE.V5](save-format.md)），**不得**进入快照 |
+| `internal` | 只存在于存档（见 [STORE.SAVE.V6](save-format.md)），**不得**进入快照 |
 
 | freshness | 含义 |
 |---|---|
@@ -70,12 +70,15 @@
 
 <!-- contract:pig-keys -->
 ```json
-["ageDays", "ageLabel", "asleep", "canChooseLook", "cleanliness", "coins", "courses", "daysToNextStage", "diplomas", "doctor", "growthPercent", "happiness", "health", "healthPercent", "illness", "kgToNextStage", "look", "memories", "mood", "moodEmoji", "moodLabel", "moodLevel", "name", "perks", "renameCardPrice", "renameCards", "renameFree", "satiety", "sleepAuto", "soul", "souvenirs", "stage", "stageLine", "traits", "weight", "worldTraveler", "xp"]
+["ageDays", "ageLabel", "asleep", "canChooseLook", "cleanliness", "coins", "courses", "daysToNextStage", "diplomas", "doctor", "growthPercent", "happiness", "health", "healthPercent", "illness", "kgToNextStage", "look", "memories", "mood", "moodEmoji", "moodLabel", "moodLevel", "name", "outfit", "perks", "renameCardPrice", "renameCards", "renameFree", "satiety", "sleepAuto", "soul", "souvenirs", "stage", "stageLine", "traits", "wardrobe", "weight", "worldTraveler", "xp"]
 ```
 
 | 组 | 字段 | 深度 | freshness |
 |---|---|---|---|
-| 身份 | `name`, `stage{key,label,emoji,size,line,art,faded}`, `look`, `canChooseLook` | core | STATE+TABLE |
+| 身份 | `name`, `stage{key,label,emoji,size,line,art,faded}` | core | STATE+TABLE |
+| 穿戴 | `outfit{auto,worn[]}`：`worn` 是当前穿戴的装饰键（按部位绘制顺序，面板原样拼到精灵 URL 的 `?wear=`），`auto` 为跟着阶段穿 | core | DERIVED（ST0004，见 [ART.ASSETS.V1](art-assets.md)） |
+| 衣柜 | `wardrobe[{key,slot,label,emoji,unlocked,worn,hint}]`：全部装饰，`hint` 是已翻译的解锁条件 | task | DERIVED |
+| 旧外观开关 | `look`（`'elder'` = 戴着 `whiskers`，否则 `'original'`）、`canChooseLook`（`whiskers` 已解锁）：ST0004 起由衣柜推导，只为旧面板保留 | core | DERIVED |
 | 年龄与成长 | `ageDays`, `ageLabel`, `daysToNextStage`, `kgToNextStage`, `growthPercent`, `weight` | core | LIVE |
 | 四维 | `satiety`, `happiness`, `cleanliness`（0–100 整数）, `health`, `healthPercent` | core | STATE |
 | 心情 | `mood`, `moodLevel`, `moodEmoji`, `moodLabel` | core | LIVE |
@@ -91,14 +94,16 @@
 |---|---|---|
 | `/dsh-pig/state` | GET | 返回快照，`cache-control: no-store`；其他方法 405 + `allow` |
 | `/dsh-pig/act` | POST | JSON 体 `{action, ...}`；未知 `action` → 400 + `allowed` 列表；体过大或非 JSON → 413 |
-| `/dsh-pig/art/<name>.svg` | GET | 只服务 `assets/` 下匹配 `^[a-z][a-z0-9-]{0,31}\.svg$` 的文件，其他一律 404 |
+| `/dsh-pig/art/<name>.svg` | GET | 只服务 `assets/` 下匹配 `^[a-z][a-z0-9-]{0,31}\.svg$` 的文件，其他一律 404；可带 `?wear=<k1>,<k2>` 给姿势穿上装饰，只认 `WEARABLES` 键，其余丢弃（合成规则见 [ART.ASSETS.V1](art-assets.md) §2.6） |
 
 `OPERATIONS` 表（路由与斜杠命令共用，同一张表防止两者漂移）：
 
 <!-- contract:act-operations -->
 ```json
-["adopt", "bathe", "buy", "calloff", "dev", "feed", "hatch", "lang", "look", "lottery", "pet", "play", "rename", "reset", "sleep", "study", "trip", "use", "wake", "work"]
+["adopt", "bathe", "buy", "calloff", "dev", "feed", "hatch", "lang", "look", "lottery", "pet", "play", "rename", "reset", "sleep", "study", "trip", "use", "wake", "wear", "work"]
 ```
+
+`wear`：`{item, on}` 穿上（同部位的换下）或脱下一件，`{auto: true}` 回到跟着阶段穿；拒绝原因 `unhatched` / `dead` / `bad-wear` / `wear-locked`。`look` 自 ST0004 起只是戴上 / 摘下 `whiskers` 的旧入口。
 
 `/act` 回执 = 最新快照 + 以下操作结论字段（结论在后，覆盖快照的 `ok`）：
 

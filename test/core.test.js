@@ -8,7 +8,7 @@
 
 import { PLACES, REGIONS, SOUVENIRS, SPECIALTIES, WORLD_BONUS, fareFor, zonesBetween } from '../world.js'
 import { ALL_ITEMS, DIPLOMAS, PARALLEL_COURSES, RENAME_CARD, diplomaCount, schoolStageByKey as schoolStage } from '../data.js'
-import { diplomaView } from '../core.js'
+import { diplomaView, outfitIsAuto, wardrobeView, wear, wearAuto, wornFor } from '../core.js'
 import { hasDefaultName, perksOf, regionProgress, renamePig, tripQuote } from '../core.js'
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
@@ -191,21 +191,84 @@ test('weight comes from food actually eaten, slower once elderly', () => {
   assert.equal(pig.weightG, 90_000 + 2 * 50)
 })
 
-test('an elder pig can switch between the elder and the original drawing', () => {
+// [ST0004] the old elder switch only puts the beard on or takes it off now.
+test('an elder pig can switch between the elder and the original look', () => {
   const pig = hatchEgg(T0)
   assert.equal(canChooseLook(pig), false)
   assert.deepEqual(setLook(pig, 'original', T0), { ok: false, reason: 'too-light' })
 
   pig.weightG = 80_000
   assert.equal(canChooseLook(pig), true)
-  assert.equal(lifeStageFor(pig, T0).art, 'stage-elder', 'elder by default')
+  assert.deepEqual(wornFor(pig), ['whiskers'], 'elder by default')
   assert.equal(setLook(pig, 'original', T0).ok, true)
-  assert.equal(lifeStageFor(pig, T0).key, 'elder', 'still an elder pig')
-  assert.equal(lifeStageFor(pig, T0).art, 'stage-young', 'wearing the original drawing')
+  assert.equal(lifeStageFor(pig, T0).art, 'stage-elder', 'still the elder pose: the look is the outfit, not the drawing')
+  assert.deepEqual(wornFor(pig), [], 'the beard is off')
   assert.equal(setLook(pig, 'nonsense', T0).ok, false)
-  assert.equal(migrate(JSON.parse(JSON.stringify(pig))).look, 'original', 'the choice is saved')
+  assert.deepEqual(migrate(JSON.parse(JSON.stringify(pig))).outfit, [], 'the choice is saved')
   assert.equal(setLook(pig, 'elder', T0).ok, true)
-  assert.equal(lifeStageFor(pig, T0).art, 'stage-elder')
+  assert.deepEqual(wornFor(pig), ['whiskers'])
+})
+
+test('wardrobe: unlocks follow progress the save already keeps', () => {
+  const pig = hatchEgg(T0)
+  const unlocked = () => wardrobeView(pig).filter(item => item.unlocked).map(item => item.key)
+  assert.deepEqual(unlocked(), ['bow'], 'a new piglet has its bow')
+  assert.deepEqual(wardrobeView(layEgg(T0)).filter(item => item.unlocked), [], 'a box has nothing')
+  pig.weightG = 50_000
+  assert.deepEqual(unlocked(), ['bow', 'flatcap'], 'grown: the flat cap')
+  pig.lessonsByStage.college = 1
+  assert.deepEqual(unlocked(), ['bow', 'flatcap', 'glasses'], 'any lesson: the glasses')
+  pig.lessonsByStage.primary = 9
+  assert.deepEqual(unlocked(), ['bow', 'flatcap', 'mortarboard', 'glasses', 'scarf'], 'primary school: the scarf; a diploma: the mortarboard')
+  pig.stats.trips = 1
+  assert.ok(unlocked().includes('strawhat'), 'home from a trip: the straw hat')
+  assert.ok(!unlocked().includes('sunglasses'))
+  const mideast = SOUVENIRS.find(souvenir => souvenir.region === 'mideast')
+  pig.collected = { [mideast.key]: 1 }
+  assert.ok(unlocked().includes('sunglasses'), 'a souvenir from the Middle East: the sunglasses')
+  pig.weightG = 80_000
+  assert.ok(unlocked().includes('whiskers'), 'elder: the beard')
+})
+
+test('wardrobe: the stage look until the owner dresses the pig, one thing per slot', () => {
+  const pig = hatchEgg(T0)
+  assert.equal(outfitIsAuto(pig), true)
+  assert.deepEqual(wornFor(pig), ['bow'], 'a piglet wears its bow')
+  pig.weightG = 50_000
+  assert.deepEqual(wornFor(pig), ['flatcap'], 'the stage look follows the stage')
+  pig.lessonsByStage.primary = 9
+
+  assert.deepEqual(wear(pig, 'glasses', true, T0), { ok: true })
+  assert.equal(outfitIsAuto(pig), false, 'dressed by hand now')
+  assert.deepEqual(wornFor(pig), ['glasses', 'flatcap'], 'kept the stage look and added the glasses, in drawing order')
+  assert.equal(wear(pig, 'mortarboard', true, T0).ok, true)
+  assert.deepEqual(wornFor(pig), ['glasses', 'mortarboard'], 'one hat at a time')
+  assert.equal(wear(pig, 'scarf', true, T0).ok, true)
+  assert.deepEqual(wornFor(pig), ['scarf', 'glasses', 'mortarboard'])
+  assert.equal(wear(pig, 'glasses', false, T0).ok, true)
+  assert.deepEqual(wornFor(pig), ['scarf', 'mortarboard'])
+  pig.weightG = 80_000
+  assert.deepEqual(wornFor(pig), ['scarf', 'mortarboard'], "the owner's outfit outlasts growing up")
+
+  assert.deepEqual(wear(pig, 'sunglasses', true, T0), { ok: false, reason: 'wear-locked' })
+  assert.deepEqual(wear(pig, 'cape', true, T0), { ok: false, reason: 'bad-wear' })
+  assert.deepEqual(wearAuto(pig, T0), { ok: true })
+  assert.deepEqual(wornFor(pig), ['whiskers'], 'back to the stage look')
+
+  pig.dead = true
+  assert.deepEqual(wornFor(pig), [], 'a grave wears nothing')
+  assert.deepEqual(wear(pig, 'bow', true, T0), { ok: false, reason: 'dead' })
+})
+
+test('wardrobe: migration keeps the outfit tidy and moves the old elder look over', () => {
+  assert.equal(migrate({ hatched: true }).outfit, null, 'no outfit: follow the stage')
+  assert.deepEqual(migrate({ hatched: true, outfit: ['strawhat', 'bow', 'cape', 7, 'whiskers'] }).outfit, ['whiskers', 'strawhat'],
+    'known keys, one per slot, drawing order')
+  const old = migrate({ version: 5, hatched: true, weightG: 90_000, look: 'original' })
+  assert.deepEqual(old.outfit, [], "an owner who took the beard off keeps it off")
+  assert.equal(Object.hasOwn(old, 'look'), false, 'the old key is gone')
+  assert.equal(migrate({ version: 5, hatched: true, weightG: 90_000, look: 'elder' }).outfit, null, 'the elder look is the stage look')
+  assert.deepEqual(migrate({ version: 6, hatched: true, outfit: ['bow'], look: 'original' }).outfit, ['bow'], 'a v6 outfit wins')
 })
 
 test('nothing dies of old age, and a grave can still be left for a new pig', () => {
@@ -1000,8 +1063,9 @@ test('study is refused when broke, away, sick or dead', () => {
 // ===========================================================================
 
 // [dsh-piggy-claude-code mod] the travel world: priced by time zones from home.
-// [ST0001] every job, school stage and region has a pose, in every stage look.
-test('every job, school stage and trip region has its sprite, dressed for every stage', () => {
+// [ST0001] every job, school stage and region has a pose. [ST0004] Decorations
+// are their own files now, so there is one drawing per pose.
+test('every job, school stage and trip region has its sprite', () => {
   const poses = [
     ...JOBS.map(job => `job-${job.art}`),
     ...SCHOOL_STAGES.map(stage => `study-${stage.key}`),
@@ -1010,10 +1074,8 @@ test('every job, school stage and trip region has its sprite, dressed for every 
   ]
   assert.ok(JOBS.every(job => typeof job.art === 'string' && job.art !== ''), 'every job names its art')
   for (const pose of poses) {
-    for (const name of [pose, `${pose}--piglet`, `${pose}--middle`, `${pose}--elder`]) {
-      assert.ok(existsSync(new URL(`../assets/${name}.svg`, import.meta.url)), `assets/${name}.svg`)
-      assert.match(`${name}.svg`, /^[a-z][a-z0-9-]{0,31}\.svg$/, 'the art route serves it')
-    }
+    assert.ok(existsSync(new URL(`../assets/${pose}.svg`, import.meta.url)), `assets/${pose}.svg`)
+    assert.match(`${pose}.svg`, /^[a-z][a-z0-9-]{0,31}\.svg$/, 'the art route serves it')
   }
 })
 

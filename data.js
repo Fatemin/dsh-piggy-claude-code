@@ -181,8 +181,58 @@ export const GROWTH = Object.freeze({
   gramsPerSatietyElder: 50,
 })
 
-/** The looks an elder pig can wear. */
+/**
+ * The looks an elder pig can wear. [ST0004] Kept for the old `look` command
+ * only: 'elder' puts the white brows and beard (`whiskers`) on, 'original'
+ * takes them off. The wardrobe below is what really dresses the pig.
+ */
 export const LOOKS = Object.freeze(['elder', 'original'])
+
+// ---------------------------------------------------------------------------
+// [ST0004] Wardrobe. A decoration (装饰资产) is something the pig wears and its
+// owner picks; a pose (行为资产) is what the pig is doing and the game picks.
+// The contract between the two: docs/contracts/art-assets.md (ART.ASSETS.V1).
+// ---------------------------------------------------------------------------
+
+/** Where a decoration sits on the pig, in drawing order (later is on top). */
+export const WEAR_SLOTS = Object.freeze(['face', 'neck', 'eyes', 'head'])
+
+/**
+ * Every decoration, one slot each; its drawing is assets/wear-<key>.svg.
+ * `unlock` is worked out from progress the save already keeps, so unlocking
+ * stores nothing and a pig that grew up before the wardrobe has its things:
+ *   always            from the moment it hatches
+ *   stage <key>       it has grown to that life stage (weight only goes up)
+ *   lessons <stage>   it has sat a lesson at that school (`null`: any school)
+ *   diploma           it holds any diploma
+ *   trip              it has come home from a trip
+ *   region <key>      it brought a souvenir home from that region
+ */
+const WEARABLE = fields => Object.freeze({ ...fields, unlock: Object.freeze(fields.unlock) })
+export const WEARABLES = Object.freeze([
+  WEARABLE({ key: 'bow', slot: 'head', label: '蝴蝶结', emoji: '🎀', unlock: { kind: 'always' } }),
+  WEARABLE({ key: 'flatcap', slot: 'head', label: '鸭舌帽', emoji: '🧢', unlock: { kind: 'stage', stage: 'middle' } }),
+  WEARABLE({ key: 'mortarboard', slot: 'head', label: '学士帽', emoji: '🎓', unlock: { kind: 'diploma' } }),
+  WEARABLE({ key: 'strawhat', slot: 'head', label: '草帽', emoji: '👒', unlock: { kind: 'trip' } }),
+  WEARABLE({ key: 'glasses', slot: 'eyes', label: '圆眼镜', emoji: '👓', unlock: { kind: 'lessons', stage: null } }),
+  WEARABLE({ key: 'sunglasses', slot: 'eyes', label: '墨镜', emoji: '🕶️', unlock: { kind: 'region', region: 'mideast' } }),
+  WEARABLE({ key: 'scarf', slot: 'neck', label: '红领巾', emoji: '🧣', unlock: { kind: 'lessons', stage: 'primary' } }),
+  WEARABLE({ key: 'whiskers', slot: 'face', label: '白眉白胡子', emoji: '🧓', unlock: { kind: 'stage', stage: 'elder' } }),
+])
+
+export const wearableByKey = key => WEARABLES.find(item => item.key === key) ?? null
+
+/**
+ * What a pig wears until its owner dresses it: each life stage's own look, as
+ * the stage drawings used to have it baked in. An `outfit` of `null` in the
+ * save means "follow this table".
+ */
+export const STAGE_OUTFIT = Object.freeze({
+  piglet: Object.freeze(['bow']),
+  young: Object.freeze([]),
+  middle: Object.freeze(['flatcap']),
+  elder: Object.freeze(['whiskers']),
+})
 
 /**
  * Where the stages change over, in kilograms. The `size` here is only the
