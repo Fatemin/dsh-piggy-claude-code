@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { LANGS, LANG_NAMES, tr } from './pig/i18n.js'
 import { startServer } from './pig/lib/server.js'
 import { readSnapshot } from './pig/lib/status.js'
+import { createUpdater } from './updater.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 // Room for the panel above a 200 px (120 kg) pig, and for the player to
@@ -31,6 +32,10 @@ let tray = null
 let quitting = false
 let trayLang = null
 let panelWin = null
+const updater = createUpdater({
+  translate: (zh, params) => tr(currentLang(), zh, params),
+  onChange: () => refreshTray(true),
+})
 
 /** The pig's language, read from the save (the panel may have just changed it). */
 function currentLang() {
@@ -235,6 +240,7 @@ function trayMenu() {
       click: item => app.setLoginItemSettings({ openAtLogin: item.checked }),
     },
     { type: 'separator' },
+    ...updater.menuItems(),
     { label: t('退出'), click: () => app.quit() },
   ])
 }
@@ -313,5 +319,6 @@ if (!app.requestSingleInstanceLock()) {
     createWindow(server.url + 'desk')
     createTray()
     followSystemSleep()
+    updater.start()
   })
 }

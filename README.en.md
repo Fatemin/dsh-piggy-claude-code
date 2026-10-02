@@ -193,6 +193,7 @@ Self-check: launch with `PIGGY_DEBUG_SNAPSHOT=<dir>` and the app writes window r
 - Mac: universal `.dmg` (Intel + Apple silicon); Windows: one-click `Setup.exe` (x64, no admin needed)
 - Right-click for the menu, left-click to pet, drag to move, click-through outside the pig; tray / menu-bar icon to hide, reset position, launch at login and quit
 - The pig falls asleep when the computer sleeps and gets up when it wakes; a pig you put to bed yourself is not woken by the computer
+- Update check: when GitHub has a newer version a dialog says so, and "Update now" downloads it, swaps it in and restarts; the tray menu has "Check for updates" too
 - Saves live in the system app-data folder (Mac `~/Library/Application Support/DSH Piggy/`, Windows `%APPDATA%\DSH Piggy\`), separate from the Claude Code pig
 
 ```bash
@@ -208,6 +209,8 @@ npm run dist:win
 ```
 
 Output goes to `app/dist/`. Builds are unsigned: on Mac, the first launch needs "Open Anyway" in System Settings → Privacy & Security; on Windows, click "More info → Run anyway" in SmartScreen. A guide for less technical users is in [`app/share-readme.txt`](app/share-readme.txt) (Chinese). Use `npm start` during development.
+
+To ship a new version: bump `version` in `app/package.json`, build, then create a GitHub Release tagged `v<version>` with the `.dmg` and `Setup.exe` attached. Installed apps check the latest release 20 s after launch and every 6 hours (drafts and pre-releases are ignored). On Mac the app must sit in a writable folder (such as Applications) to replace itself; run straight from the dmg it opens the download page instead.
 
 ## Commands
 
