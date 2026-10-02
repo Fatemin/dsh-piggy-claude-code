@@ -140,11 +140,20 @@ const WEAR = {
     slot: 'eyes', title: '墨镜', note: '从中东·非洲晒回来的墨镜。',
     svg: `<path d="M72 134h40v10a16 16 0 0 1-40 0ZM146 148h40v10a16 16 0 0 1-40 0Z" fill="#2E2E3A"/><path d="M112 138L146 152M72 136L58 130" fill="none" stroke="#2E2E3A" stroke-width="5"/>`,
   },
+  // The pig has no neck: the scarf goes round its waist, between the front legs
+  // and the hind leg, clear of the near ear. The band is clipped to the body
+  // so it ends exactly on the outline; it bows toward the head the way a ring
+  // round a turned barrel does. The knot's two ends flutter.
   scarf: {
-    slot: 'neck', title: '红领巾', note: '上小学系的红领巾。',
-    svg: `<path d="M128 212L198 226L152 262Z" fill="#E5534B"/>
-    <path d="M156 222L138 252M156 222L174 254" fill="none" stroke="#E5534B" stroke-width="10" stroke-linecap="round"/>
-    <circle cx="156" cy="222" r="9" fill="#C9433C"/>`,
+    slot: 'waist', title: '红领巾', note: '上小学系的红领巾，猪没有脖子，绑在腰上。',
+    css: `.w-scarf-ends{animation:w-scarf-flutter 2.4s ease-in-out infinite;transform-origin:248px 196px}
+    @keyframes w-scarf-flutter{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}`,
+    svg: `<clipPath id="w-scarf-body"><path d="${P.body}"/></clipPath>
+    <g clip-path="url(#w-scarf-body)"><path d="M238 28Q228 135 242 244H264Q250 135 262 28Z" fill="#E5534B"/>
+    <path d="M259 28Q249 135 263 244" fill="none" stroke="#C9433C" stroke-width="5"/></g>
+    <g class="w-scarf-ends"><path d="M242 198C228 210 214 222 200 236L234 246Z" fill="#E5534B"/><path d="M242 200L220 238" fill="none" stroke="#C9433C" stroke-width="3" stroke-linecap="round"/>
+    <path d="M254 198C268 208 280 220 292 234L260 246Z" fill="#E5534B"/><path d="M254 200L272 238" fill="none" stroke="#C9433C" stroke-width="3" stroke-linecap="round"/></g>
+    <ellipse cx="248" cy="196" rx="14" ry="12" fill="#C9433C"/><path d="M241 192Q248 188 255 192" fill="none" stroke="#F07A72" stroke-width="3" stroke-linecap="round"/>`,
   },
   whiskers: {
     slot: 'face', title: '白眉白胡子', note: '老年猪的灰眉毛和白胡子。',
@@ -721,7 +730,7 @@ const SPRITES = {
     @keyframes squat{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.94)}}
     @keyframes lift{0%,100%{transform:translateY(0)}50%{transform:translateY(-70px)}}
     @keyframes fling{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(26px,-30px)}}`,
-    wrap: 'squat', wears: ['neck'],
+    wrap: 'squat', wears: ['waist'],
     pig: { face: `<path d="M64 112L196 128L194 146L60 130Z" fill="#E5534B"/><path d="M64 120L195 136" fill="none" stroke="#FFFFFF" stroke-width="4"/>
     <path d="M120 214Q150 240 190 226" fill="none" stroke="#5B5F73" stroke-width="4"/><rect x="138" y="228" width="22" height="14" rx="6" fill="#F5C24C"/>
     ${drop(220, 70, 1.3, '#9FD8F0', 's1')}${drop(60, 100, 1.1, '#9FD8F0', 's2')}` },
@@ -849,7 +858,7 @@ const SPRITES = {
     @keyframes stamp{0%,30%,100%{transform:translateY(-22px)}45%,55%{transform:translateY(0)}}
     @keyframes mark{0%,45%{opacity:0}50%,95%{opacity:1}}
     @keyframes spin{to{transform:rotate(360deg)}}`,
-    wrap: 'sit', wears: ['neck'],
+    wrap: 'sit', wears: ['waist'],
     pig: { face: `<path d="M120 212h20l-4 10h-12Z" fill="#3E5C99"/><path d="M125 222h10l6 30-11 11-11-11Z" fill="#4A6FB5"/>
     <path d="M128 232l8 6M126 244l10 7" fill="none" stroke="#7FA0D8" stroke-width="3" stroke-linecap="round"/>` },
     under: `<circle cx="306" cy="-2" r="30" fill="#FFFFFF"/><circle cx="306" cy="-2" r="30" fill="none" stroke="#8B6B4E" stroke-width="6"/>
@@ -981,7 +990,7 @@ const SPRITES = {
     @keyframes belt{0%{opacity:0;transform:translateX(0)}10%,85%{opacity:1}100%{opacity:0;transform:translateX(-150px)}}
     @keyframes beam{0%,50%,70%,100%{opacity:0}55%,65%{opacity:1}}
     @keyframes roll{to{transform:rotate(-360deg)}}`,
-    wrap: 'scan', wears: ['neck'],
+    wrap: 'scan', wears: ['waist'],
     pig: { face: `<path d="M118 212Q150 240 192 226" fill="none" stroke="#4A6FB5" stroke-width="4"/>
     <rect x="140" y="228" width="26" height="32" rx="4" fill="#FFFFFF"/><rect x="144" y="232" width="18" height="10" rx="2" fill="#6FA8DC"/>
     <path d="M145 248h16M145 254h10" fill="none" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/>` },
@@ -1002,12 +1011,13 @@ const SPRITES = {
     .top{animation:bounce .8s ease-in-out infinite}
     @keyframes recite{0%,100%{transform:rotate(0)}50%{transform:rotate(-2deg) translateY(-2px)}}
     @keyframes note{0%{opacity:0;transform:translate(0,0)}25%{opacity:1}100%{opacity:0;transform:translate(-14px,-56px)}}
-    @keyframes bounce{50%{transform:translateY(-6px)}}`,
-    wrap: 'recite', wears: ['neck'],
-    pig: { face: `<path d="M236 58Q206 110 226 168" fill="none" stroke="#E5A92A" stroke-width="8"/>
+    @keyframes bounce{50%{transform:translateY(-6px)}}
+    ${WEAR.scarf.css}`,
+    wrap: 'recite', wears: ['waist'],
+    pig: { face: `${WEAR.scarf.svg}
+    <path d="M236 58Q206 110 226 168" fill="none" stroke="#E5A92A" stroke-width="8"/>
     <rect x="244" y="40" width="70" height="80" rx="22" fill="#FFC83D" transform="rotate(8 280 80)"/>
-    <rect x="254" y="84" width="52" height="26" rx="10" fill="#F5B52A" transform="rotate(8 280 80)"/>
-    ${WEAR.scarf.svg}` },
+    <rect x="254" y="84" width="52" height="26" rx="10" fill="#F5B52A" transform="rotate(8 280 80)"/>` },
     over: `<g class="n1"><circle cx="48" cy="200" r="7" fill="#8C9BC4"/><path d="M54 200V176l10 4" fill="none" stroke="#8C9BC4" stroke-width="4" stroke-linecap="round"/></g>
     <g class="n2"><circle cx="40" cy="176" r="6" fill="#FF9FB0"/><path d="M45 176V156l9 4" fill="none" stroke="#FF9FB0" stroke-width="4" stroke-linecap="round"/></g>
     <rect x="28" y="266" width="34" height="34" rx="4" fill="#FF7A93"/><circle cx="45" cy="283" r="9" fill="#FFFFFF"/>
@@ -1186,7 +1196,7 @@ const SPRITES = {
   }),
 }
 
-const SLOT_ORDER = ['face', 'neck', 'eyes', 'head']
+const SLOT_ORDER = ['face', 'waist', 'eyes', 'head']
 
 function render(s) {
   // The empty wear slot: the art route fills it with the decorations worn,
