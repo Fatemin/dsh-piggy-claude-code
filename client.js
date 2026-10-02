@@ -4099,6 +4099,19 @@ window.__ModuleLoader__.load({
         fitPanel()
         return moved
       }
+      // [dsh-piggy-claude-code mod] A desktop shell drags the whole window, and
+      // keeps the window on screen; whatever of the move the window cannot take
+      // at a screen edge, it hands back here as the pig's spot inside the window.
+      host.addEventListener('dsh-pig:place', function (event) {
+        var at = isObj(event.detail) ? event.detail : {}
+        if (split || typeof at.right !== 'number' || typeof at.bottom !== 'number') return
+        if (!isFinite(at.right) || !isFinite(at.bottom)) return
+        userRight = at.right
+        userBottom = at.bottom
+        clampPig()
+        writeStore(POSITION_KEY, JSON.stringify({ right: userRight, bottom: userBottom }))
+        fitPanel()
+      })
       var boxPokes = 0
 
       /**

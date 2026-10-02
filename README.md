@@ -193,6 +193,7 @@ node ~/piggy-piggy-companion/bin/pig.js serve
 - Mac：`.dmg`，通用包（Intel + Apple 芯片）；Windows：一键安装的 `Setup.exe`（x64，免管理员）
 - 右键开菜单、左键摸摸、拖动移动，猪以外的区域点击穿透；托盘 / 菜单栏图标可隐藏、复位、开机自启、退出
 - 电脑休眠时猪跟着睡，电脑醒来就起床；你亲手哄睡的猪不会被电脑叫醒
+- 自动检查更新：GitHub 上有新版本时弹窗提示，点「立即更新」就下载、替换并重启；托盘菜单里也能「检查更新」
 - 存档在系统的应用数据目录（Mac `~/Library/Application Support/DSH Piggy/`，Windows `%APPDATA%\DSH Piggy\`），和 Claude Code 版互不影响
 
 ```bash
@@ -208,6 +209,8 @@ npm run dist:win
 ```
 
 产物在 `app/dist/`。未签名：Mac 首次打开要在「系统设置 → 隐私与安全性」里点「仍要打开」，Windows 要在 SmartScreen 里点「更多信息 → 仍要运行」。给不熟悉电脑的人的说明见 [`app/share-readme.txt`](app/share-readme.txt)。开发时 `npm start` 直接运行。
+
+发新版：先改 `app/package.json` 的 `version`，打包后在 GitHub 建 Release，tag 写 `v<版本号>`，把 `.dmg` 和 `Setup.exe` 作为附件上传。已装的 App 启动 20 秒后和之后每 6 小时查一次最新 Release（草稿和预发布不算）。Mac 版要装在可写的目录（如「应用程序」）才能自己替换，直接从 dmg 里运行时会改为打开下载页。
 
 ## 命令
 

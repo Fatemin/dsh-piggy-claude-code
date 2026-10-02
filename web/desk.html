@@ -16,7 +16,10 @@
   //   __pigHit(x, y)  — is there pig (or its panel) under this point? The
   //                     window lets clicks fall through everywhere else.
   //   drag bridge     — dragging the pig moves the whole window, instead of
-  //                     moving the pig around inside a transparent box.
+  //                     moving the pig around inside a transparent box. The
+  //                     first move says where the pig sits in the window.
+  //   __pigPlace(r, b) — where the window stops at a screen edge, the host
+  //                     moves the pig inside it instead (right/bottom in px).
   //   openPanel       — the panel's ⤢ button asks the host for the big window.
   //
   // The window is larger than the pig and its panel (the panel can be resized),
@@ -29,6 +32,10 @@
   window.__pigHit = (x, y) => {
     const el = document.elementFromPoint(x, y)
     return el !== null && el.closest('[data-dsh-pig]') !== null
+  }
+
+  window.__pigPlace = (right, bottom) => {
+    document.querySelector('[data-dsh-pig]')?.dispatchEvent(new CustomEvent('dsh-pig:place', { detail: { right, bottom } }))
   }
 
   // Capture phase on window runs before client.js's own listeners on the pig.
@@ -45,10 +52,15 @@
     const dy = event.screenY - drag.y
     event.stopImmediatePropagation()
     if (!drag.moved && Math.hypot(dx, dy) < 4) return
+    const message = { type: 'drag', dx, dy }
+    if (!drag.moved) {
+      const host = getComputedStyle(drag.scene.closest('[data-dsh-pig]'))
+      Object.assign(message, { start: true, right: parseFloat(host.right) || 0, bottom: parseFloat(host.bottom) || 0 })
+    }
     drag.moved = true
     drag.x = event.screenX
     drag.y = event.screenY
-    native.postMessage({ type: 'drag', dx, dy })
+    native.postMessage(message)
   }, true)
   addEventListener('pointerup', event => {
     if (drag === null) return

@@ -24,6 +24,8 @@
     "files": [
       "main.mjs",
       "preload.cjs",
+      "update-core.mjs",
+      "updater.mjs",
       "package.json",
       "pig/**",
       "build/tray.png",
