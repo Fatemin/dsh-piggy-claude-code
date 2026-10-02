@@ -21,6 +21,7 @@ The pig is referred to as "it" in English and by name or 「この子」 in Japa
 | 经验 | けいけんち | XP |
 | 状态 · 学习 · 打工 · 商店 · 旅行 · 背包 (six tabs) | ようす · 勉強 · バイト · おみせ · 旅行 · バッグ | Status · Study · Work · Shop · Travel · Bag |
 | 喂食 · 洗澡 · 玩耍 · 摸摸 | ごはん · おふろ · あそぶ · なでなで | Feed · Bathe · Play · Pat |
+| 睡觉 · 叫醒 · 在睡觉 | ねる · おこす · おやすみ中 | Sleep · Wake up · Sleeping |
 | 纸盒 | ダンボール箱 | box |
 | 拆开纸盒 | 箱をあける | Open the box |
 | 小猪 · 青年猪 · 中年猪 · 老年猪 | こブタ · わかブタ · おとなブタ · おじいブタ | Piglet · Young pig · Grown pig · Elder pig |

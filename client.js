@@ -25,7 +25,7 @@ window.__ModuleLoader__.load({
     // Poses drawn on top of the stage's body. A mood without one (fine) keeps
     // the stage drawing; each file animates itself.
     var MOOD_ART = {
-      sick: 'mood-sick', hungry: 'mood-hungry', dirty: 'mood-dirty', sleepy: 'mood-sleepy',
+      sick: 'mood-sick', hungry: 'mood-hungry', dirty: 'mood-dirty', sleepy: 'mood-sleepy', asleep: 'mood-asleep',
       happy: 'mood-happy', lonely: 'mood-lonely',
       working: 'away-work', studying: 'away-study', traveling: 'away-trip',
     }
@@ -249,6 +249,12 @@ window.__ModuleLoader__.load({
         '中了{prize}！+{coins} 🪙': '{prize}！ +{coins} 🪙', '谢谢参与…下次一定': 'はずれ…次こそ',
         '一等奖': '1等', '二等奖': '2等', '三等奖': '3等', '安慰奖': '残念賞', '谢谢参与': 'はずれ',
         '其他': 'そのほか', '成长 {pct}%': '成長 {pct}%',
+        // [dsh-piggy-claude-code mod] sleep
+        '睡觉': 'ねる', '叫醒': 'おこす', '晚安…': 'おやすみ…', '早上好！': 'おはよう！',
+        '{name} 在睡觉': '{name}はおやすみ中',
+        '睡着时只会变饿，心情和清洁会慢慢恢复': 'ねている間はおなかがへるだけ。きげんときれいさは少しずつもどります',
+        '跟着电脑一起睡的，电脑醒来它就起床': 'パソコンといっしょにねたので、パソコンがおきたらおきます',
+        '它已经在睡了': 'もうねています', '它本来就醒着': 'もうおきています',
       },
       en: {
         // tabs
@@ -400,6 +406,12 @@ window.__ModuleLoader__.load({
         '中了{prize}！+{coins} 🪙': '{prize}! +{coins} 🪙', '谢谢参与…下次一定': 'No luck… next time',
         '一等奖': '1st prize', '二等奖': '2nd prize', '三等奖': '3rd prize', '安慰奖': 'Consolation prize', '谢谢参与': 'No luck',
         '其他': 'Other', '成长 {pct}%': 'Growth {pct}%',
+        // [dsh-piggy-claude-code mod] sleep
+        '睡觉': 'Sleep', '叫醒': 'Wake up', '晚安…': 'Good night…', '早上好！': 'Good morning!',
+        '{name} 在睡觉': '{name} is sleeping',
+        '睡着时只会变饿，心情和清洁会慢慢恢复': 'Asleep it only gets hungrier; mood and cleanliness slowly come back',
+        '跟着电脑一起睡的，电脑醒来它就起床': 'It fell asleep with the computer and gets up when the computer wakes',
+        '它已经在睡了': "It's already asleep", '它本来就醒着': "It's already awake",
       },
     }
     // English singulars, picked when `params.n === 1`. Japanese and Chinese
@@ -525,6 +537,9 @@ window.__ModuleLoader__.load({
           moodLevel: num(pig.moodLevel, 0),
           moodEmoji: str(pig.moodEmoji, '😊'),
           moodLabel: str(pig.moodLabel, L('还不错')),
+          // [dsh-piggy-claude-code mod] an older host never sends these: awake.
+          asleep: pig.asleep === true,
+          sleepAuto: pig.sleepAuto === true,
           satiety: Math.round(num(pig.satiety, 0)),
           happiness: Math.round(num(pig.happiness, 0)),
           cleanliness: Math.round(num(pig.cleanliness, 0)),
@@ -953,6 +968,7 @@ window.__ModuleLoader__.load({
       '@keyframes dp-cough{0%,100%{transform:translateX(0)}30%{transform:translateX(-4px) rotate(-7deg)}70%{transform:translateX(4px) rotate(6deg)}}',
       '.dp-pig[data-mood="happy"]{animation-duration:1.15s}',
       '.dp-pig[data-mood="sleepy"]{animation-name:dp-breathe;animation-duration:3.6s}',
+      '.dp-pig[data-mood="asleep"]{animation-name:dp-breathe;animation-duration:4.4s}',
       '.dp-pig[data-mood="hungry"]{animation-name:dp-shake;animation-duration:2.4s}',
       '.dp-pig[data-mood="dirty"]{animation-name:dp-breathe;animation-duration:2.6s;filter:sepia(.4) drop-shadow(0 4px 6px rgba(61,52,40,.28))}',
       '.dp-pig[data-mood="sick"]{animation-name:dp-cough;animation-duration:2.2s;filter:hue-rotate(-28deg) saturate(.75) drop-shadow(0 4px 6px rgba(61,52,40,.28))}',
@@ -1129,6 +1145,7 @@ window.__ModuleLoader__.load({
       '.dp-alert b{font-weight:700;color:var(--ac-text)}',
       '.dp-alert.dp-sick{background:#fdeeee;border-color:#f2c2c2}',
       '.dp-alert.dp-work{background:#eef1fb;border-color:#c3cdf0}',
+      '.dp-alert.dp-sleep{background:#f1effb;border-color:#d3cdef}',
       '.dp-alert.dp-dead{background:var(--ac-bg-disabled);border-color:var(--ac-border-light)}',
       '.dp-alert.dp-legacy{background:#fdf7e2;border-color:#f0dfa8}',
 
@@ -2254,6 +2271,9 @@ window.__ModuleLoader__.load({
         buy: { kind: 'pet', ms: 620, fx: ['🪙', '🛒'], count: 2, say: '买到了！' },
         use: { kind: 'pet', ms: 620, fx: ['✨'], count: 2, say: '用掉了。' },
         rename: { kind: 'levelup', ms: 900, fx: ['✏️', '✨'], count: 2, say: '好名字！' },
+        // [dsh-piggy-claude-code mod] bed and back.
+        sleep: { kind: 'sleep', ms: 900, fx: ['💤', '🌙'], count: 2, say: '晚安…' },
+        wake: { kind: 'pet', ms: 620, fx: ['☀️'], count: 1, say: '早上好！' },
       }
 
       function flash(action) {
@@ -2553,6 +2573,18 @@ window.__ModuleLoader__.load({
             grid.appendChild(btn)
           })(MODES[i])
         }
+        // [dsh-piggy-claude-code mod] bed and back, under the four care buttons.
+        var asleep = view.pig !== null && view.pig.asleep
+        var bed = button('dp-btn dp-btn-wide', { 'data-action': asleep ? 'wake' : 'sleep' }, function () {
+          send(asleep ? 'wake' : 'sleep')
+        })
+        bed.appendChild(el('span', 'dp-e', asleep ? '☀️' : '😴'))
+        bed.appendChild(el('span', null, T(asleep ? '叫醒' : '睡觉')))
+        if (view.dead || view.activity !== null) {
+          bed.disabled = true
+          if (view.activity !== null) bed.appendChild(el('span', 'dp-wait', T('不在家')))
+        }
+        grid.appendChild(bed)
         return grid
       }
 
@@ -3570,6 +3602,15 @@ window.__ModuleLoader__.load({
           content.appendChild(wrap)
         }
 
+        // [dsh-piggy-claude-code mod] asleep — alongside an illness, if it has one.
+        if (view.pig !== null && !view.dead && view.pig.asleep) {
+          var sleeping = el('div', 'dp-alert dp-sleep')
+          sleeping.appendChild(el('b', null, '😴 ' + T('{name} 在睡觉', { name: view.pig.name })))
+          sleeping.appendChild(el('div', null, T('睡着时只会变饿，心情和清洁会慢慢恢复')))
+          if (view.pig.sleepAuto) sleeping.appendChild(el('div', 'dp-dim', T('跟着电脑一起睡的，电脑醒来它就起床')))
+          content.appendChild(sleeping)
+        }
+
         if (view.pig === null) {
           content.appendChild(el('div', 'dp-empty', T('门口放着一个纸盒，里面窸窸窣窣 📦')))
           var grid = el('div', 'dp-actions')
@@ -3800,6 +3841,8 @@ window.__ModuleLoader__.load({
               'use-to-rename': '更名卡要在「状态」里改名时用',
               'bad-name': '名字要 1–16 个字',
               'same-name': '和现在的名字一样',
+              asleep: '它已经在睡了',
+              awake: '它本来就醒着',
             }
             // [dsh-piggy-claude-code mod] refusals that carry a number.
             if (next.reason === 'too-many') {

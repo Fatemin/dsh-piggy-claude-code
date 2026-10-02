@@ -25,7 +25,7 @@
 
 <!-- contract:state-keys -->
 ```json
-["activity", "bornAt", "cleanliness", "coins", "collected", "cooldowns", "courses", "dead", "diedAt", "doctorDone", "happiness", "hatched", "health", "illness", "inventory", "lang", "lastActiveAt", "lastFedAt", "lastLotteryAt", "lastSeenAt", "lastTrip", "lessonsByStage", "memories", "name", "pending", "regionsDone", "riskMinutes", "satiety", "souvenirs", "stage", "stageCourses", "stats", "traits", "version", "weightG", "worldDone", "xp"]
+["activity", "bornAt", "cleanliness", "coins", "collected", "cooldowns", "courses", "dead", "diedAt", "doctorDone", "happiness", "hatched", "health", "illness", "inventory", "lang", "lastActiveAt", "lastFedAt", "lastLotteryAt", "lastSeenAt", "lastTrip", "lessonsByStage", "memories", "name", "pending", "regionsDone", "riskMinutes", "satiety", "sleep", "souvenirs", "stage", "stageCourses", "stats", "traits", "version", "weightG", "worldDone", "xp"]
 ```
 
 | 组 | 键 | 说明 |
@@ -35,7 +35,7 @@
 | 资产 | `coins`, `inventory` | `coins` 为非负整数 |
 | 养成 | `traits`, `courses`, `lessonsByStage`, `stageCourses`, `doctorDone` | `stageCourses` 是各学段每门课的次数（小学/大学上限按它算）；缺失时按 `lessonsByStage` 平均摊到九门课 |
 | 旅行 | `souvenirs`, `collected`, `regionsDone`, `worldDone`, `lastTrip` | |
-| 进行中 | `activity`, `illness`, `cooldowns`, `riskMinutes` | `activity.key` 引用 [GAME.RULES.V1](game-rules.md) 的表键 |
+| 进行中 | `activity`, `illness`, `sleep`, `cooldowns`, `riskMinutes` | `activity.key` 引用 [GAME.RULES.V1](game-rules.md) 的表键；`sleep` 为 `{since, auto}` 或 `null`（外出、死亡时迁移成 `null`；`auto` 表示电脑休眠触发） |
 | 记录 | `memories`（最多 8 条）, `pending`（加载时清空）, `stats` | |
 | 时间戳 | `lastFedAt`, `lastLotteryAt`, `lastActiveAt`, `lastSeenAt` | 毫秒时间戳 |
 

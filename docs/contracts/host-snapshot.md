@@ -70,7 +70,7 @@
 
 <!-- contract:pig-keys -->
 ```json
-["ageDays", "ageLabel", "canChooseLook", "cleanliness", "coins", "courses", "daysToNextStage", "doctor", "growthPercent", "happiness", "health", "healthPercent", "illness", "kgToNextStage", "look", "memories", "mood", "moodEmoji", "moodLabel", "moodLevel", "name", "perks", "renameCardPrice", "renameCards", "renameFree", "satiety", "soul", "souvenirs", "stage", "stageLine", "traits", "weight", "worldTraveler", "xp"]
+["ageDays", "ageLabel", "asleep", "canChooseLook", "cleanliness", "coins", "courses", "daysToNextStage", "doctor", "growthPercent", "happiness", "health", "healthPercent", "illness", "kgToNextStage", "look", "memories", "mood", "moodEmoji", "moodLabel", "moodLevel", "name", "perks", "renameCardPrice", "renameCards", "renameFree", "satiety", "sleepAuto", "soul", "souvenirs", "stage", "stageLine", "traits", "weight", "worldTraveler", "xp"]
 ```
 
 | 组 | 字段 | 深度 | freshness |
@@ -79,6 +79,7 @@
 | 年龄与成长 | `ageDays`, `ageLabel`, `daysToNextStage`, `kgToNextStage`, `growthPercent`, `weight` | core | LIVE |
 | 四维 | `satiety`, `happiness`, `cleanliness`（0–100 整数）, `health`, `healthPercent` | core | STATE |
 | 心情 | `mood`, `moodLevel`, `moodEmoji`, `moodLabel` | core | LIVE |
+| 睡眠 | `asleep`（在睡觉）, `sleepAuto`（电脑休眠触发、电脑唤醒时自动起床） | core | STATE |
 | 资产 | `coins`, `xp`, `renameCards`, `renameCardPrice`, `renameFree` | core | STATE |
 | 养成 | `traits{intel,charm,strong}`, `courses`, `perks`, `doctor`, `worldTraveler`, `souvenirs` | task | STATE |
 | 状态 | `illness{name,cure,stage,chain}` 或 `null`, `soul`, `stageLine`, `memories`（最近 3 条） | core | STATE |
@@ -95,7 +96,7 @@
 
 <!-- contract:act-operations -->
 ```json
-["adopt", "bathe", "buy", "calloff", "dev", "feed", "hatch", "lang", "look", "lottery", "pet", "play", "rename", "reset", "study", "trip", "use", "work"]
+["adopt", "bathe", "buy", "calloff", "dev", "feed", "hatch", "lang", "look", "lottery", "pet", "play", "rename", "reset", "sleep", "study", "trip", "use", "wake", "work"]
 ```
 
 `/act` 回执 = 最新快照 + 以下操作结论字段（结论在后，覆盖快照的 `ok`）：

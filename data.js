@@ -132,6 +132,16 @@ export const SICK_PAY_MULTIPLIER = 0.5
 export const SICK_AWAY_MULTIPLIER = 2
 export const SLEEPY_AFTER_MINUTES = 30
 
+/**
+ * [dsh-piggy-claude-code mod] Asleep — put to bed by hand, or because the
+ * computer went to sleep — the pig only gets hungrier: satiety drains at the
+ * usual rate while mood and cleanliness come back by these amounts per minute
+ * (a night of eight hours is about +72 mood and +48 cleanliness).
+ */
+export const SLEEP_RECOVERY_PER_MIN = Object.freeze({ happiness: 0.15, cleanliness: 0.1 })
+/** Asleep, neglect builds toward illness at half speed. */
+export const SLEEP_SICK_RISK_MULTIPLIER = 0.5
+
 /** Away from home the pig burns through its bars faster. */
 export const AWAY_MULTIPLIER = 1.8
 
