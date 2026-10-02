@@ -193,7 +193,7 @@ node ~/piggy-piggy-companion/bin/pig.js serve
 - Mac：`.dmg`，通用包（Intel + Apple 芯片）；Windows：一键安装的 `Setup.exe`（x64，免管理员）
 - 右键开菜单、左键摸摸、拖动移动，猪以外的区域点击穿透；托盘 / 菜单栏图标可隐藏、复位、开机自启、退出
 - 电脑休眠时猪跟着睡，电脑醒来就起床；你亲手哄睡的猪不会被电脑叫醒
-- 自动检查更新：GitHub 上有新版本时弹窗提示，点「立即更新」就下载、替换并重启；托盘菜单里也能「检查更新」
+- 自动检查更新：GitHub 上有新版本时，猪猪冒个气泡说一声，面板顶部出现更新卡片，点「立即更新」就下载、替换并重启；语言下面的版本行可以随时「检查更新」。不弹窗
 - 存档在系统的应用数据目录（Mac `~/Library/Application Support/DSH Piggy/`，Windows `%APPDATA%\DSH Piggy\`），和 Claude Code 版互不影响
 
 ```bash
