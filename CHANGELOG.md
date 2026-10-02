@@ -5,7 +5,10 @@ All notable changes to `dsh-pig`. Versions follow the plugin's own
 
 ---
 
-## [Unreleased]
+## [0.15.0] — 2026-10-02
+
+### Changed
+- **版本统一（ST0012）。** 独立桌宠 App 的版本从 0.6.0 改为与插件一致的 0.15.0；GitHub Release 的 tag `v<版本>` 同时是插件版本和 App 更新源，App 拿它和自己的版本比较，不会再因为两套版本号而一直提示更新。这是第一个附带安装包（Mac `.dmg`、Windows `Setup.exe`）的 GitHub Release。
 
 ### Added
 - **商店卖腰饰（ST0012）。** 商店新增「👗 装扮」货架，卖 5 件参考潮流与老网络热梗的腰部装饰：⭕网红呼啦圈 66、🦆小黄鸭游泳圈 88、👝多巴胺腰包 168、⛓️杀马特腰链 188、📟BP机皮带 288（金币）。
